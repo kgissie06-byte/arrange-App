@@ -1,0 +1,921 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F4EF;--card:#FFFDF9;--border:#E8E2D8;--bm:#D4CCBE;
+  --t:#2C2C2A;--t2:#6B6460;--t3:#A09890;
+  --acc:#634B38;--acc-bg:#EDE5D8;--acc-lt:#FFF5E8;
+  --tab:#3C3489;--toast-bg:#3C3489;--toast-c:#EEEDFE;
+  --danger:#791F1F;--danger-bg:#FCEBEB;
+}
+body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(--bg)}
+.wrap{min-height:100vh;background:var(--bg);padding-bottom:3rem}
+.top-bar{background:var(--card);border-bottom:1px solid var(--border);padding:0 1rem;position:sticky;top:0;z-index:80}
+.tabs{display:flex;gap:0;overflow-x:auto}
+.tab{padding:11px 15px;font-size:12px;cursor:pointer;border:none;background:none;color:var(--t2);border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;transition:color .15s;font-family:inherit}
+.tab.active{color:var(--tab);border-bottom-color:var(--tab);font-weight:500}
+.tab:hover:not(.active){color:var(--t);background:var(--acc-bg)}
+.content{padding:1.125rem 1rem;max-width:920px;margin:0 auto;position:relative}
+.page{display:none}.page.active{display:block}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
+.sec-head h2{font-size:14px;font-weight:500}
+.btn{padding:6px 13px;font-size:12px;border:1px solid var(--bm);border-radius:8px;background:var(--card);cursor:pointer;color:var(--t);font-family:inherit;white-space:nowrap;transition:background .15s}
+.btn:hover{background:var(--acc-bg)}
+.btn.pri{background:var(--acc);color:#FFF8F0;border-color:var(--acc)}
+.btn.pri:hover{opacity:.88}
+.btn.sm{padding:4px 9px;font-size:11px}
+.btn.danger{color:var(--danger);border-color:#F09595;background:var(--card)}
+.btn.danger:hover{background:var(--danger-bg)}
+.back-btn{font-size:12px;cursor:pointer;padding:5px 11px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--t2);font-family:inherit;transition:background .15s}
+.back-btn:hover{background:var(--acc-bg)}
+
+/* ① 育成入力 */
+.grid-members{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:9px}
+.grid-chars{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.m-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 8px;cursor:pointer;text-align:center;transition:border-color .15s,background .15s}
+.m-card:hover{border-color:var(--bm);background:var(--acc-lt)}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:13px;margin:0 auto 6px}
+.m-name{font-size:12px;font-weight:500}.m-sub{font-size:11px;color:var(--t2);margin-top:2px}
+.cc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px;cursor:pointer;transition:border-color .15s}
+.cc:hover{border-color:var(--bm)}.cc.sel{border:1.5px solid var(--tab);background:#FAFAFE}
+.cc-name{font-size:12px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badges{display:flex;gap:3px;flex-wrap:wrap}
+.bdg{display:inline-block;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:500}
+.panel{margin-top:10px;padding:13px;background:var(--card);border:1px solid var(--border);border-radius:12px}
+.pick-label{font-size:11px;color:var(--t2);margin-bottom:4px;font-weight:500}
+.pick-btns{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px}
+.p-btn{padding:4px 9px;font-size:11px;border:1px solid var(--bm);border-radius:7px;background:var(--bg);cursor:pointer;color:var(--t);font-family:inherit;transition:all .15s}
+.p-btn:hover{background:var(--acc-bg)}
+.save-bar{display:flex;justify-content:flex-end;margin-top:1rem;gap:7px}
+
+/* ② 育成検索 */
+.search-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.875rem;align-items:center}
+.search-row input,.fil-input{flex:1;min-width:130px;padding:7px 10px;font-size:12px;border:1px solid var(--bm);border-radius:8px;background:var(--card);color:var(--t);font-family:inherit}
+.fil-sec{margin-bottom:.625rem}
+.fil-label{font-size:11px;color:var(--t2);margin-bottom:4px;font-weight:500}
+.fil-btns{display:flex;gap:4px;flex-wrap:wrap}
+.f-btn{padding:3px 9px;font-size:11px;border:1px solid var(--border);border-radius:20px;background:var(--card);cursor:pointer;color:var(--t2);font-family:inherit;transition:all .15s}
+.f-btn:hover{color:var(--t);background:var(--acc-bg)}
+.f-btn.on{font-weight:500;color:var(--acc);background:var(--acc-bg);border-color:var(--bm)}
+.res-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 11px;display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.res-card.already{opacity:.55;background:var(--bg)}
+.res-card.already .res-already-tag{display:inline-block}
+.res-already-tag{display:none;font-size:10px;padding:1px 6px;border-radius:10px;background:var(--acc-bg);color:var(--acc);border:.5px solid var(--bm);margin-left:5px}
+.av2{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+
+/* ③ 援軍表 */
+.reinf-wrap{overflow-x:auto;margin-top:.875rem}
+.reinf-table{border-collapse:collapse;width:100%}
+.reinf-table th,.reinf-table td{border:1px solid var(--border);padding:0;font-size:12px;text-align:left;vertical-align:middle}
+.reinf-table th{background:var(--acc-bg);color:var(--acc);font-weight:500;font-size:11px;padding:7px 10px;white-space:nowrap}
+.rt-name{min-width:120px;max-width:160px}
+.rt-pair{min-width:130px}
+.rt-del{width:42px;text-align:center}
+.name-cell{cursor:pointer;padding:7px 10px;color:var(--t2);font-style:italic}
+.name-cell.filled{color:var(--t);font-style:normal;font-weight:500}
+.name-cell:hover{background:var(--acc-lt)}
+.pair-cell-inner{display:flex;align-items:center;gap:5px;padding:7px 10px;cursor:pointer;font-size:12px}
+.pair-cell-inner:hover{background:var(--acc-lt)}
+.pair-sep{color:var(--t3);font-size:11px}
+.del-btn{display:flex;align-items:center;justify-content:center;padding:7px 8px;cursor:pointer;color:var(--t3);font-size:14px;transition:color .15s;border-left:1px solid var(--border)}
+.del-btn:hover{color:var(--danger);background:var(--danger-bg)}
+.add-row-btn{display:flex;align-items:center;gap:6px;margin-top:8px;padding:7px 10px;font-size:12px;color:var(--t2);cursor:pointer;border:1px dashed var(--bm);border-radius:8px;background:none;font-family:inherit;width:100%;transition:background .15s}
+.add-row-btn:hover{background:var(--acc-bg);color:var(--t)}
+
+/* キャラ管理 */
+.grid-charlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.c-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px}
+.sub-tabs{display:flex;gap:5px;margin-bottom:1rem}
+.sub-tab{padding:5px 13px;font-size:11px;border:1px solid var(--bm);border-radius:20px;cursor:pointer;background:var(--bg);color:var(--t2);font-family:inherit;transition:all .15s}
+.sub-tab.active{background:var(--acc);color:#FFF8F0;border-color:var(--acc)}
+.field{margin-bottom:9px}
+.field label{display:block;font-size:11px;color:var(--t2);margin-bottom:3px}
+.field input,.field select{width:100%;padding:7px 10px;font-size:12px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit}
+
+/* モーダル */
+.overlay{position:fixed;inset:0;background:rgba(44,34,24,.42);display:flex;align-items:flex-start;justify-content:center;padding-top:48px;z-index:300;overflow-y:auto}
+.modal{background:var(--card);border:1px solid var(--bm);border-radius:14px;padding:1.125rem;width:calc(100% - 2rem);max-width:480px;margin-bottom:48px}
+.modal h3{font-size:14px;font-weight:500;margin-bottom:12px}
+.modal-acts{display:flex;gap:7px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+
+/* 援軍専用検索パネル (full-screen overlay) */
+.reinf-search-overlay{position:fixed;inset:0;background:var(--bg);z-index:400;overflow-y:auto;display:flex;flex-direction:column}
+.reinf-search-header{background:var(--card);border-bottom:1px solid var(--border);padding:.875rem 1rem;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10}
+.reinf-search-header h3{font-size:13px;font-weight:500;flex:1}
+.reinf-search-body{padding:1rem;max-width:680px;width:100%;margin:0 auto;flex:1}
+.reinf-search-filters{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:.875rem}
+.filter-group-title{font-size:11px;font-weight:500;color:var(--acc);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.reinf-results-list{display:flex;flex-direction:column;gap:6px}
+.reinf-res-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 11px;display:flex;align-items:center;gap:9px}
+.reinf-res-card.already{background:var(--bg);border-color:var(--border);opacity:.6}
+.add-to-table-btn{margin-left:auto;flex-shrink:0;padding:5px 11px;font-size:11px;border:1px solid var(--bm);border-radius:7px;background:var(--card);cursor:pointer;color:var(--acc);font-weight:500;font-family:inherit;white-space:nowrap;transition:all .15s}
+.add-to-table-btn:hover:not(:disabled){background:var(--acc-bg)}
+.add-to-table-btn:disabled{opacity:.4;cursor:default}
+.already-tag{font-size:10px;padding:1px 7px;border-radius:10px;background:var(--acc-bg);color:var(--acc);border:.5px solid var(--bm);margin-left:auto;flex-shrink:0}
+.empty{color:var(--t3);text-align:center;padding:1.5rem;font-size:12px}
+hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
+.toast-fixed{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--toast-bg);color:var(--toast-c);border-radius:20px;padding:8px 18px;font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast-fixed.show{opacity:1}
+</style>
+
+<div class="wrap">
+<div class="top-bar">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('input',this)">① 育成入力</button>
+    <button class="tab" onclick="switchTab('search',this)">② 育成検索</button>
+    <button class="tab" onclick="switchTab('reinf',this)">③ 援軍表</button>
+    <button class="tab" onclick="switchTab('chars',this)">④ キャラ管理</button>
+  </div>
+</div>
+
+<div class="content">
+<div class="toast-fixed" id="toast"></div>
+
+<!-- ① 育成入力 -->
+<div id="page-input" class="page active">
+  <div id="v-members">
+    <div class="sec-head">
+      <h2>メンバーを選択</h2>
+      <div style="display:flex;gap:6px">
+        <button class="btn" onclick="openMemberModal('add')">+ 追加</button>
+        <button class="btn" onclick="openMemberModal('edit')">編集</button>
+      </div>
+    </div>
+    <div class="grid-members" id="member-list"></div>
+  </div>
+  <div id="v-chars" style="display:none">
+    <div class="sec-head">
+      <h2 id="editing-name"></h2>
+      <button class="back-btn" onclick="goBack()">← 戻る</button>
+    </div>
+    <div class="grid-chars" id="char-grid-edit"></div>
+    <div id="lv-panel" style="display:none">
+      <div class="panel">
+        <div style="font-size:12px;font-weight:500;margin-bottom:11px" id="panel-title"></div>
+        <div class="pick-label">レアリティ（1つ選択）</div>
+        <div class="pick-btns" id="rar-btns"></div>
+        <div class="pick-label">ランク（複数選択可）</div>
+        <div class="pick-btns" id="rank-btns"></div>
+        <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div>
+      </div>
+    </div>
+    <div class="save-bar">
+      <button class="btn" onclick="goBack()">キャンセル</button>
+      <button class="btn pri" onclick="saveTraining()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ② 育成検索 (standalone) -->
+<div id="page-search" class="page">
+  <div class="search-row">
+    <input type="text" id="s-input" placeholder="キャラ名を入力..." oninput="renderSearch()">
+    <button class="btn pri" onclick="renderSearch()">Search</button>
+  </div>
+  <div class="fil-sec"><div class="fil-label">レアリティ</div><div class="fil-btns" id="fil-rar"></div></div>
+  <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="fil-rank"></div></div>
+  <div class="fil-sec"><div class="fil-label">役割</div><div class="fil-btns" id="fil-role"></div></div>
+  <div id="search-results"></div>
+</div>
+
+<!-- ③ 援軍表 -->
+<div id="page-reinf" class="page">
+  <div class="sec-head">
+    <h2>援軍表</h2>
+    <button class="btn" onclick="addReinfRow()">+ 行追加</button>
+  </div>
+  <div class="reinf-wrap">
+    <table class="reinf-table" id="reinf-table"></table>
+  </div>
+</div>
+
+<!-- ④ キャラ管理 -->
+<div id="page-chars" class="page">
+  <div class="sec-head"><h2>キャラ管理</h2></div>
+  <div class="sub-tabs">
+    <button class="sub-tab active" onclick="switchCharMode('new',this)">新規追加</button>
+    <button class="sub-tab" onclick="switchCharMode('update',this)">更新</button>
+  </div>
+  <div id="char-new-form">
+    <div class="field"><label>キャラ名</label><input type="text" id="cn-name" placeholder="例: 昭王"></div>
+    <div class="field"><label>あり得るレアリティ（複数選択可）</label><div class="pick-btns" id="cn-rar-btns" style="margin-top:4px"></div></div>
+    <div class="field"><label>あり得るランク（複数選択可）</label><div class="pick-btns" id="cn-rank-btns" style="margin-top:4px"></div></div>
+    <div class="save-bar"><button class="btn pri" onclick="addChar()">追加</button></div>
+  </div>
+  <div id="char-update-form" style="display:none">
+    <div class="field"><label>更新するキャラを選択</label>
+      <select id="cu-sel" onchange="loadCharForUpdate()"><option value="">-- 選択 --</option></select>
+    </div>
+    <div id="cu-detail" style="display:none">
+      <div class="field"><label>キャラ名</label><input type="text" id="cu-name"></div>
+      <div class="field"><label>あり得るレアリティ</label><div class="pick-btns" id="cu-rar-btns" style="margin-top:4px"></div></div>
+      <div class="field"><label>あり得るランク</label><div class="pick-btns" id="cu-rank-btns" style="margin-top:4px"></div></div>
+      <div class="save-bar">
+        <button class="btn danger" onclick="deleteChar()">削除</button>
+        <button class="btn pri" onclick="updateChar()">更新</button>
+      </div>
+    </div>
+  </div>
+  <hr class="div">
+  <div class="sec-head"><h2>登録済みキャラ一覧</h2></div>
+  <div class="grid-charlist" id="char-list-display"></div>
+</div>
+</div>
+</div>
+
+<!-- モーダルコンテナ -->
+<div class="overlay" id="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-box"><div id="modal-content"></div></div>
+</div>
+
+<!-- 援軍専用検索オーバーレイ -->
+<div class="reinf-search-overlay" id="reinf-search-overlay" style="display:none">
+  <div class="reinf-search-header">
+    <button class="back-btn" onclick="closeReinfSearch()">← 戻る</button>
+    <h3 id="reinf-search-title">メンバー検索</h3>
+  </div>
+  <div class="reinf-search-body">
+    <div class="reinf-search-filters">
+      <div style="margin-bottom:10px">
+        <div class="filter-group-title" id="rs-main-label">大将フィルター</div>
+        <div class="fil-sec" style="margin-bottom:6px"><div class="fil-label">レアリティ</div><div class="fil-btns" id="rs-main-rar"></div></div>
+        <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-main-rank"></div></div>
+      </div>
+      <hr class="div" style="margin:.75rem 0">
+      <div id="rs-sub-section">
+        <div class="filter-group-title" id="rs-sub-label">副将フィルター</div>
+        <div class="fil-sec" style="margin-bottom:6px"><div class="fil-label">レアリティ</div><div class="fil-btns" id="rs-sub-rar"></div></div>
+        <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-sub-rank"></div></div>
+      </div>
+    </div>
+    <div class="fil-sec" style="margin-bottom:.75rem">
+      <div class="fil-label">役割で絞り込み</div>
+      <div class="fil-btns" id="rs-role"></div>
+    </div>
+    <div style="font-size:11px;color:var(--t2);margin-bottom:8px" id="rs-result-count"></div>
+    <div class="reinf-results-list" id="rs-results"></div>
+  </div>
+</div>
+
+<script>
+const ALL_RARITIES=['LG3','LG2','LG1','LG','UR','SR','R','N'];
+const ALL_RANKS=['全技極','裏技極','技極','表1','表2','表3','表4','表5','表6','裏1','裏2','裏3','裏4','裏5','裏6'];
+
+// レアリティ階層：クリックしたレアリティ以下をすべて返す
+const RAR_ORDER=['LG3','LG2','LG1','LG','UR','SR','R','N'];
+function getRarImplied(r){
+  const idx=RAR_ORDER.indexOf(r);
+  if(idx<0)return[r];
+  return RAR_ORDER.slice(idx);
+}
+
+// ランク階層：クリックしたランクが含むランク一覧を返す
+const OMOTE_RANKS=['表1','表2','表3','表4','表5','表6'];
+const URA_RANKS=['裏1','裏2','裏3','裏4','裏5','裏6'];
+function getRankImplied(r){
+  if(r==='全技極') return['全技極','裏技極','技極',...OMOTE_RANKS,...URA_RANKS];
+  if(r==='裏技極') return['裏技極',...OMOTE_RANKS,...URA_RANKS];
+  if(r==='技極')   return['技極',...OMOTE_RANKS,'裏1'];
+  if(OMOTE_RANKS.includes(r)){
+    // 表N以下の表ランクをすべて含む
+    const idx=OMOTE_RANKS.indexOf(r);
+    return OMOTE_RANKS.slice(0,idx+1);
+  }
+  if(URA_RANKS.includes(r)){
+    // 裏Nは裏N以下の裏ランク＋表1〜6すべてを含む
+    const idx=URA_RANKS.indexOf(r);
+    return[...URA_RANKS.slice(0,idx+1),...OMOTE_RANKS];
+  }
+  return[r];
+}
+
+// レアリティフィルター判定：フィルターに選んだレアリティ以上（より上位）も含める
+// 例：フィルターにLGを選んだ場合、LG・LG1・LG2・LG3を持つメンバーもヒット
+function rarMatchesFilter(memberRar, filterRars){
+  if(!filterRars.length) return true;
+  // filterRarsのどれかに対して、memberRarがそのレアリティ以上（RAR_ORDER上でより左）ならtrue
+  return filterRars.some(fr=>{
+    const fi=RAR_ORDER.indexOf(fr);
+    const mi=RAR_ORDER.indexOf(memberRar);
+    return mi>=0&&fi>=0&&mi<=fi; // memberRarがfrと同じかより上位
+  });
+}
+
+// 選択配列をトグル（階層考慮）
+function toggleWithHierarchy(arr, r, impliedFn){
+  const implied=impliedFn(r);
+  const allOn=implied.every(x=>arr.includes(x));
+  if(allOn){
+    // すでに全部ON → 全部OFF
+    implied.forEach(x=>{const i=arr.indexOf(x);if(i>=0)arr.splice(i,1);});
+  } else {
+    // 一部または全部OFF → 全部ON
+    implied.forEach(x=>{if(!arr.includes(x))arr.push(x);});
+  }
+}
+const RAR_S={
+  'LG3':{bg:'#FAEEDA',c:'#412402',bd:'#EF9F27'},
+  'LG2':{bg:'#FAEEDA',c:'#633806',bd:'#BA7517'},
+  'LG1':{bg:'#FFF0D0',c:'#7A4A10',bd:'#D48A20'},
+  'LG': {bg:'#FFF0D0',c:'#854F0B',bd:'#EF9F27'},
+  'UR': {bg:'#EEEDFE',c:'#3C3489',bd:'#7F77DD'},
+  'SR': {bg:'#E6F1FB',c:'#0C447C',bd:'#378ADD'},
+  'R':  {bg:'#E1F5EE',c:'#085041',bd:'#1D9E75'},
+  'N':  {bg:'#F1EFE8',c:'#5F5E5A',bd:'#B4B2A9'},
+};
+const TOP_RANKS=['全技極','裏技極','技極'];
+const AVC=[
+  {bg:'#E6F1FB',c:'#0C447C'},{bg:'#E1F5EE',c:'#085041'},
+  {bg:'#FAEEDA',c:'#633806'},{bg:'#FBEAF0',c:'#72243E'},
+  {bg:'#EEEDFE',c:'#3C3489'},{bg:'#FAECE7',c:'#993C1D'},
+  {bg:'#EAF3DE',c:'#27500A'},{bg:'#FCEBEB',c:'#791F1F'},
+];
+
+let S={
+  members:[
+    {id:1,name:'アリス',role:'リーダー',chars:[{name:'炎の剣士',rar:'UR',ranks:['技極']},{name:'水の魔法師',rar:'SR',ranks:['表3']}]},
+    {id:2,name:'ボブ',role:'メンバー',chars:[{name:'炎の剣士',rar:'LG',ranks:['裏技極','全技極']}]},
+    {id:3,name:'チャーリー',role:'メンバー',chars:[{name:'水の魔法師',rar:'LG2',ranks:['全技極']},{name:'聖騎士',rar:'SR',ranks:['技極']}]},
+    {id:4,name:'ダイアナ',role:'サブ',chars:[{name:'聖騎士',rar:'R',ranks:['表4']}]},
+  ],
+  chars:[
+    {name:'炎の剣士',rars:['LG3','LG2','LG','UR','SR'],ranks:['全技極','裏技極','技極','表1','表2','表3']},
+    {name:'水の魔法師',rars:['LG2','LG','UR','SR','R'],ranks:['全技極','裏技極','技極','表1','表2','表3','表4']},
+    {name:'聖騎士',rars:['UR','SR','R','N'],ranks:['技極','表1','表2','表3','表4','表5']},
+    {name:'影のハンター',rars:['LG','UR','SR'],ranks:['全技極','裏技極','技極','表1','表2']},
+  ],
+  // reinf rows: {id, memberName(null), normalMain, normalSub, castleMain, castleSub}
+  reinf:[],
+  nextId:5, nextReinfId:1,
+  filRar:[],filRank:[],filRole:[],
+};
+let E={memberId:null,charName:null,pendingRar:null,pendingRanks:[]};
+let cnSelRar=[],cnSelRank=[],cuSelRar=[],cuSelRank=[];
+// 援軍検索状態
+let RS={rowId:null,mainRar:[],mainRank:[],subRar:[],subRank:[],roleFilter:[]};
+
+function esc(s){return(s||'').replace(/'/g,"\\'");}
+function av(i){return AVC[((i%AVC.length)+AVC.length)%AVC.length];}
+function ini(n){return n.slice(0,2).toUpperCase();}
+function rarBdg(r){const s=RAR_S[r]||{bg:'#F1EFE8',c:'#5F5E5A',bd:'#B4B2A9'};return`<span class="bdg" style="background:${s.bg};color:${s.c};border:.5px solid ${s.bd}">${r}</span>`;}
+function rankBdg(r){const top=TOP_RANKS.includes(r);return`<span class="bdg" style="background:${top?'#EEEDFE':'#F1EFE8'};color:${top?'#3C3489':'#5F5E5A'};border:.5px solid ${top?'#AFA9EC':'#D3D1C7'}">${r}</span>`;}
+
+// ランク表示を要約：選択済みランク配列から表示すべきランクの配列を返す
+function summarizeRanks(ranks){
+  if(!ranks||!ranks.length) return[];
+  if(ranks.includes('全技極')) return['全技極'];
+  if(ranks.includes('裏技極')) return['裏技極'];
+  const URA_ORDER=['裏6','裏5','裏4','裏3','裏2','裏1'];
+  const OMOTE_ORDER=['表6','表5','表4','表3','表2','表1'];
+  const topUra=URA_ORDER.find(r=>ranks.includes(r));
+  if(ranks.includes('技極')){
+    return topUra?['技極',topUra]:['技極'];
+  }
+  // 技極なし：裏→表の優先順で最大1つ
+  const best=topUra||OMOTE_ORDER.find(r=>ranks.includes(r));
+  return best?[best]:[];
+}
+async function load() {
+  const res = await fetch('/api/init');
+  const data = await res.json();
+  S = data;
+  renderAll();
+}
+
+
+function renderAll(){
+  renderMembers();renderCharListDisplay();renderReinfTable();renderFilters();renderCharUpdateSel();
+}
+
+/* ========== ① 育成入力 ========== */
+function renderMembers(){
+  const el=document.getElementById('member-list');
+  if(!S.members.length){el.innerHTML='<div class="empty">メンバーがいません</div>';return;}
+  el.innerHTML=S.members.map((m,i)=>{const a=av(i);return`<div class="m-card" onclick="selectMember(${m.id})">
+    <div class="avatar" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
+    <div class="m-name">${m.name}</div><div class="m-sub">${m.role}</div>
+    <div class="m-sub">${m.chars.length}体育成中</div>
+  </div>`;}).join('');
+}
+function selectMember(id){
+  const m=S.members.find(x=>x.id===id);if(!m)return;
+  E={memberId:id,charName:null,pendingRar:null,pendingRanks:[]};
+  document.getElementById('editing-name').textContent=m.name+' の育成キャラ';
+  document.getElementById('v-members').style.display='none';
+  document.getElementById('v-chars').style.display='block';
+  renderCharGridEdit(m);
+  document.getElementById('lv-panel').style.display='none';
+}
+function renderCharGridEdit(m){
+  document.getElementById('char-grid-edit').innerHTML=S.chars.map(cd=>{
+    const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
+    return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')">
+      <div class="cc-name" title="${cd.name}">${cd.name}</div>
+      <div class="badges">${c?rarBdg(c.rar):''}${c&&c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}
+      ${!c?'<span style="font-size:10px;color:var(--t3)">未育成</span>':''}</div>
+    </div>`;
+  }).join('');
+}
+function selectCharEdit(cn){
+  const m=S.members.find(x=>x.id===E.memberId);
+  const c=m&&m.chars.find(x=>x.name===cn);
+  const cd=S.chars.find(x=>x.name===cn);
+  if(E.charName!==cn){
+    E.charName=cn;E.pendingRar=c?c.rar:null;E.pendingRanks=c&&c.ranks?[...c.ranks]:[];
+  }
+  document.getElementById('panel-title').textContent=cn+' の育成状況';
+  const aR=cd?cd.rars:ALL_RARITIES,aK=cd?cd.ranks:ALL_RANKS;
+  document.getElementById('rar-btns').innerHTML=aR.map(r=>{const s=RAR_S[r]||{};const on=E.pendingRar===r;
+    return`<button class="p-btn" onclick="pickRar('${r}')" style="${on?`background:${s.bg};color:${s.c};border-color:${s.bd};font-weight:500`:''}">${r}</button>`;}).join('');
+  document.getElementById('rank-btns').innerHTML=aK.map(r=>{const on=E.pendingRanks.includes(r);const top=TOP_RANKS.includes(r);
+    return`<button class="p-btn" onclick="pickRank('${r}')" style="${on?`background:${top?'#EEEDFE':'#EDE5D8'};color:${top?'#3C3489':'#634B38'};border-color:${top?'#AFA9EC':'#B4A494'};font-weight:500`:''}">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
+  document.getElementById('lv-panel').style.display='block';
+  document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
+  renderCharGridEdit(m);
+}
+function pickRar(r){E.pendingRar=r;selectCharEdit(E.charName);}
+function pickRank(r){
+  const cd=S.chars.find(x=>x.name===E.charName);
+  const allowed=cd?cd.ranks:ALL_RANKS;
+  toggleWithHierarchy(E.pendingRanks,r,v=>getRankImplied(v).filter(x=>allowed.includes(x)));
+  selectCharEdit(E.charName);
+}
+async function saveTraining(){
+  if(!E.charName){toast('キャラを選んでください');return;}
+  if(!E.pendingRar||!E.pendingRanks.length){toast('選択してください');return;}
+
+  try{
+    await fetch('/api/training', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        memberId:E.memberId,
+        charName:E.charName,
+        rar:E.pendingRar,
+        ranks:E.pendingRanks
+      })
+    });
+
+    await load();
+    toast('保存しました');
+    goBack();
+
+  }catch(e){
+    toast('エラー');
+  }
+}
+
+function goBack(){
+  document.getElementById('v-members').style.display='';
+  document.getElementById('v-chars').style.display='none';
+  E={memberId:null,charName:null,pendingRar:null,pendingRanks:[]};
+}
+
+/* ========== ② 育成検索 ========== */
+function renderFilters(){
+  const allRoles=[...new Set(S.members.map(m=>m.role))];
+  document.getElementById('fil-rar').innerHTML=ALL_RARITIES.map(r=>{const on=S.filRar.includes(r);const s=RAR_S[r]||{};
+    return`<button class="f-btn${on?' on':''}" onclick="toggleFil('rar','${r}')" style="${on?`background:${s.bg};color:${s.c};border-color:${s.bd}`:''}"> ${r}</button>`;}).join('');
+  document.getElementById('fil-rank').innerHTML=ALL_RANKS.map(r=>{const on=S.filRank.includes(r);const top=TOP_RANKS.includes(r);
+    return`<button class="f-btn${on?' on':''}" onclick="toggleFil('rank','${r}')" style="${on?(top?'background:#EEEDFE;color:#3C3489;border-color:#AFA9EC':'background:#EDE5D8;color:#634B38;border-color:#B4A494'):''}"> ${r}</button>`;}).join('');
+  document.getElementById('fil-role').innerHTML=allRoles.map(r=>{const on=S.filRole.includes(r);
+    return`<button class="f-btn${on?' on':''}" onclick="toggleFil('role','${r}')"> ${r}</button>`;}).join('');
+}
+function toggleFil(type,val){
+  const key=type==='rar'?'filRar':type==='rank'?'filRank':'filRole';
+  const i=S[key].indexOf(val);if(i>=0)S[key].splice(i,1);else S[key].push(val);
+  renderFilters();renderSearch();
+}
+function renderSearch(alreadyNames){
+  const q=(document.getElementById('s-input').value||'').trim();
+  const el=document.getElementById('search-results');
+  if(!q){el.innerHTML='<div class="empty">キャラ名を入力してください</div>';return;}
+  const matched=S.chars.filter(cd=>cd.name.includes(q));
+  if(!matched.length){el.innerHTML='<div class="empty">該当キャラが見つかりません</div>';return;}
+  let rows=[];
+  matched.forEach(cd=>{S.members.forEach((m,mi)=>{
+    const c=m.chars.find(x=>x.name===cd.name);if(!c)return;
+    if(!rarMatchesFilter(c.rar, S.filRar))return;
+    if(S.filRank.length&&!S.filRank.every(fr=>c.ranks&&c.ranks.includes(fr)))return;
+    if(S.filRole.length&&!S.filRole.includes(m.role))return;
+    const a=av(mi);
+    rows.push(`<div class="res-card"><div class="av2" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">${m.name} <span style="font-size:10px;color:var(--t2)">${m.role}</span></div>
+      <div style="font-size:10px;color:var(--t2);margin:1px 0">${cd.name}</div>
+      <div class="badges" style="margin-top:3px">${rarBdg(c.rar)}${c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}</div></div></div>`);
+  });});
+  if(!rows.length){el.innerHTML='<div class="empty">条件に合うメンバーがいません</div>';return;}
+  el.innerHTML=`<div style="font-size:11px;color:var(--t2);margin-bottom:7px">${rows.length}件</div>`+rows.join('');
+}
+
+/* ========== ③ 援軍表 ========== */
+function addReinfRow(){
+  S.reinf.push({id:S.nextReinfId++,memberName:null,normalMain:null,normalSub:null,castleMain:null,castleSub:null});
+  renderReinfTable();
+}
+
+function pairLabel(main,sub){
+  if(!main&&!sub)return`<span style="color:var(--t3);font-size:11px">未設定</span>`;
+  const m=main||'?';const s=sub?`<span class="pair-sep">-</span>${sub}`:`<span class="pair-sep" style="opacity:.4">-</span><span style="color:var(--t3);font-size:10px">副将なし</span>`;
+  return`${m}${s}`;
+}
+
+function renderReinfTable(){
+  const tbl=document.getElementById('reinf-table');
+  if(!S.reinf.length){
+    tbl.innerHTML=`<thead><tr><th class="rt-name">name</th><th class="rt-pair">通常</th><th class="rt-pair">城</th><th class="rt-del"></th></tr></thead><tbody><tr><td colspan="4" style="text-align:center;color:var(--t3);padding:1.5rem;font-size:12px">「+ 行追加」で行を追加してください</td></tr></tbody>`;
+    return;
+  }
+  let html=`<thead><tr>
+    <th class="rt-name">name</th>
+    <th class="rt-pair">通常</th>
+    <th class="rt-pair">城</th>
+    <th class="rt-del"></th>
+  </tr></thead><tbody>`;
+  S.reinf.forEach(row=>{
+    const hasMember=!!row.memberName;
+    html+=`<tr>
+      <td class="rt-name">
+        <div class="name-cell${hasMember?' filled':''}" onclick="openReinfSearch(${row.id})">
+          ${hasMember?row.memberName:'クリックして検索...'}
+        </div>
+      </td>
+      <td class="rt-pair">
+        <div class="pair-cell-inner" onclick="openPairEditModal(${row.id},'normal')">
+          ${pairLabel(row.normalMain,row.normalSub)}
+        </div>
+      </td>
+      <td class="rt-pair">
+        <div class="pair-cell-inner" onclick="openPairEditModal(${row.id},'castle')">
+          ${pairLabel(row.castleMain,row.castleSub)}
+        </div>
+      </td>
+      <td class="rt-del"><div class="del-btn" onclick="deleteReinfRow(${row.id})" title="この行を削除">✕</div></td>
+    </tr>`;
+  });
+  html+='</tbody>';
+  tbl.innerHTML=html;
+}
+
+function deleteReinfRow(id){
+  S.reinf=S.reinf.filter(r=>r.id!==id);
+  renderReinfTable();
+}
+
+function openPairEditModal(rowId,type){
+  const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
+  const mainKey=type==='normal'?'normalMain':'castleMain';
+  const subKey=type==='normal'?'normalSub':'castleSub';
+  const label=type==='normal'?'通常':'城';
+  const opts=`<option value="">なし</option>`+S.chars.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  const curMain=row[mainKey]||'';const curSub=row[subKey]||'';
+  openModal(`pair-edit`,`<h3>${label}ペアを変更</h3>
+    <div class="field"><label>大将</label>
+      <select id="pe-main">${S.chars.map(c=>`<option value="${c.name}"${c.name===curMain?' selected':''}>${c.name}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>副将（任意）</label>
+      <select id="pe-sub"><option value=""${!curSub?' selected':''}>なし</option>${S.chars.map(c=>`<option value="${c.name}"${c.name===curSub?' selected':''}>${c.name}</option>`).join('')}</select>
+    </div>
+    <div class="modal-acts">
+      <button class="btn" onclick="closeModal()">キャンセル</button>
+      <button class="btn pri" onclick="savePairEdit(${rowId},'${type}')">保存</button>
+    </div>`);
+}
+function savePairEdit(rowId,type){
+  const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
+  const mainKey=type==='normal'?'normalMain':'castleMain';
+  const subKey=type==='normal'?'normalSub':'castleSub';
+  row[mainKey]=document.getElementById('pe-main').value||null;
+  row[subKey]=document.getElementById('pe-sub').value||null;
+  renderReinfTable();closeModal();
+}
+
+/* ===== 援軍専用検索 ===== */
+function openReinfSearch(rowId){
+  const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
+  RS={rowId,mainRar:[],mainRank:[],subRar:[],subRank:[],roleFilter:[]};
+  const mainLabel=row.normalMain||'大将';
+  const subLabel=row.normalSub||'副将';
+  document.getElementById('reinf-search-title').textContent='メンバー検索';
+  document.getElementById('rs-main-label').textContent=mainLabel+' のフィルター';
+  document.getElementById('rs-sub-label').textContent=subLabel+' のフィルター';
+  const subSec=document.getElementById('rs-sub-section');
+  subSec.style.display=row.normalSub?'block':'none';
+  const mainCd=S.chars.find(c=>c.name===row.normalMain);
+  const subCd=S.chars.find(c=>c.name===row.normalSub);
+  renderRSFilterBtns('rs-main-rar',mainCd?mainCd.rars:ALL_RARITIES,RS.mainRar,'main-rar');
+  renderRSFilterBtns('rs-main-rank',mainCd?mainCd.ranks:ALL_RANKS,RS.mainRank,'main-rank');
+  if(row.normalSub){
+    renderRSFilterBtns('rs-sub-rar',subCd?subCd.rars:ALL_RARITIES,RS.subRar,'sub-rar');
+    renderRSFilterBtns('rs-sub-rank',subCd?subCd.ranks:ALL_RANKS,RS.subRank,'sub-rank');
+  }
+  const allRoles=[...new Set(S.members.map(m=>m.role))];
+  document.getElementById('rs-role').innerHTML=allRoles.map(r=>`<button class="f-btn" onclick="toggleRSRole('${esc(r)}')">${r}</button>`).join('');
+  document.getElementById('reinf-search-overlay').style.display='flex';
+  renderRSResults();
+}
+
+function renderRSFilterBtns(elId,options,selArr,key){
+  const isRar=key.endsWith('rar');
+  document.getElementById(elId).innerHTML=options.map(r=>{const on=selArr.includes(r);const s=isRar?(RAR_S[r]||{}):null;const top=!isRar&&TOP_RANKS.includes(r);
+    let style='';if(on){style=isRar&&s?`background:${s.bg};color:${s.c};border-color:${s.bd}`:top?'background:#EEEDFE;color:#3C3489;border-color:#AFA9EC':'background:#EDE5D8;color:#634B38;border-color:#B4A494';}
+    return`<button class="f-btn${on?' on':''}" onclick="toggleRSFilter('${key}','${esc(r)}')" style="${style}">${r}</button>`;}).join('');
+}
+
+function toggleRSFilter(key,val){
+  let arr;
+  if(key==='main-rar')arr=RS.mainRar;
+  else if(key==='main-rank')arr=RS.mainRank;
+  else if(key==='sub-rar')arr=RS.subRar;
+  else arr=RS.subRank;
+  const isRar=key.endsWith('rar');
+  if(isRar){const i=arr.indexOf(val);if(i>=0)arr.splice(i,1);else arr.push(val);}
+  else{const i=arr.indexOf(val);if(i>=0)arr.splice(i,1);else arr.push(val);}
+  const row=S.reinf.find(r=>r.id===RS.rowId);if(!row)return;
+  const mainCd=S.chars.find(c=>c.name===row.normalMain);
+  const subCd=S.chars.find(c=>c.name===row.normalSub);
+  renderRSFilterBtns('rs-main-rar',mainCd?mainCd.rars:ALL_RARITIES,RS.mainRar,'main-rar');
+  renderRSFilterBtns('rs-main-rank',mainCd?mainCd.ranks:ALL_RANKS,RS.mainRank,'main-rank');
+  if(row.normalSub){
+    renderRSFilterBtns('rs-sub-rar',subCd?subCd.rars:ALL_RARITIES,RS.subRar,'sub-rar');
+    renderRSFilterBtns('rs-sub-rank',subCd?subCd.ranks:ALL_RANKS,RS.subRank,'sub-rank');
+  }
+  renderRSResults();
+}
+function toggleRSRole(val){const i=RS.roleFilter.indexOf(val);if(i>=0)RS.roleFilter.splice(i,1);else RS.roleFilter.push(val);
+  const allRoles=[...new Set(S.members.map(m=>m.role))];
+  document.getElementById('rs-role').innerHTML=allRoles.map(r=>{const on=RS.roleFilter.includes(r);
+    return`<button class="f-btn${on?' on':''}" onclick="toggleRSRole('${esc(r)}')" style="${on?'background:#EDE5D8;color:#634B38;border-color:#B4A494':''}">${r}</button>`;}).join('');
+  renderRSResults();
+}
+
+function memberPassesRS(m,row){
+  const mainName=row.normalMain;const subName=row.normalSub;
+  if(mainName){
+    const mc=m.chars.find(c=>c.name===mainName);if(!mc)return false;
+    if(!rarMatchesFilter(mc.rar, RS.mainRar))return false;
+    if(RS.mainRank.length&&!RS.mainRank.every(fr=>mc.ranks&&mc.ranks.includes(fr)))return false;
+  }
+  if(subName){
+    const sc=m.chars.find(c=>c.name===subName);if(!sc)return false;
+    if(!rarMatchesFilter(sc.rar, RS.subRar))return false;
+    if(RS.subRank.length&&!RS.subRank.every(fr=>sc.ranks&&sc.ranks.includes(fr)))return false;
+  }
+  if(RS.roleFilter.length&&!RS.roleFilter.includes(m.role))return false;
+  return true;
+}
+
+function renderRSResults(){
+  const row=S.reinf.find(r=>r.id===RS.rowId);if(!row)return;
+  // 既にnameが埋まっている行のメンバー名一覧
+  const alreadyNames=new Set(S.reinf.filter(r=>r.memberName).map(r=>r.memberName));
+  const results=S.members.filter(m=>memberPassesRS(m,row));
+  const el=document.getElementById('rs-results');
+  document.getElementById('rs-result-count').textContent=results.length+'件';
+  if(!results.length){el.innerHTML='<div class="empty">条件に合うメンバーがいません<br><span style="font-size:11px">フィルターを緩めてみてください</span></div>';return;}
+  el.innerHTML=results.map((m,mi)=>{
+    const a=av(S.members.indexOf(m));
+    const isAlready=alreadyNames.has(m.name);
+    const isCurrentRow=row.memberName===m.name;
+    const mainC=row.normalMain?m.chars.find(c=>c.name===row.normalMain):null;
+    const subC=row.normalSub?m.chars.find(c=>c.name===row.normalSub):null;
+    return`<div class="reinf-res-card${isAlready?' already':''}">
+      <div class="av2" style="background:${a.bg};color:${a.c};flex-shrink:0">${ini(m.name)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:500">${m.name}
+          ${isAlready&&!isCurrentRow?`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:#EDE5D8;color:#634B38;border:.5px solid #B4A494;margin-left:4px">表に登録済み</span>`:''}
+          ${isCurrentRow?`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:#E1F5EE;color:#085041;border:.5px solid #1D9E75;margin-left:4px">この行に設定中</span>`:''}
+        </div>
+        <div style="font-size:11px;color:var(--t2);margin-top:2px">${m.role}</div>
+        <div class="badges" style="margin-top:4px">
+          ${mainC?`<span style="font-size:10px;color:var(--t2)">${row.normalMain}：</span>${rarBdg(mainC.rar)}${summarizeRanks(mainC.ranks).map(rankBdg).join('')}`:''}
+          ${subC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${row.normalSub}：</span>${rarBdg(subC.rar)}${summarizeRanks(subC.ranks).map(rankBdg).join('')}`:''}
+        </div>
+      </div>
+      ${isCurrentRow
+        ?`<button class="add-to-table-btn" style="color:#791F1F;border-color:#F09595" onclick="setReinfMember(${RS.rowId},'')">解除</button>`
+        :`<button class="add-to-table-btn" onclick="setReinfMember(${RS.rowId},'${esc(m.name)}')" ${isAlready?'style="opacity:.5"':''}>表に追加</button>`
+      }
+    </div>`;
+  }).join('');
+}
+
+function setReinfMember(rowId,name){
+  const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
+  row.memberName=name||null;
+  renderReinfTable();
+  if(name)toast(name+'を追加しました');else toast('解除しました');
+  renderRSResults();
+}
+
+function closeReinfSearch(){document.getElementById('reinf-search-overlay').style.display='none';}
+
+/* ========== キャラ管理 ========== */
+function renderCharMgmtRarBtns(elId,sel,fn){
+  document.getElementById(elId).innerHTML=ALL_RARITIES.map(r=>{const on=sel.includes(r);const s=RAR_S[r]||{};
+    return`<button class="p-btn" onclick="${fn}('${r}')" style="${on?`background:${s.bg};color:${s.c};border-color:${s.bd};font-weight:500`:''}">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
+}
+function renderCharMgmtRankBtns(elId,sel,fn){
+  document.getElementById(elId).innerHTML=ALL_RANKS.map(r=>{const on=sel.includes(r);const top=TOP_RANKS.includes(r);
+    return`<button class="p-btn" onclick="${fn}('${r}')" style="${on?`background:${top?'#EEEDFE':'#EDE5D8'};color:${top?'#3C3489':'#634B38'};border-color:${top?'#AFA9EC':'#B4A494'};font-weight:500`:''}">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
+}
+function toggleCnRar(r){toggleWithHierarchy(cnSelRar,r,getRarImplied);renderCharMgmtRarBtns('cn-rar-btns',cnSelRar,'toggleCnRar');renderCharMgmtRankBtns('cn-rank-btns',cnSelRank,'toggleCnRank');}
+function toggleCnRank(r){toggleWithHierarchy(cnSelRank,r,getRankImplied);renderCharMgmtRarBtns('cn-rar-btns',cnSelRar,'toggleCnRar');renderCharMgmtRankBtns('cn-rank-btns',cnSelRank,'toggleCnRank');}
+function toggleCuRar(r){toggleWithHierarchy(cuSelRar,r,getRarImplied);renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');}
+function toggleCuRank(r){toggleWithHierarchy(cuSelRank,r,getRankImplied);renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');}
+function initCharNewForm(){cnSelRar=[];cnSelRank=[];const el=document.getElementById('cn-name');if(el)el.value='';renderCharMgmtRarBtns('cn-rar-btns',cnSelRar,'toggleCnRar');renderCharMgmtRankBtns('cn-rank-btns',cnSelRank,'toggleCnRank');}
+async function addChar(){
+  const name=document.getElementById('cn-name').value;
+
+  await fetch('/api/chars',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      name,
+      rars:cnSelRar,
+      ranks:cnSelRank
+    })
+  });
+
+  await load();
+  toast('追加しました');
+}
+
+function renderCharUpdateSel(){
+  const sel=document.getElementById('cu-sel');if(!sel)return;
+  sel.innerHTML='<option value="">-- 選択 --</option>'+S.chars.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  const d=document.getElementById('cu-detail');if(d)d.style.display='none';
+}
+function loadCharForUpdate(){
+  const name=document.getElementById('cu-sel').value;
+  const cd=S.chars.find(c=>c.name===name);
+  if(!cd){document.getElementById('cu-detail').style.display='none';return;}
+  document.getElementById('cu-name').value=cd.name;
+  cuSelRar=[...cd.rars];cuSelRank=[...cd.ranks];
+  renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');
+  renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');
+  document.getElementById('cu-detail').style.display='block';
+}
+async function updateChar(){
+  const old=document.getElementById('cu-sel').value;
+  const name=document.getElementById('cu-name').value;
+
+  await fetch(`/api/chars/${old}`,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      name,
+      rars:cuSelRar,
+      ranks:cuSelRank
+    })
+  });
+
+  await load();
+  toast('更新しました');
+}
+
+async function deleteChar(){
+  const name = document.getElementById('cu-sel').value;
+  if(!name){
+    toast('キャラを選択してください');
+    return;
+  }
+
+  // 確認ダイアログ（事故防止）
+  if(!confirm(`${name} を削除しますか？`)) return;
+
+  try{
+    const res = await fetch(`/api/chars/${encodeURIComponent(name)}`, {
+      method: 'DELETE'
+    });
+
+    if(!res.ok){
+      throw new Error('削除失敗');
+    }
+
+    // 再読み込み（DBと同期）
+    await load();
+
+    // UIリセット
+    document.getElementById('cu-detail').style.display = 'none';
+
+    toast('削除しました');
+
+  } catch(err){
+    console.error(err);
+    toast('削除に失敗しました');
+  }
+}
+
+function renderCharListDisplay(){
+  const el=document.getElementById('char-list-display');if(!el)return;
+  if(!S.chars.length){el.innerHTML='<div class="empty">キャラが登録されていません</div>';return;}
+  el.innerHTML=S.chars.map(cd=>`<div class="c-card">
+    <div style="font-size:12px;font-weight:500;margin-bottom:5px">${cd.name}</div>
+    <div style="font-size:10px;color:var(--t2);margin-bottom:3px">レアリティ</div>
+    <div class="badges" style="margin-bottom:5px">${cd.rars.map(rarBdg).join('')||'<span style="font-size:10px;color:var(--t3)">未設定</span>'}</div>
+    <div style="font-size:10px;color:var(--t2);margin-bottom:3px">ランク</div>
+    <div class="badges">${cd.ranks.map(rankBdg).join('')||'<span style="font-size:10px;color:var(--t3)">未設定</span>'}</div>
+  </div>`).join('');
+}
+function switchCharMode(mode,el){
+  document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  document.getElementById('char-new-form').style.display=mode==='new'?'block':'none';
+  document.getElementById('char-update-form').style.display=mode==='update'?'block':'none';
+  if(mode==='new')initCharNewForm();if(mode==='update')renderCharUpdateSel();
+}
+
+/* ========== モーダル ========== */
+function openModal(id,html){
+  if(html){document.getElementById('modal-content').innerHTML=html;}
+  document.getElementById('modal-overlay').style.display='flex';
+}
+function openMemberModal(mode){
+  if(mode==='add'){
+    openModal('member-add',`<h3>メンバー追加</h3>
+      <div class="field"><label>名前</label><input type="text" id="mm-name" placeholder="例: たなか"></div>
+      <div class="field"><label>役割</label><input type="text" id="mm-role" placeholder="例: リーダー"></div>
+      <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="addMember()">追加</button></div>`);
+  } else {
+    if(!S.members.length){toast('メンバーがいません');return;}
+    openModal('member-edit',`<h3>メンバー編集</h3>
+      <div class="field"><label>メンバーを選択</label>
+        <select id="me-sel" onchange="loadMemberEdit()"><option value="">-- 選択 --</option>${S.members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select></div>
+      <div id="me-detail" style="display:none">
+        <div class="field"><label>名前</label><input type="text" id="me-name"></div>
+        <div class="field"><label>役割</label><input type="text" id="me-role"></div>
+        <div class="modal-acts"><button class="btn danger" onclick="deleteMember()">削除</button><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="saveMemberEdit()">保存</button></div>
+      </div>`);
+  }
+}
+function closeModal(){document.getElementById('modal-overlay').style.display='none';}
+function loadMemberEdit(){const id=parseInt(document.getElementById('me-sel').value);const m=S.members.find(x=>x.id===id);if(!m){document.getElementById('me-detail').style.display='none';return;}document.getElementById('me-name').value=m.name;document.getElementById('me-role').value=m.role;document.getElementById('me-detail').style.display='block';}
+async function saveMemberEdit(){
+  const id=parseInt(document.getElementById('me-sel').value);
+  const name=document.getElementById('me-name').value;
+  const role=document.getElementById('me-role').value;
+
+  await fetch(`/api/members/${id}`,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name,role})
+  });
+
+  await load();
+  closeModal();
+  toast('更新しました');
+}
+
+async function deleteMember(){
+  const id=parseInt(document.getElementById('me-sel').value);
+
+  await fetch(`/api/members/${id}`,{
+    method:'DELETE'
+  });
+
+  await load();
+  closeModal();
+  toast('削除しました');
+}
+
+async function addMember(){
+  const name=(document.getElementById('mm-name').value||'').trim();
+  const role=(document.getElementById('mm-role').value||'').trim();
+  if(!name)return;
+
+  try {
+    const res = await fetch('/api/members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, role })
+    });
+
+    if(!res.ok){
+      throw new Error('保存失敗');
+    }
+
+    await load();
+
+    closeModal();
+    toast('追加しました');
+
+  } catch(err){
+    console.error(err);
+    toast('エラーが発生しました');
+  }
+}
+
+
+/* ========== タブ切替 ========== */
+function switchTab(tab,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  if(tab==='search'){renderFilters();renderSearch();}
+  if(tab==='reinf')renderReinfTable();
+  if(tab==='chars'){initCharNewForm();renderCharListDisplay();}
+}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+load();
+</script>
