@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/api/members", "destination": "/api/members/index" },
+    { "source": "/api/chars", "destination": "/api/chars/index" },
+    { "source": "/api/reinf", "destination": "/api/reinf/index" }
+  ]
+}
