@@ -8,6 +8,24 @@
   --danger:#791F1F;--danger-bg:#FCEBEB;
 }
 body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(--bg)}
+
+/* ===== ログイン画面 ===== */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem 1.75rem;width:calc(100% - 2rem);max-width:340px;text-align:center}
+.login-box h1{font-size:16px;font-weight:600;margin-bottom:6px;color:var(--t)}
+.login-box p{font-size:12px;color:var(--t2);margin-bottom:1.5rem}
+.login-box input{width:100%;padding:10px 12px;font-size:14px;border:1px solid var(--bm);border-radius:10px;background:var(--bg);color:var(--t);font-family:inherit;text-align:center;letter-spacing:2px;margin-bottom:10px}
+.login-box input:focus{outline:none;border-color:var(--tab);box-shadow:0 0 0 2px rgba(60,52,137,.12)}
+.login-box button{width:100%;padding:10px;font-size:13px;border:none;border-radius:10px;background:var(--acc);color:#FFF8F0;cursor:pointer;font-family:inherit;font-weight:500;transition:opacity .15s}
+.login-box button:hover{opacity:.88}
+.login-error{font-size:11px;color:var(--danger);margin-top:6px;min-height:16px}
+
+/* ===== ローディングオーバーレイ ===== */
+#loading-overlay{position:fixed;inset:0;background:rgba(247,244,239,.78);z-index:8000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+#loading-overlay.show{display:flex}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--tab);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:12px;color:var(--t2)}
 .wrap{min-height:100vh;background:var(--bg);padding-bottom:3rem}
 .top-bar{background:var(--card);border-bottom:1px solid var(--border);padding:0 1rem;position:sticky;top:0;z-index:80}
 .tabs{display:flex;gap:0;overflow-x:auto}
@@ -115,15 +133,44 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .toast-fixed{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--toast-bg);color:var(--toast-c);border-radius:20px;padding:8px 18px;font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
 .toast-fixed.show{opacity:1}
+/* ===== ログアウトボタン / 管理バー ===== */
+.top-action-bar{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:4px 1rem;background:var(--card);border-bottom:1px solid var(--border);font-size:11px;color:var(--t2)}
+.logout-btn{padding:3px 11px;font-size:11px;border:1px solid var(--bm);border-radius:20px;background:none;cursor:pointer;color:var(--t2);font-family:inherit;transition:background .15s}
+.logout-btn:hover{background:var(--acc-bg);color:var(--t)}
+.role-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500}
+.role-badge.admin{background:#EEEDFE;color:#3C3489;border:.5px solid #AFA9EC}
+.role-badge.user{background:var(--acc-bg);color:var(--acc);border:.5px solid var(--bm)}
 </style>
 
-<div class="wrap">
+<!-- ローディングオーバーレイ -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text">処理中...</div>
+</div>
+
+<!-- ログイン画面 -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>育成管理</h1>
+    <p>パスワードを入力してください</p>
+    <input type="password" id="login-pw" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">ログイン</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<div class="wrap" id="main-wrap" style="display:none">
+<div class="top-action-bar">
+  <span id="role-badge-wrap"></span>
+  <button class="logout-btn admin-only" onclick="openChangePwModal()">🔑 パスワード変更</button>
+  <button class="logout-btn" onclick="doLogout()">ログアウト</button>
+</div>
 <div class="top-bar">
   <div class="tabs">
     <button class="tab active" onclick="switchTab('input',this)">① 育成入力</button>
     <button class="tab" onclick="switchTab('search',this)">② 育成検索</button>
-    <button class="tab" onclick="switchTab('reinf',this)">③ 援軍表</button>
-    <button class="tab" onclick="switchTab('chars',this)">④ キャラ管理</button>
+    <button class="tab admin-only" onclick="switchTab('reinf',this)">③ 援軍表</button>
+    <button class="tab admin-only" onclick="switchTab('chars',this)">④ キャラ管理</button>
   </div>
 </div>
 
@@ -136,8 +183,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
     <div class="sec-head">
       <h2>メンバーを選択</h2>
       <div style="display:flex;gap:6px">
-        <button class="btn" onclick="openMemberModal('add')">+ 追加</button>
-        <button class="btn" onclick="openMemberModal('edit')">編集</button>
+        <button class="btn input-admin-only" onclick="openMemberModal('add')">+ 追加</button>
+        <button class="btn input-admin-only" onclick="openMemberModal('edit')">編集</button>
       </div>
     </div>
     <div class="grid-members" id="member-list"></div>
@@ -160,7 +207,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
     </div>
     <div class="save-bar">
       <button class="btn" onclick="goBack()">キャンセル</button>
-      <button class="btn pri" onclick="saveTraining()">Save</button>
+      <button class="btn pri input-admin-only" onclick="saveTraining()">Save</button>
     </div>
   </div>
 </div>
@@ -254,6 +301,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
     <div style="font-size:11px;color:var(--t2);margin-bottom:8px" id="rs-result-count"></div>
     <div class="reinf-results-list" id="rs-results"></div>
   </div>
+</div>
 </div>
 
 <script>
@@ -367,10 +415,15 @@ function summarizeRanks(ranks){
   return best?[best]:[];
 }
 async function load() {
-  const res = await fetch('/api/init');
-  const data = await res.json();
-  S = data;
-  renderAll();
+  showLoading();
+  try {
+    const res = await fetch('/api/init');
+    const data = await res.json();
+    S = data;
+    renderAll();
+  } finally {
+    hideLoading();
+  }
 }
 
 
@@ -381,8 +434,12 @@ function renderAll(){
 /* ========== ① 育成入力 ========== */
 function renderMembers(){
   const el=document.getElementById('member-list');
-  if(!S.members.length){el.innerHTML='<div class="empty">メンバーがいません</div>';return;}
-  el.innerHTML=S.members.map((m,i)=>{const a=av(i);return`<div class="m-card" onclick="selectMember(${m.id})">
+  // 利用者ロールでは「その他」所属のメンバーを表示しない
+  const visible = currentRole === 'user'
+    ? S.members.filter(m => m.role !== 'その他')
+    : S.members;
+  if(!visible.length){el.innerHTML='<div class="empty">メンバーがいません</div>';return;}
+  el.innerHTML=visible.map((m,i)=>{const a=av(S.members.indexOf(m));return`<div class="m-card" onclick="selectMember(${m.id})">
     <div class="avatar" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
     <div class="m-name">${m.name}</div><div class="m-sub">${m.role}</div>
     <div class="m-sub">${m.chars.length}体育成中</div>
@@ -435,6 +492,7 @@ async function saveTraining(){
   if(!E.charName){toast('キャラを選んでください');return;}
   if(!E.pendingRar||!E.pendingRanks.length){toast('選択してください');return;}
 
+  showLoading();
   try{
     await fetch('/api/training', {
       method:'POST',
@@ -453,6 +511,8 @@ async function saveTraining(){
 
   }catch(e){
     toast('エラー');
+  } finally {
+    hideLoading();
   }
 }
 
@@ -501,6 +561,7 @@ function renderSearch(alreadyNames){
 
 /* ========== ③ 援軍表 ========== */
 async function addReinfRow(){
+  showLoading();
   try {
     const res = await fetch('/api/reinf', {
       method: 'POST',
@@ -512,6 +573,8 @@ async function addReinfRow(){
   } catch(err) {
     console.error(err);
     toast('行の追加に失敗しました');
+  } finally {
+    hideLoading();
   }
 }
 
@@ -559,12 +622,15 @@ function renderReinfTable(){
 }
 
 async function deleteReinfRow(id){
+  showLoading();
   try {
     await fetch(`/api/reinf/${id}`, { method: 'DELETE' });
     await load();
   } catch(err) {
     console.error(err);
     toast('削除に失敗しました');
+  } finally {
+    hideLoading();
   }
 }
 
@@ -772,18 +838,23 @@ function initCharNewForm(){cnSelRar=[];cnSelRank=[];const el=document.getElement
 async function addChar(){
   const name=document.getElementById('cn-name').value;
 
-  await fetch('/api/chars',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      name,
-      rars:cnSelRar,
-      ranks:cnSelRank
-    })
-  });
+  showLoading();
+  try {
+    await fetch('/api/chars',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name,
+        rars:cnSelRar,
+        ranks:cnSelRank
+      })
+    });
 
-  await load();
-  toast('追加しました');
+    await load();
+    toast('追加しました');
+  } finally {
+    hideLoading();
+  }
 }
 
 function renderCharUpdateSel(){
@@ -802,21 +873,26 @@ function loadCharForUpdate(){
   document.getElementById('cu-detail').style.display='block';
 }
 async function updateChar(){
-  const old=document.getElementById('cu-sel').value;
+  const oldName=document.getElementById('cu-sel').value;
   const name=document.getElementById('cu-name').value;
 
-  await fetch(`/api/chars/${old}`,{
-    method:'PUT',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      name,
-      rars:cuSelRar,
-      ranks:cuSelRank
-    })
-  });
+  showLoading();
+  try {
+    await fetch(`/api/chars/${oldName}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name,
+        rars:cuSelRar,
+        ranks:cuSelRank
+      })
+    });
 
-  await load();
-  toast('更新しました');
+    await load();
+    toast('更新しました');
+  } finally {
+    hideLoading();
+  }
 }
 
 async function deleteChar(){
@@ -904,27 +980,37 @@ async function saveMemberEdit(){
   const name=document.getElementById('me-name').value;
   const role=document.getElementById('me-role').value;
 
-  await fetch(`/api/members/${id}`,{
-    method:'PUT',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name,role})
-  });
+  showLoading();
+  try {
+    await fetch(`/api/members/${id}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,role})
+    });
 
-  await load();
-  closeModal();
-  toast('更新しました');
+    await load();
+    closeModal();
+    toast('更新しました');
+  } finally {
+    hideLoading();
+  }
 }
 
 async function deleteMember(){
   const id=parseInt(document.getElementById('me-sel').value);
 
-  await fetch(`/api/members/${id}`,{
-    method:'DELETE'
-  });
+  showLoading();
+  try {
+    await fetch(`/api/members/${id}`,{
+      method:'DELETE'
+    });
 
-  await load();
-  closeModal();
-  toast('削除しました');
+    await load();
+    closeModal();
+    toast('削除しました');
+  } finally {
+    hideLoading();
+  }
 }
 
 async function addMember(){
@@ -932,6 +1018,7 @@ async function addMember(){
   const role=(document.getElementById('mm-role').value||'').trim();
   if(!name)return;
 
+  showLoading();
   try {
     const res = await fetch('/api/members', {
       method: 'POST',
@@ -951,6 +1038,8 @@ async function addMember(){
   } catch(err){
     console.error(err);
     toast('エラーが発生しました');
+  } finally {
+    hideLoading();
   }
 }
 
@@ -967,5 +1056,119 @@ function switchTab(tab,el){
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 
-load();
+/* ========== ローディング ========== */
+function showLoading(){document.getElementById('loading-overlay').classList.add('show');}
+function hideLoading(){document.getElementById('loading-overlay').classList.remove('show');}
+
+/* ========== ログイン (Supabase DB管理) ========== */
+// パスワードはSupabaseのpasswordsテーブルで管理
+// テーブル構成: id(text PK), password(text)
+// レコード例: {id:'admin', password:'xxxx'}, {id:'user', password:'yyyy'}
+
+let currentRole = null; // 'admin' or 'user'
+
+async function doLogin(){
+  const pw = (document.getElementById('login-pw').value || '').trim();
+  const errEl = document.getElementById('login-error');
+  const btn = document.querySelector('#login-screen button');
+  if(!pw){ errEl.textContent = 'パスワードを入力してください'; return; }
+
+  btn.disabled = true;
+  btn.textContent = '確認中...';
+  errEl.textContent = '';
+
+  try {
+    const res = await fetch('/api/auth/verify', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ password: pw })
+    });
+    const data = await res.json();
+    if(!res.ok || !data.role){
+      errEl.textContent = data.error || 'パスワードが違います';
+      return;
+    }
+    currentRole = data.role; // 'admin' or 'user'
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-wrap').style.display = '';
+    applyRole();
+    load();
+  } catch(e) {
+    errEl.textContent = 'エラーが発生しました';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ログイン';
+  }
+}
+
+function doLogout(){
+  currentRole = null;
+  document.getElementById('login-pw').value = '';
+  document.getElementById('login-error').textContent = '';
+  document.getElementById('main-wrap').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  // 最初のタブをリセット
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', i===0);
+  });
+  document.querySelectorAll('.page').forEach((p,i) => {
+    p.classList.toggle('active', i===0);
+  });
+}
+
+function applyRole(){
+  const isAdmin = currentRole === 'admin';
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = isAdmin ? '' : 'none';
+  });
+  document.querySelectorAll('.input-admin-only').forEach(el => {
+    el.style.display = isAdmin ? '' : 'none';
+  });
+  // ロールバッジ
+  document.getElementById('role-badge-wrap').innerHTML =
+    `<span class="role-badge ${isAdmin?'admin':'user'}">${isAdmin?'管理者':'利用者'}</span>`;
+}
+
+/* ========== パスワード変更モーダル (管理者専用) ========== */
+function openChangePwModal(){
+  openModal('change-pw', `<h3>利用者パスワード変更</h3>
+    <div class="field"><label>新しいパスワード</label>
+      <input type="password" id="cpw-new" placeholder="新パスワード">
+    </div>
+    <div class="field"><label>確認（もう一度入力）</label>
+      <input type="password" id="cpw-confirm" placeholder="確認">
+    </div>
+    <div style="font-size:11px;color:var(--danger);min-height:14px;margin-bottom:4px" id="cpw-err"></div>
+    <div class="modal-acts">
+      <button class="btn" onclick="closeModal()">キャンセル</button>
+      <button class="btn pri" onclick="saveUserPassword()">変更</button>
+    </div>`);
+}
+
+async function saveUserPassword(){
+  const nw = (document.getElementById('cpw-new').value || '').trim();
+  const cf = (document.getElementById('cpw-confirm').value || '').trim();
+  const errEl = document.getElementById('cpw-err');
+  if(!nw){ errEl.textContent = 'パスワードを入力してください'; return; }
+  if(nw !== cf){ errEl.textContent = '確認パスワードが一致しません'; return; }
+  if(nw.length < 4){ errEl.textContent = '4文字以上で設定してください'; return; }
+
+  showLoading();
+  try {
+    const res = await fetch('/api/auth/change-password', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ role: 'user', password: nw })
+    });
+    const data = await res.json();
+    if(!res.ok){ errEl.textContent = data.error || '変更に失敗しました'; return; }
+    closeModal();
+    toast('利用者パスワードを変更しました');
+  } catch(e) {
+    errEl.textContent = 'エラーが発生しました';
+  } finally {
+    hideLoading();
+  }
+}
+
 </script>
