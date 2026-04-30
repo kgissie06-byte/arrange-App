@@ -151,9 +151,9 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
     <div id="lv-panel" style="display:none">
       <div class="panel">
         <div style="font-size:12px;font-weight:500;margin-bottom:11px" id="panel-title"></div>
-        <div class="pick-label">レアリティ（1つ選択）</div>
+        <div class="pick-label">レアリティ</div>
         <div class="pick-btns" id="rar-btns"></div>
-        <div class="pick-label">ランク（複数選択可）</div>
+        <div class="pick-label">ランク</div>
         <div class="pick-btns" id="rank-btns"></div>
         <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div>
       </div>
@@ -173,7 +173,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
   </div>
   <div class="fil-sec"><div class="fil-label">レアリティ</div><div class="fil-btns" id="fil-rar"></div></div>
   <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="fil-rank"></div></div>
-  <div class="fil-sec"><div class="fil-label">役割</div><div class="fil-btns" id="fil-role"></div></div>
+  <div class="fil-sec"><div class="fil-label">所属</div><div class="fil-btns" id="fil-role"></div></div>
   <div id="search-results"></div>
 </div>
 
@@ -197,8 +197,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
   </div>
   <div id="char-new-form">
     <div class="field"><label>キャラ名</label><input type="text" id="cn-name" placeholder="例: 昭王"></div>
-    <div class="field"><label>あり得るレアリティ（複数選択可）</label><div class="pick-btns" id="cn-rar-btns" style="margin-top:4px"></div></div>
-    <div class="field"><label>あり得るランク（複数選択可）</label><div class="pick-btns" id="cn-rank-btns" style="margin-top:4px"></div></div>
+    <div class="field"><label>最大レアリティ</label><div class="pick-btns" id="cn-rar-btns" style="margin-top:4px"></div></div>
+    <div class="field"><label>最大ランク</label><div class="pick-btns" id="cn-rank-btns" style="margin-top:4px"></div></div>
     <div class="save-bar"><button class="btn pri" onclick="addChar()">追加</button></div>
   </div>
   <div id="char-update-form" style="display:none">
@@ -207,8 +207,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
     </div>
     <div id="cu-detail" style="display:none">
       <div class="field"><label>キャラ名</label><input type="text" id="cu-name"></div>
-      <div class="field"><label>あり得るレアリティ</label><div class="pick-btns" id="cu-rar-btns" style="margin-top:4px"></div></div>
-      <div class="field"><label>あり得るランク</label><div class="pick-btns" id="cu-rank-btns" style="margin-top:4px"></div></div>
+      <div class="field"><label>最大レアリティ</label><div class="pick-btns" id="cu-rar-btns" style="margin-top:4px"></div></div>
+      <div class="field"><label>最大ランク</label><div class="pick-btns" id="cu-rank-btns" style="margin-top:4px"></div></div>
       <div class="save-bar">
         <button class="btn danger" onclick="deleteChar()">削除</button>
         <button class="btn pri" onclick="updateChar()">更新</button>
@@ -236,19 +236,19 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
   <div class="reinf-search-body">
     <div class="reinf-search-filters">
       <div style="margin-bottom:10px">
-        <div class="filter-group-title" id="rs-main-label">大将フィルター</div>
+        <div class="filter-group-title" id="rs-main-label">大将</div>
         <div class="fil-sec" style="margin-bottom:6px"><div class="fil-label">レアリティ</div><div class="fil-btns" id="rs-main-rar"></div></div>
         <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-main-rank"></div></div>
       </div>
       <hr class="div" style="margin:.75rem 0">
       <div id="rs-sub-section">
-        <div class="filter-group-title" id="rs-sub-label">副将フィルター</div>
+        <div class="filter-group-title" id="rs-sub-label">副将</div>
         <div class="fil-sec" style="margin-bottom:6px"><div class="fil-label">レアリティ</div><div class="fil-btns" id="rs-sub-rar"></div></div>
         <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-sub-rank"></div></div>
       </div>
     </div>
     <div class="fil-sec" style="margin-bottom:.75rem">
-      <div class="fil-label">役割で絞り込み</div>
+      <div class="fil-label">所属で絞り込み</div>
       <div class="fil-btns" id="rs-role"></div>
     </div>
     <div style="font-size:11px;color:var(--t2);margin-bottom:8px" id="rs-result-count"></div>
@@ -332,16 +332,8 @@ const AVC=[
 
 let S={
   members:[
-    {id:1,name:'アリス',role:'リーダー',chars:[{name:'炎の剣士',rar:'UR',ranks:['技極']},{name:'水の魔法師',rar:'SR',ranks:['表3']}]},
-    {id:2,name:'ボブ',role:'メンバー',chars:[{name:'炎の剣士',rar:'LG',ranks:['裏技極','全技極']}]},
-    {id:3,name:'チャーリー',role:'メンバー',chars:[{name:'水の魔法師',rar:'LG2',ranks:['全技極']},{name:'聖騎士',rar:'SR',ranks:['技極']}]},
-    {id:4,name:'ダイアナ',role:'サブ',chars:[{name:'聖騎士',rar:'R',ranks:['表4']}]},
   ],
   chars:[
-    {name:'炎の剣士',rars:['LG3','LG2','LG','UR','SR'],ranks:['全技極','裏技極','技極','表1','表2','表3']},
-    {name:'水の魔法師',rars:['LG2','LG','UR','SR','R'],ranks:['全技極','裏技極','技極','表1','表2','表3','表4']},
-    {name:'聖騎士',rars:['UR','SR','R','N'],ranks:['技極','表1','表2','表3','表4','表5']},
-    {name:'影のハンター',rars:['LG','UR','SR'],ranks:['全技極','裏技極','技極','表1','表2']},
   ],
   // reinf rows: {id, memberName(null), normalMain, normalSub, castleMain, castleSub}
   reinf:[],
@@ -587,7 +579,7 @@ function openPairEditModal(rowId,type){
     <div class="field"><label>大将</label>
       <select id="pe-main">${S.chars.map(c=>`<option value="${c.name}"${c.name===curMain?' selected':''}>${c.name}</option>`).join('')}</select>
     </div>
-    <div class="field"><label>副将（任意）</label>
+    <div class="field"><label>副将</label>
       <select id="pe-sub"><option value=""${!curSub?' selected':''}>なし</option>${S.chars.map(c=>`<option value="${c.name}"${c.name===curSub?' selected':''}>${c.name}</option>`).join('')}</select>
     </div>
     <div class="modal-acts">
@@ -883,11 +875,15 @@ function openModal(id,html){
   if(html){document.getElementById('modal-content').innerHTML=html;}
   document.getElementById('modal-overlay').style.display='flex';
 }
+const ROLE_OPTIONS=['乱咲','蕾','その他'];
+function roleSelect(id,val=''){
+  return`<select id="${id}">${ROLE_OPTIONS.map(r=>`<option value="${r}"${r===val?' selected':''}>${r}</option>`).join('')}</select>`;
+}
 function openMemberModal(mode){
   if(mode==='add'){
     openModal('member-add',`<h3>メンバー追加</h3>
-      <div class="field"><label>名前</label><input type="text" id="mm-name" placeholder="例: たなか"></div>
-      <div class="field"><label>役割</label><input type="text" id="mm-role" placeholder="例: リーダー"></div>
+      <div class="field"><label>名前</label><input type="text" id="mm-name" placeholder=""></div>
+      <div class="field"><label>所属</label>${roleSelect('mm-role')}</div>
       <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="addMember()">追加</button></div>`);
   } else {
     if(!S.members.length){toast('メンバーがいません');return;}
@@ -896,13 +892,13 @@ function openMemberModal(mode){
         <select id="me-sel" onchange="loadMemberEdit()"><option value="">-- 選択 --</option>${S.members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select></div>
       <div id="me-detail" style="display:none">
         <div class="field"><label>名前</label><input type="text" id="me-name"></div>
-        <div class="field"><label>役割</label><input type="text" id="me-role"></div>
+        <div class="field"><label>所属</label>${roleSelect('me-role')}</div>
         <div class="modal-acts"><button class="btn danger" onclick="deleteMember()">削除</button><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="saveMemberEdit()">保存</button></div>
       </div>`);
   }
 }
 function closeModal(){document.getElementById('modal-overlay').style.display='none';}
-function loadMemberEdit(){const id=parseInt(document.getElementById('me-sel').value);const m=S.members.find(x=>x.id===id);if(!m){document.getElementById('me-detail').style.display='none';return;}document.getElementById('me-name').value=m.name;document.getElementById('me-role').value=m.role;document.getElementById('me-detail').style.display='block';}
+function loadMemberEdit(){const id=parseInt(document.getElementById('me-sel').value);const m=S.members.find(x=>x.id===id);if(!m){document.getElementById('me-detail').style.display='none';return;}document.getElementById('me-name').value=m.name;const roleEl=document.getElementById('me-role');roleEl.value=ROLE_OPTIONS.includes(m.role)?m.role:'その他';document.getElementById('me-detail').style.display='block';}
 async function saveMemberEdit(){
   const id=parseInt(document.getElementById('me-sel').value);
   const name=document.getElementById('me-name').value;
