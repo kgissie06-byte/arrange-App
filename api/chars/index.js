@@ -8,13 +8,18 @@ const supabase = createClient(
 export default async function handler(req, res) {
   // キャラ追加
   if (req.method === 'POST') {
-    const { name, rars, ranks } = req.body
+    const { name, rars, ranks, shukuen } = req.body
 
     if (!name) return res.status(400).json({ error: 'name is required' })
 
     const { data, error } = await supabase
       .from('chars')
-      .insert({ name, rars: rars || [], ranks: ranks || [] })
+      .insert({
+        name,
+        rars: rars || [],
+        ranks: ranks || [],
+        shukuen: shukuen || { enabled: false, members: [] }
+      })
       .select()
       .single()
 

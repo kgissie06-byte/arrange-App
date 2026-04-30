@@ -21,6 +21,7 @@ export default async function handler(req, res) {
     name: c.name,
     rars: c.rars || [],
     ranks: c.ranks || [],
+    shukuen: c.shukuen || { enabled: false, members: [] },
   }))
 
   // メンバー一覧
