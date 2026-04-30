@@ -600,12 +600,11 @@ function renderSearch(alreadyNames){
     if(S.filRole.length&&!S.filRole.includes(m.role))return;
     const a=av(mi);
     const shBadge=shukuenBadgeHtml(m,cd);
-    const sumBadge=shukuenSummaryHtml(m);
     rows.push(`<div class="res-card"><div class="av2" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
       <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">${m.name} <span style="font-size:10px;color:var(--t2)">${m.role}</span></div>
       <div style="font-size:10px;color:var(--t2);margin:1px 0">${cd.name}</div>
       <div class="badges" style="margin-top:3px">${rarBdg(c.rar)}${c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}</div>
-      ${shBadge}${sumBadge}</div></div>`);
+      ${shBadge}</div></div>`);
   });});
   if(!rows.length){el.innerHTML='<div class="empty">条件に合うメンバーがいません</div>';return;}
   el.innerHTML=`<div style="font-size:11px;color:var(--t2);margin-bottom:7px">${rows.length}件</div>`+rows.join('');
@@ -829,7 +828,6 @@ function renderRSResults(){
     const subCd=S.chars.find(c=>c.name===row.normalSub);
     const mainShBadge=mainCd?shukuenBadgeHtml(m,mainCd):'';
     const subShBadge=subCd?shukuenBadgeHtml(m,subCd):'';
-    const sumBadge=shukuenSummaryHtml(m);
     return`<div class="reinf-res-card${isAlready?' already':''}">
       <div class="av2" style="background:${a.bg};color:${a.c};flex-shrink:0">${ini(m.name)}</div>
       <div style="flex:1;min-width:0">
@@ -846,7 +844,6 @@ function renderRSResults(){
           ${mainCd&&mainShBadge?`<div style="display:flex;align-items:center;gap:5px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${row.normalMain}</span>${mainShBadge}</div>`:''}
           ${subCd&&subShBadge?`<div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${row.normalSub}</span>${subShBadge}</div>`:''}
         </div>`:''}
-        ${sumBadge}
       </div>
       ${isCurrentRow
         ?`<button class="add-to-table-btn" style="color:#791F1F;border-color:#F09595" onclick="setReinfMember(${RS.rowId},'')">解除</button>`
@@ -992,32 +989,6 @@ function shukuenBadgeHtml(member, charDef){
   if(o) pills+=`<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
   if(s) pills+=`<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
   return `<div class="sh-badge-wrap"><span style="font-size:10px;color:var(--t2)">宿縁</span>${pills}<span style="font-size:10px;color:var(--t3)">/${total}</span></div>`;
-}
-
-/* メンバー全体の宿縁集計バッジ（育成検索・援軍検索の結果カード用）
-   全キャラの宿縁リストに登場するキャラ名を重複なしで集計し、
-   🟣技極/裏技極/全技極、🟢表6以上、🟡それ以外で所持 の件数を表示 */
-function shukuenSummaryHtml(member) {
-  let g = 0, o = 0, s = 0;
-  const counted = new Set();
-  S.chars.forEach(cd => {
-    if (!cd.shukuen || !cd.shukuen.enabled) return;
-    (cd.shukuen.members || []).forEach(sName => {
-      if (counted.has(sName)) return;
-      counted.add(sName);
-      const mc = member.chars.find(c => c.name === sName);
-      const lv = shukuenLevel(mc);
-      if (lv === 'gikkyoku') g++;
-      else if (lv === 'omote6') o++;
-      else if (lv === 'soji') s++;
-    });
-  });
-  if (!g && !o && !s) return '';
-  let pills = '';
-  if (g) pills += `<span class="sh-pill gikkyoku"><span class="sh-pill-dot"></span>${g}</span>`;
-  if (o) pills += `<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
-  if (s) pills += `<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
-  return `<div class="sh-badge-wrap" style="margin-top:4px"><span style="font-size:10px;color:var(--t2)">宿縁計</span>${pills}</div>`;
 }
 
 function initCharNewForm(){
