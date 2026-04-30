@@ -524,7 +524,7 @@ function goBack(){
 
 /* ========== ② 育成検索 ========== */
 function renderFilters(){
-  const allRoles=[...new Set(S.members.map(m=>m.role))];
+  const allRoles=[...new Set(S.members.map(m=>m.role))].filter(r=>r!=='その他');
   document.getElementById('fil-rar').innerHTML=ALL_RARITIES.map(r=>{const on=S.filRar.includes(r);const s=RAR_S[r]||{};
     return`<button class="f-btn${on?' on':''}" onclick="toggleFil('rar','${r}')" style="${on?`background:${s.bg};color:${s.c};border-color:${s.bd}`:''}"> ${r}</button>`;}).join('');
   document.getElementById('fil-rank').innerHTML=ALL_RANKS.map(r=>{const on=S.filRank.includes(r);const top=TOP_RANKS.includes(r);
@@ -545,6 +545,7 @@ function renderSearch(alreadyNames){
   if(!matched.length){el.innerHTML='<div class="empty">該当キャラが見つかりません</div>';return;}
   let rows=[];
   matched.forEach(cd=>{S.members.forEach((m,mi)=>{
+    if(m.role==='その他')return; // 管理者・利用者ともに非表示
     const c=m.chars.find(x=>x.name===cd.name);if(!c)return;
     if(!rarMatchesFilter(c.rar, S.filRar))return;
     if(S.filRank.length&&!S.filRank.every(fr=>c.ranks&&c.ranks.includes(fr)))return;
@@ -703,7 +704,7 @@ function openReinfSearch(rowId){
     renderRSFilterBtns('rs-sub-rar',subCd?subCd.rars:ALL_RARITIES,RS.subRar,'sub-rar');
     renderRSFilterBtns('rs-sub-rank',subCd?subCd.ranks:ALL_RANKS,RS.subRank,'sub-rank');
   }
-  const allRoles=[...new Set(S.members.map(m=>m.role))];
+  const allRoles=[...new Set(S.members.map(m=>m.role))].filter(r=>r!=='その他');
   document.getElementById('rs-role').innerHTML=allRoles.map(r=>`<button class="f-btn" onclick="toggleRSRole('${esc(r)}')">${r}</button>`).join('');
   document.getElementById('reinf-search-overlay').style.display='flex';
   renderRSResults();
@@ -763,7 +764,7 @@ function renderRSResults(){
   const row=S.reinf.find(r=>r.id===RS.rowId);if(!row)return;
   // 既にnameが埋まっている行のメンバー名一覧
   const alreadyNames=new Set(S.reinf.filter(r=>r.memberName).map(r=>r.memberName));
-  const results=S.members.filter(m=>memberPassesRS(m,row));
+  const results=S.members.filter(m=>m.role!=='その他'&&memberPassesRS(m,row));
   const el=document.getElementById('rs-results');
   document.getElementById('rs-result-count').textContent=results.length+'件';
   if(!results.length){el.innerHTML='<div class="empty">条件に合うメンバーがいません<br><span style="font-size:11px">フィルターを緩めてみてください</span></div>';return;}
@@ -1061,7 +1062,11 @@ function showLoading(){document.getElementById('loading-overlay').classList.add(
 function hideLoading(){document.getElementById('loading-overlay').classList.remove('show');}
 
 /* ========== ログイン (Supabase DB管理) ========== */
-let currentRole = null;
+// パスワードはSupabaseのpasswordsテーブルで管理
+// テーブル構成: id(text PK), password(text)
+// レコード例: {id:'admin', password:'xxxx'}, {id:'user', password:'yyyy'}
+
+let currentRole = null; // 'admin' or 'user'
 
 async function doLogin(){
   const pw = (document.getElementById('login-pw').value || '').trim();
