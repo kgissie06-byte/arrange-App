@@ -1061,11 +1061,7 @@ function showLoading(){document.getElementById('loading-overlay').classList.add(
 function hideLoading(){document.getElementById('loading-overlay').classList.remove('show');}
 
 /* ========== ログイン (Supabase DB管理) ========== */
-// パスワードはSupabaseのpasswordsテーブルで管理
-// テーブル構成: id(text PK), password(text)
-// レコード例: {id:'admin', password:'xxxx'}, {id:'user', password:'yyyy'}
-
-let currentRole = null; // 'admin' or 'user'
+let currentRole = null;
 
 async function doLogin(){
   const pw = (document.getElementById('login-pw').value || '').trim();

@@ -2,18 +2,8 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 )
-
-// POST /api/auth/verify
-// body: { password: string }
-// Supabaseの passwords テーブルを参照してロールを返す
-// テーブル構成:
-//   id       text PRIMARY KEY  ('admin' | 'user')
-//   password text NOT NULL
-//
-// 初期データ例 (Supabase SQL Editor で実行):
-//   insert into passwords (id, password) values ('admin', 'admin1234'), ('user', 'user5678');
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

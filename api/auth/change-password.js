@@ -2,13 +2,9 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-// POST /api/auth/change-password
-// body: { role: 'user', password: string }
-// 管理者のみが利用者パスワードを変更できる想定
-// （呼び出し元 index.html は管理者ログイン時のみボタンを表示）
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
