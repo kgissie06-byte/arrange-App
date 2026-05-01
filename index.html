@@ -1,3 +1,14 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<!-- user-scalable=no: ピンチズーム無効 / interactive-widget=resizes-content: キーボード表示でもビューポートサイズを変えない -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>育成管理</title>
+</head>
+<body>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -14,7 +25,7 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem 1.75rem;width:calc(100% - 2rem);max-width:340px;text-align:center}
 .login-box h1{font-size:16px;font-weight:600;margin-bottom:6px;color:var(--t)}
 .login-box p{font-size:12px;color:var(--t2);margin-bottom:1.5rem}
-.login-box input{width:100%;padding:10px 12px;font-size:14px;border:1px solid var(--bm);border-radius:10px;background:var(--bg);color:var(--t);font-family:inherit;text-align:center;letter-spacing:2px;margin-bottom:10px}
+.login-box input{width:100%;padding:10px 12px;font-size:16px;border:1px solid var(--bm);border-radius:10px;background:var(--bg);color:var(--t);font-family:inherit;text-align:center;letter-spacing:2px;margin-bottom:10px}
 .login-box input:focus{outline:none;border-color:var(--tab);box-shadow:0 0 0 2px rgba(60,52,137,.12)}
 .login-box button{width:100%;padding:10px;font-size:13px;border:none;border-radius:10px;background:var(--acc);color:#FFF8F0;cursor:pointer;font-family:inherit;font-weight:500;transition:opacity .15s}
 .login-box button:hover{opacity:.88}
@@ -67,7 +78,7 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 
 /* ② 育成検索 */
 .search-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.875rem;align-items:center}
-.search-row input,.fil-input{flex:1;min-width:130px;padding:7px 10px;font-size:12px;border:1px solid var(--bm);border-radius:8px;background:var(--card);color:var(--t);font-family:inherit}
+.search-row input,.fil-input{flex:1;min-width:130px;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--card);color:var(--t);font-family:inherit}
 .fil-sec{margin-bottom:.625rem}
 .fil-label{font-size:11px;color:var(--t2);margin-bottom:4px;font-weight:500}
 .fil-btns{display:flex;gap:4px;flex-wrap:wrap}
@@ -107,7 +118,7 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .sub-tab.active{background:var(--acc);color:#FFF8F0;border-color:var(--acc)}
 .field{margin-bottom:9px}
 .field label{display:block;font-size:11px;color:var(--t2);margin-bottom:3px}
-.field input,.field select{width:100%;padding:7px 10px;font-size:12px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit}
+.field input,.field select{width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit}
 
 /* モーダル */
 .overlay{position:fixed;inset:0;background:rgba(44,34,24,.42);display:flex;align-items:flex-start;justify-content:center;padding-top:48px;z-index:300;overflow-y:auto}
@@ -166,6 +177,19 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .role-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500}
 .role-badge.admin{background:#EEEDFE;color:#3C3489;border:.5px solid #AFA9EC}
 .role-badge.user{background:var(--acc-bg);color:var(--acc);border:.5px solid var(--bm)}
+/* ===== 縦画面固定 ===== */
+@media screen and (orientation: landscape) {
+  body::before{
+    content:'縦画面でご利用ください';
+    position:fixed;inset:0;background:var(--bg);z-index:99999;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;color:var(--t2);
+  }
+  body>*{display:none!important}
+  body::before{display:flex!important}
+}
+/* キーボード表示時にbodyを固定 */
+body{overscroll-behavior:none}
 </style>
 
 <!-- ローディングオーバーレイ -->
@@ -1244,6 +1268,46 @@ function hideLoading(){document.getElementById('loading-overlay').classList.remo
 
 let currentRole = null; // 'admin' or 'user'
 
+// ===== セッション保持 =====
+function saveSession(role){ sessionStorage.setItem('role', role); }
+function clearSession(){ sessionStorage.removeItem('role'); }
+function getSavedRole(){ return sessionStorage.getItem('role'); }
+
+// ページ読み込み時にセッション復元
+(function restoreSession(){
+  const saved = getSavedRole();
+  if(saved){
+    currentRole = saved;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-wrap').style.display = '';
+    applyRole();
+    load();
+    startPolling();
+  }
+})();
+
+// ===== 定期ポーリング（30秒ごとに全員の画面を更新） =====
+let _pollTimer = null;
+function startPolling(){
+  stopPolling();
+  _pollTimer = setInterval(async ()=>{
+    if(!currentRole) return;
+    try {
+      const res = await fetch('/api/init');
+      if(!res.ok) return;
+      const data = await res.json();
+      // データに変化があれば再描画（JSON比較）
+      if(JSON.stringify(data) !== JSON.stringify(S)){
+        S = data;
+        renderAll();
+      }
+    } catch(e){ /* ネットワークエラーは無視 */ }
+  }, 30000);
+}
+function stopPolling(){
+  if(_pollTimer){ clearInterval(_pollTimer); _pollTimer = null; }
+}
+
 async function doLogin(){
   const pw = (document.getElementById('login-pw').value || '').trim();
   const errEl = document.getElementById('login-error');
@@ -1266,10 +1330,12 @@ async function doLogin(){
       return;
     }
     currentRole = data.role; // 'admin' or 'user'
+    saveSession(currentRole);
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('main-wrap').style.display = '';
     applyRole();
     load();
+    startPolling();
   } catch(e) {
     errEl.textContent = 'エラーが発生しました';
   } finally {
@@ -1280,6 +1346,8 @@ async function doLogin(){
 
 function doLogout(){
   currentRole = null;
+  clearSession();
+  stopPolling();
   document.getElementById('login-pw').value = '';
   document.getElementById('login-error').textContent = '';
   document.getElementById('main-wrap').style.display = 'none';
@@ -1349,3 +1417,5 @@ async function saveUserPassword(){
 }
 
 </script>
+</body>
+</html>
