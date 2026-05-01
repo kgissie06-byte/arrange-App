@@ -213,6 +213,13 @@ body{overscroll-behavior:none}
   .shukuen-toggle button:hover,
   .c-card:hover
   { background:revert; opacity:revert; color:revert; border-color:revert; }
+
+  /* タッチ後にフォーカス枠が残らないよう */
+  *:focus { outline: none !important; box-shadow: none !important; }
+  .m-card:focus, .cc:focus, .btn:focus, .tab:focus,
+  .p-btn:focus, .f-btn:focus, .back-btn:focus, .logout-btn:focus,
+  .del-btn:focus, .add-row-btn:focus, .sub-tab:focus
+  { border-color: var(--border) !important; background: var(--card) !important; }
 }
 </style>
 
@@ -1305,6 +1312,10 @@ function startPolling(){
       if(JSON.stringify(data) !== JSON.stringify(S)){
         S = data;
         renderAll();
+        // 再描画後にフォーカスが残らないよう外す
+        if(document.activeElement && document.activeElement !== document.body){
+          document.activeElement.blur();
+        }
       }
     } catch(e){ /* ネットワークエラーは無視 */ }
   }, 30000);
