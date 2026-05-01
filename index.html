@@ -1269,6 +1269,27 @@ function hideLoading(){document.getElementById('loading-overlay').classList.remo
 
 let currentRole = null; // 'admin' or 'user'
 
+// ===== 定期ポーリング（30秒ごとに全員の画面を更新） =====
+let _pollTimer = null;
+function startPolling(){
+  stopPolling();
+  _pollTimer = setInterval(async ()=>{
+    if(!currentRole) return;
+    try {
+      const res = await fetch('/api/init');
+      if(!res.ok) return;
+      const data = await res.json();
+      if(JSON.stringify(data) !== JSON.stringify(S)){
+        S = data;
+        renderAll();
+      }
+    } catch(e){ /* ネットワークエラーは無視 */ }
+  }, 30000);
+}
+function stopPolling(){
+  if(_pollTimer){ clearInterval(_pollTimer); _pollTimer = null; }
+}
+
 // ===== セッション保持 =====
 function saveSession(role){ sessionStorage.setItem('role', role); }
 function clearSession(){ sessionStorage.removeItem('role'); }
@@ -1286,28 +1307,6 @@ function getSavedRole(){ return sessionStorage.getItem('role'); }
     startPolling();
   }
 })();
-
-// ===== 定期ポーリング（30秒ごとに全員の画面を更新） =====
-let _pollTimer = null;
-function startPolling(){
-  stopPolling();
-  _pollTimer = setInterval(async ()=>{
-    if(!currentRole) return;
-    try {
-      const res = await fetch('/api/init');
-      if(!res.ok) return;
-      const data = await res.json();
-      // データに変化があれば再描画（JSON比較）
-      if(JSON.stringify(data) !== JSON.stringify(S)){
-        S = data;
-        renderAll();
-      }
-    } catch(e){ /* ネットワークエラーは無視 */ }
-  }, 30000);
-}
-function stopPolling(){
-  if(_pollTimer){ clearInterval(_pollTimer); _pollTimer = null; }
-}
 
 async function doLogin(){
   const pw = (document.getElementById('login-pw').value || '').trim();
