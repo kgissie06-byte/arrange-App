@@ -10,7 +10,7 @@
 </head>
 <body>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+*{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#F7F4EF;--card:#FFFDF9;--border:#E8E2D8;--bm:#D4CCBE;
   --t:#2C2C2A;--t2:#6B6460;--t3:#A09890;
@@ -407,8 +407,10 @@ body{overscroll-behavior:none}
 // タッチ操作後にフォーカス・アクティブ状態を即座に解除
 document.addEventListener('touchend', () => {
   setTimeout(() => {
-    if (document.activeElement && document.activeElement !== document.body) {
-      document.activeElement.blur();
+    const el = document.activeElement;
+    // input・select・textareaはキーボード入力が必要なのでblurしない
+    if (el && el !== document.body && !['INPUT','SELECT','TEXTAREA'].includes(el.tagName)) {
+      el.blur();
     }
   }, 100);
 }, { passive: true });
