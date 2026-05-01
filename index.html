@@ -177,8 +177,9 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .role-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500}
 .role-badge.admin{background:#EEEDFE;color:#3C3489;border:.5px solid #AFA9EC}
 .role-badge.user{background:var(--acc-bg);color:var(--acc);border:.5px solid var(--bm)}
-/* ===== 縦画面固定 ===== */
-@media screen and (orientation: landscape) {
+/* ===== 縦画面固定（スマホのみ）===== */
+/* max-height:600px かつ landscape = スマホの横向き */
+@media screen and (orientation: landscape) and (max-height: 600px) {
   body::before{
     content:'縦画面でご利用ください';
     position:fixed;inset:0;background:var(--bg);z-index:99999;
