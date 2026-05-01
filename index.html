@@ -1085,7 +1085,7 @@ async function addChar(){
 
 function renderCharUpdateSel(){
   const sel=document.getElementById('cu-sel');if(!sel)return;
-  sel.innerHTML='<option value="">-- 選択 --</option>'+S.chars.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  sel.innerHTML='<option value="">-- 選択 --</option>'+[...S.chars].sort((a,b)=>a.name.localeCompare(b.name,'ja')).map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
   const d=document.getElementById('cu-detail');if(d)d.style.display='none';
 }
 function loadCharForUpdate(){
