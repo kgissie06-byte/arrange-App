@@ -191,6 +191,29 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 }
 /* キーボード表示時にbodyを固定 */
 body{overscroll-behavior:none}
+/* ===== ホバースタイルをポインターデバイス限定に（タッチ後に残らないよう） ===== */
+@media (hover: none) {
+  .tab:hover:not(.active),
+  .btn:hover, .btn.pri:hover,
+  .back-btn:hover,
+  .m-card:hover,
+  .cc:hover,
+  .p-btn:hover,
+  .f-btn:hover,
+  .name-cell:hover,
+  .pair-cell-inner:hover,
+  .del-btn:hover,
+  .add-row-btn:hover,
+  .sub-tab:hover,
+  .logout-btn:hover,
+  .shukuen-add-btn:hover,
+  .shukuen-remove-btn:hover,
+  .add-to-table-btn:hover:not(:disabled),
+  .login-box button:hover,
+  .shukuen-toggle button:hover,
+  .c-card:hover
+  { background:revert; opacity:revert; color:revert; border-color:revert; }
+}
 </style>
 
 <!-- ローディングオーバーレイ -->
