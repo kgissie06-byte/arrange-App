@@ -996,7 +996,7 @@ function openShukuenAddModal(prefix){
     <div class="field"><label>キャラを選択</label>
       <select id="shukuen-char-sel">
         <option value="">-- 選択 --</option>
-        ${available.map(c=>`<option value="${c.name}">${c.name}</option>`).join('')}
+        ${[...available].sort((a,b)=>a.name.localeCompare(b.name,'ja')).map(c=>`<option value="${c.name}">${c.name}</option>`).join('')}
       </select>
     </div>
     <div class="modal-acts">
@@ -1204,7 +1204,7 @@ function openMemberModal(mode){
     if(!S.members.length){toast('メンバーがいません');return;}
     openModal('member-edit',`<h3>メンバー編集</h3>
       <div class="field"><label>メンバーを選択</label>
-        <select id="me-sel" onchange="loadMemberEdit()"><option value="">-- 選択 --</option>${S.members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select></div>
+        <select id="me-sel" onchange="loadMemberEdit()"><option value="">-- 選択 --</option>${[...S.members].sort((a,b)=>a.name.localeCompare(b.name,'ja')).map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select></div>
       <div id="me-detail" style="display:none">
         <div class="field"><label>名前</label><input type="text" id="me-name"></div>
         <div class="field"><label>所属</label>${roleSelect('me-role')}</div>
