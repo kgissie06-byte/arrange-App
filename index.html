@@ -193,33 +193,29 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 body{overscroll-behavior:none}
 /* ===== ホバースタイルをポインターデバイス限定に（タッチ後に残らないよう） ===== */
 @media (hover: none) {
-  .tab:hover:not(.active),
-  .btn:hover, .btn.pri:hover,
-  .back-btn:hover,
-  .m-card:hover,
-  .cc:hover,
-  .p-btn:hover,
-  .f-btn:hover,
-  .name-cell:hover,
-  .pair-cell-inner:hover,
-  .del-btn:hover,
-  .add-row-btn:hover,
-  .sub-tab:hover,
-  .logout-btn:hover,
-  .shukuen-add-btn:hover,
-  .shukuen-remove-btn:hover,
-  .add-to-table-btn:hover:not(:disabled),
-  .login-box button:hover,
-  .shukuen-toggle button:hover,
-  .c-card:hover
-  { background:revert; opacity:revert; color:revert; border-color:revert; }
+  /* タッチデバイスではhover・focus・activeスタイルをすべて無効化 */
+  .tab:hover:not(.active), .tab:active:not(.active),
+  .btn:hover, .btn.pri:hover, .btn:active,
+  .back-btn:hover, .back-btn:active,
+  .m-card:hover, .m-card:active,
+  .cc:hover, .cc:active,
+  .p-btn:hover, .p-btn:active,
+  .f-btn:hover, .f-btn:active,
+  .name-cell:hover, .name-cell:active,
+  .pair-cell-inner:hover, .pair-cell-inner:active,
+  .del-btn:hover, .del-btn:active,
+  .add-row-btn:hover, .add-row-btn:active,
+  .sub-tab:hover, .sub-tab:active,
+  .logout-btn:hover, .logout-btn:active,
+  .shukuen-add-btn:hover, .shukuen-add-btn:active,
+  .shukuen-remove-btn:hover, .shukuen-remove-btn:active,
+  .add-to-table-btn:hover:not(:disabled), .add-to-table-btn:active,
+  .login-box button:hover, .login-box button:active,
+  .shukuen-toggle button:hover, .shukuen-toggle button:active,
+  .c-card:hover, .c-card:active
+  { background:revert !important; opacity:revert !important; color:revert !important; border-color:revert !important; }
 
-  /* タッチ後にフォーカス枠が残らないよう */
-  *:focus { outline: none !important; box-shadow: none !important; }
-  .m-card:focus, .cc:focus, .btn:focus, .tab:focus,
-  .p-btn:focus, .f-btn:focus, .back-btn:focus, .logout-btn:focus,
-  .del-btn:focus, .add-row-btn:focus, .sub-tab:focus
-  { border-color: var(--border) !important; background: var(--card) !important; }
+  *:focus, *:focus-visible { outline: none !important; box-shadow: none !important; border-color: inherit !important; }
 }
 </style>
 
@@ -408,6 +404,15 @@ body{overscroll-behavior:none}
 </div>
 
 <script>
+// タッチ操作後にフォーカス・アクティブ状態を即座に解除
+document.addEventListener('touchend', () => {
+  setTimeout(() => {
+    if (document.activeElement && document.activeElement !== document.body) {
+      document.activeElement.blur();
+    }
+  }, 100);
+}, { passive: true });
+
 const ALL_RARITIES=['LG3','LG2','LG1','LG','UR','SR','R','N'];
 const ALL_RANKS=['全技極','裏技極','技極','表1','表2','表3','表4','表5','表6','裏1','裏2','裏3','裏4','裏5','裏6'];
 
