@@ -282,7 +282,10 @@ body{overscroll-behavior:none}
     <div class="grid-chars" id="char-grid-edit"></div>
     <div id="lv-panel" style="display:none">
       <div class="panel">
-        <div style="font-size:12px;font-weight:500;margin-bottom:11px" id="panel-title"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+          <div style="font-size:12px;font-weight:500" id="panel-title"></div>
+          <button id="clear-training-btn" class="btn danger" style="display:none;font-size:11px;padding:3px 10px" onclick="clearTraining()">未入力に戻す</button>
+        </div>
         <div class="pick-label">レアリティ</div>
         <div class="pick-btns" id="rar-btns"></div>
         <div class="pick-label">ランク</div>
@@ -639,6 +642,9 @@ function selectCharEdit(cn){
   document.getElementById('rank-btns').innerHTML=aK.map(r=>{const on=E.pendingRanks.includes(r);const top=TOP_RANKS.includes(r);
     return`<button class="p-btn" onclick="pickRank('${r}')" style="${on?`background:${top?'#EEEDFE':'#EDE5D8'};color:${top?'#3C3489':'#634B38'};border-color:${top?'#AFA9EC':'#B4A494'};font-weight:500`:''}">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
   document.getElementById('lv-panel').style.display='block';
+  // 入力済みのときだけ「未入力に戻す」を表示
+  const clearBtn=document.getElementById('clear-training-btn');
+  if(clearBtn) clearBtn.style.display=c?'':'none';
   document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
   renderCharGridEdit(m);
 }
@@ -679,7 +685,29 @@ async function saveTraining(){
   }
 }
 
-function goBack(){
+async function clearTraining(){
+  if(!E.charName) return;
+  if(!confirm(`${E.charName} の育成データを削除しますか？`)) return;
+  showLoading();
+  try{
+    await fetch('/api/training', {
+      method:'DELETE',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({memberId:E.memberId, charName:E.charName})
+    });
+    await load();
+    toast('未入力に戻しました');
+    // パネルを閉じてグリッド再描画
+    E.pendingRar=null; E.pendingRanks=[];
+    document.getElementById('lv-panel').style.display='none';
+    const m=S.members.find(x=>x.id===E.memberId);
+    if(m) renderCharGridEdit(m);
+  }catch(e){
+    toast('エラー');
+  } finally {
+    hideLoading();
+  }
+}
   document.getElementById('v-members').style.display='';
   document.getElementById('v-chars').style.display='none';
   const cs=document.getElementById('cc-search');if(cs)cs.value='';
