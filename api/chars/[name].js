@@ -12,10 +12,11 @@ export default async function handler(req, res) {
 
   // キャラ更新（名前変更含む）
   if (req.method === 'PUT') {
-    const { name: newName, rars, ranks, shukuen } = req.body
+    const { name: newName, yomi, rars, ranks, shukuen } = req.body
 
     const updates = {}
     if (newName) updates.name = newName
+    if (yomi !== undefined) updates.yomi = yomi
     if (rars !== undefined) updates.rars = rars
     if (ranks !== undefined) updates.ranks = ranks
     if (shukuen !== undefined) updates.shukuen = shukuen

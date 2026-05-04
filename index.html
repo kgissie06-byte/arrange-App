@@ -321,6 +321,7 @@ body{overscroll-behavior:none}
   </div>
   <div id="char-new-form">
     <div class="field"><label>キャラ名</label><input type="text" id="cn-name" placeholder="例: 昭王"></div>
+    <div class="field"><label>読み仮名</label><input type="text" id="cn-yomi" placeholder="例: しょうおう"></div>
     <div class="field"><label>最大レアリティ</label><div class="pick-btns" id="cn-rar-btns" style="margin-top:4px"></div></div>
     <div class="field"><label>最大ランク</label><div class="pick-btns" id="cn-rank-btns" style="margin-top:4px"></div></div>
     <div class="field">
@@ -342,6 +343,7 @@ body{overscroll-behavior:none}
     </div>
     <div id="cu-detail" style="display:none">
       <div class="field"><label>キャラ名</label><input type="text" id="cu-name"></div>
+      <div class="field"><label>読み仮名</label><input type="text" id="cu-yomi" placeholder="例: しょうおう"></div>
       <div class="field"><label>最大レアリティ</label><div class="pick-btns" id="cu-rar-btns" style="margin-top:4px"></div></div>
       <div class="field"><label>最大ランク</label><div class="pick-btns" id="cu-rank-btns" style="margin-top:4px"></div></div>
       <div class="field">
@@ -565,7 +567,7 @@ function selectMember(id){
   document.getElementById('lv-panel').style.display='none';
 }
 function renderCharGridEdit(m){
-  document.getElementById('char-grid-edit').innerHTML=S.chars.map(cd=>{
+  document.getElementById('char-grid-edit').innerHTML=sortByYomi(S.chars).map(cd=>{
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
     return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')">
       <div class="cc-name" title="${cd.name}">${cd.name}</div>
@@ -996,7 +998,7 @@ function openShukuenAddModal(prefix){
     <div class="field"><label>キャラを選択</label>
       <select id="shukuen-char-sel">
         <option value="">-- 選択 --</option>
-        ${[...available].sort((a,b)=>a.name.localeCompare(b.name,'ja')).map(c=>`<option value="${c.name}">${c.name}</option>`).join('')}
+        ${sortByYomi(available).map(c=>`<option value="${c.name}">${c.name}</option>`).join('')}
       </select>
     </div>
     <div class="modal-acts">
@@ -1062,6 +1064,7 @@ function initCharNewForm(){
 }
 async function addChar(){
   const name=document.getElementById('cn-name').value;
+  const yomi=document.getElementById('cn-yomi').value.trim();
 
   showLoading();
   try {
@@ -1070,6 +1073,7 @@ async function addChar(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         name,
+        yomi,
         rars:cnSelRar,
         ranks:cnSelRank,
         shukuen:{enabled:cnShukuenEnabled,members:cnShukuenMembers}
@@ -1083,9 +1087,12 @@ async function addChar(){
   }
 }
 
+// 読み仮名でソート（なければキャラ名フォールバック）
+function sortByYomi(arr){ return [...arr].sort((a,b)=>(a.yomi||a.name).localeCompare(b.yomi||b.name,'ja')); }
+
 function renderCharUpdateSel(){
   const sel=document.getElementById('cu-sel');if(!sel)return;
-  sel.innerHTML='<option value="">-- 選択 --</option>'+[...S.chars].sort((a,b)=>a.name.localeCompare(b.name,'ja')).map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  sel.innerHTML='<option value="">-- 選択 --</option>'+sortByYomi(S.chars).map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
   const d=document.getElementById('cu-detail');if(d)d.style.display='none';
 }
 function loadCharForUpdate(){
@@ -1093,6 +1100,7 @@ function loadCharForUpdate(){
   const cd=S.chars.find(c=>c.name===name);
   if(!cd){document.getElementById('cu-detail').style.display='none';return;}
   document.getElementById('cu-name').value=cd.name;
+  document.getElementById('cu-yomi').value=cd.yomi||'';
   cuSelRar=[...cd.rars];cuSelRank=[...cd.ranks];
   renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');
   renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');
@@ -1105,6 +1113,7 @@ function loadCharForUpdate(){
 async function updateChar(){
   const oldName=document.getElementById('cu-sel').value;
   const name=document.getElementById('cu-name').value;
+  const yomi=document.getElementById('cu-yomi').value.trim();
 
   showLoading();
   try {
@@ -1113,6 +1122,7 @@ async function updateChar(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         name,
+        yomi,
         rars:cuSelRar,
         ranks:cuSelRank,
         shukuen:{enabled:cuShukuenEnabled,members:cuShukuenMembers}
@@ -1162,7 +1172,7 @@ async function deleteChar(){
 function renderCharListDisplay(){
   const el=document.getElementById('char-list-display');if(!el)return;
   if(!S.chars.length){el.innerHTML='<div class="empty">キャラが登録されていません</div>';return;}
-  el.innerHTML=S.chars.map(cd=>{
+  el.innerHTML=sortByYomi(S.chars).map(cd=>{
     const sh=cd.shukuen||{enabled:false,members:[]};
     const shHtml=sh.enabled&&sh.members.length
       ?`<div style="font-size:10px;color:var(--t2);margin-top:6px;margin-bottom:2px">宿縁</div>

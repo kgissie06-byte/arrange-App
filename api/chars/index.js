@@ -8,7 +8,7 @@ const supabase = createClient(
 export default async function handler(req, res) {
   // キャラ追加
   if (req.method === 'POST') {
-    const { name, rars, ranks, shukuen } = req.body
+    const { name, yomi, rars, ranks, shukuen } = req.body
 
     if (!name) return res.status(400).json({ error: 'name is required' })
 
@@ -16,6 +16,7 @@ export default async function handler(req, res) {
       .from('chars')
       .insert({
         name,
+        yomi: yomi || '',
         rars: rars || [],
         ranks: ranks || [],
         shukuen: shukuen || { enabled: false, members: [] }

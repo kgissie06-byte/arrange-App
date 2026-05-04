@@ -19,6 +19,7 @@ export default async function handler(req, res) {
 
   const chars = (charsRaw || []).map(c => ({
     name: c.name,
+    yomi: c.yomi || '',
     rars: c.rars || [],
     ranks: c.ranks || [],
     shukuen: c.shukuen || { enabled: false, members: [] },
