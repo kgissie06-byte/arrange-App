@@ -706,6 +706,8 @@ async function clearTraining(){
     hideLoading();
   }
 }
+
+function backToMembers(){
   document.getElementById('v-members').style.display='';
   document.getElementById('v-chars').style.display='none';
   const cs=document.getElementById('cc-search');if(cs)cs.value='';
@@ -713,6 +715,7 @@ async function clearTraining(){
   const btn=document.getElementById('cc-untrained-btn');if(btn)btn.classList.remove('on');
   E={memberId:null,charName:null,pendingRar:null,pendingRanks:[]};
 }
+
 
 /* ========== ② 育成検索 ========== */
 function renderFilters(){
