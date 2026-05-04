@@ -277,6 +277,7 @@ body{overscroll-behavior:none}
     </div>
     <div class="cc-search-row">
       <input type="text" class="cc-search-input" id="cc-search" placeholder="キャラ名・読み仮名で絞り込み" oninput="filterCharGrid()">
+      <button class="f-btn" id="cc-untrained-btn" onclick="toggleUntrainedFilter()">未入力</button>
     </div>
     <div class="grid-chars" id="char-grid-edit"></div>
     <div id="lv-panel" style="display:none">
@@ -573,30 +574,33 @@ function selectMember(id){
   renderCharGridEdit(m);
   document.getElementById('lv-panel').style.display='none';
 }
+let _showUntrainedOnly = false;
+function toggleUntrainedFilter(){
+  _showUntrainedOnly = !_showUntrainedOnly;
+  const btn = document.getElementById('cc-untrained-btn');
+  if(btn) btn.classList.toggle('on', _showUntrainedOnly);
+  filterCharGrid();
+}
 function renderCharGridEdit(m){
-  // 未育成を先頭、育成済みを後ろにソート（yomi順を維持しつつ）
-  const sorted = sortByYomi(S.chars).sort((a,b)=>{
-    const aHas = !!m.chars.find(x=>x.name===a.name);
-    const bHas = !!m.chars.find(x=>x.name===b.name);
-    return aHas - bHas; // falseが先（未育成=先頭）
-  });
-  document.getElementById('char-grid-edit').innerHTML=sorted.map(cd=>{
+  document.getElementById('char-grid-edit').innerHTML=sortByYomi(S.chars).map(cd=>{
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
-    return`<div class="cc${isSel?' sel':''}${c?' trained':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}">
+    return`<div class="cc${isSel?' sel':''}${c?' trained':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}" data-trained="${c?'1':'0'}">
       <div class="cc-name" title="${cd.name}">${cd.name}</div>
       <div class="badges">${c?rarBdg(c.rar):''}${c&&c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}
       ${!c?'<span style="font-size:10px;color:var(--t3)">未育成</span>':''}</div>
     </div>`;
   }).join('');
-  filterCharGrid(); // 検索欄が入力済みなら絞り込みを維持
+  filterCharGrid();
 }
 function filterCharGrid(){
   const q=(document.getElementById('cc-search')?.value||'').trim();
   document.querySelectorAll('#char-grid-edit .cc').forEach(el=>{
-    if(!q){el.style.display='';return;}
     const name=el.dataset.name||'';
     const yomi=el.dataset.yomi||'';
-    el.style.display=(name.includes(q)||yomi.includes(q))?'':'none';
+    const trained=el.dataset.trained==='1';
+    const textOk=!q||(name.includes(q)||yomi.includes(q));
+    const trainedOk=!_showUntrainedOnly||!trained;
+    el.style.display=(textOk&&trainedOk)?'':'none';
   });
 }
 function selectCharEdit(cn){
@@ -655,6 +659,8 @@ function goBack(){
   document.getElementById('v-members').style.display='';
   document.getElementById('v-chars').style.display='none';
   const cs=document.getElementById('cc-search');if(cs)cs.value='';
+  _showUntrainedOnly=false;
+  const btn=document.getElementById('cc-untrained-btn');if(btn)btn.classList.remove('on');
   E={memberId:null,charName:null,pendingRar:null,pendingRanks:[]};
 }
 
