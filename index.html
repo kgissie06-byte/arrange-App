@@ -610,16 +610,13 @@ function renderCharGridEdit(m){
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
     const safeName=cd.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
     const safeYomi=(cd.yomi||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-    return`<div class="cc${isSel?' sel':''}" data-name="${safeName}" data-yomi="${safeYomi}" data-trained="${c?'1':'0'}">
+    const safeNameJs=cd.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return`<div class="cc${isSel?' sel':''}" data-name="${safeName}" data-yomi="${safeYomi}" data-trained="${c?'1':'0'}" onclick="selectCharEdit('${safeNameJs}')" ontouchend="event.preventDefault();selectCharEdit('${safeNameJs}')">
       <div class="cc-name" title="${cd.name}">${cd.name}</div>
       <div class="badges">${c?rarBdg(c.rar):''}${c&&c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}
       ${!c?'<span style="font-size:10px;color:var(--t3)">未育成</span>':''}</div>
     </div>`;
   }).join('');
-  grid.onclick=function(e){
-    const card=e.target.closest('.cc');
-    if(card&&card.style.display!=='none'){selectCharEdit(card.dataset.name);}
-  };
   filterCharGrid();
 }
 function filterCharGrid(){
