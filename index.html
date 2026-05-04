@@ -672,7 +672,12 @@ async function saveTraining(){
 
     await load();
     toast('保存しました');
-    // 画面を維持しつつキャラグリッドを再描画
+    // 検索クリア・選択解除・パネルを閉じる
+    E.charName=null; E.pendingRar=null; E.pendingRanks=[];
+    const cs=document.getElementById('cc-search');if(cs)cs.value='';
+    _showUntrainedOnly=false;
+    const ub=document.getElementById('cc-untrained-btn');if(ub)ub.classList.remove('on');
+    document.getElementById('lv-panel').style.display='none';
     const m=S.members.find(x=>x.id===E.memberId);
     if(m) renderCharGridEdit(m);
 
