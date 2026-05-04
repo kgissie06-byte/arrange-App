@@ -605,14 +605,21 @@ function toggleUntrainedFilter(){
   filterCharGrid();
 }
 function renderCharGridEdit(m){
-  document.getElementById('char-grid-edit').innerHTML=sortByYomi(S.chars).map(cd=>{
+  const grid=document.getElementById('char-grid-edit');
+  grid.innerHTML=sortByYomi(S.chars).map(cd=>{
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
-    return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}" data-trained="${c?'1':'0'}">
+    const safeName=cd.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    const safeYomi=(cd.yomi||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    return`<div class="cc${isSel?' sel':''}" data-name="${safeName}" data-yomi="${safeYomi}" data-trained="${c?'1':'0'}">
       <div class="cc-name" title="${cd.name}">${cd.name}</div>
       <div class="badges">${c?rarBdg(c.rar):''}${c&&c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}
       ${!c?'<span style="font-size:10px;color:var(--t3)">未育成</span>':''}</div>
     </div>`;
   }).join('');
+  grid.onclick=function(e){
+    const card=e.target.closest('.cc');
+    if(card&&card.style.display!=='none'){selectCharEdit(card.dataset.name);}
+  };
   filterCharGrid();
 }
 function filterCharGrid(){
@@ -742,8 +749,7 @@ function toggleFil(type,val){
 function renderSearch(alreadyNames){
   const q=(document.getElementById('s-input').value||'').trim();
   const el=document.getElementById('search-results');
-  if(!q){el.innerHTML='<div class="empty">キャラ名を入力してください</div>';return;}
-  const matched=S.chars.filter(cd=>cd.name.includes(q)||(cd.yomi||'').includes(q));
+  const matched=!q?S.chars:S.chars.filter(cd=>cd.name.includes(q)||(cd.yomi||'').includes(q));
   if(!matched.length){el.innerHTML='<div class="empty">該当キャラが見つかりません</div>';return;}
   let rows=[];
   matched.forEach(cd=>{S.members.forEach((m,mi)=>{
