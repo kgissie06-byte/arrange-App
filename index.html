@@ -633,6 +633,10 @@ function selectCharEdit(cn){
   if(E.charName!==cn){
     E.charName=cn;E.pendingRar=c?c.rar:null;E.pendingRanks=c&&c.ranks?[...c.ranks]:[];
   }
+  // 選択状態をDOMに直接反映（再生成しない）
+  document.querySelectorAll('#char-grid-edit .cc').forEach(el=>{
+    el.classList.toggle('sel', el.dataset.name===cn);
+  });
   document.getElementById('panel-title').textContent=cn+' の育成状況';
   const aR=cd?cd.rars:ALL_RARITIES,aK=cd?cd.ranks:ALL_RANKS;
   document.getElementById('rar-btns').innerHTML=aR.map(r=>{const s=RAR_S[r]||{};const on=E.pendingRar===r;
@@ -640,11 +644,9 @@ function selectCharEdit(cn){
   document.getElementById('rank-btns').innerHTML=aK.map(r=>{const on=E.pendingRanks.includes(r);const top=TOP_RANKS.includes(r);
     return`<button class="p-btn" onclick="pickRank('${r}')" style="${on?`background:${top?'#EEEDFE':'#EDE5D8'};color:${top?'#3C3489':'#634B38'};border-color:${top?'#AFA9EC':'#B4A494'};font-weight:500`:''}">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
   document.getElementById('lv-panel').style.display='block';
-  // 入力済みのときだけ「未入力に戻す」を表示
   const clearBtn=document.getElementById('clear-training-btn');
   if(clearBtn) clearBtn.style.display=c?'':'none';
   document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
-  renderCharGridEdit(m);
 }
 function pickRar(r){E.pendingRar=r;selectCharEdit(E.charName);}
 function pickRank(r){
