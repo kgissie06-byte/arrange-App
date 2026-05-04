@@ -646,7 +646,9 @@ async function saveTraining(){
 
     await load();
     toast('保存しました');
-    goBack();
+    // 画面を維持しつつキャラグリッドを再描画
+    const m=S.members.find(x=>x.id===E.memberId);
+    if(m) renderCharGridEdit(m);
 
   }catch(e){
     toast('エラー');
