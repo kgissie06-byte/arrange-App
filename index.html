@@ -59,15 +59,13 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 
 /* ① 育成入力 */
 .grid-members{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:9px}
-.grid-chars{display:flex;flex-wrap:wrap;gap:8px}
-.grid-chars .cc{flex:1 1 140px;max-width:calc(50% - 4px)}
+.grid-chars{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
 .m-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 8px;cursor:pointer;text-align:center;transition:border-color .15s,background .15s}
 .m-card:hover{border-color:var(--bm);background:var(--acc-lt)}
 .avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:13px;margin:0 auto 6px}
 .m-name{font-size:12px;font-weight:500}.m-sub{font-size:11px;color:var(--t2);margin-top:2px}
 .cc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px;cursor:pointer;transition:border-color .15s}
 .cc:hover{border-color:var(--bm)}.cc.sel{border:1.5px solid var(--tab);background:#FAFAFE}
-.cc.trained{order:1} /* 育成済みを後ろに */
 .cc-search-row{display:flex;align-items:center;gap:6px;margin-bottom:8px}
 .cc-search-input{flex:1;padding:6px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--card);color:var(--t);font-family:inherit}
 .cc-name{font-size:12px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -609,7 +607,7 @@ function toggleUntrainedFilter(){
 function renderCharGridEdit(m){
   document.getElementById('char-grid-edit').innerHTML=sortByYomi(S.chars).map(cd=>{
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
-    return`<div class="cc${isSel?' sel':''}${c?' trained':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}" data-trained="${c?'1':'0'}">
+    return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}" data-trained="${c?'1':'0'}">
       <div class="cc-name" title="${cd.name}">${cd.name}</div>
       <div class="badges">${c?rarBdg(c.rar):''}${c&&c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}
       ${!c?'<span style="font-size:10px;color:var(--t3)">未育成</span>':''}</div>
