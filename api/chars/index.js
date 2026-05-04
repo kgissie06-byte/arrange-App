@@ -8,7 +8,7 @@ const supabase = createClient(
 export default async function handler(req, res) {
   // キャラ追加
   if (req.method === 'POST') {
-    const { name, yomi, rars, ranks, shukuen } = req.body
+    const { name, yomi, rars, ranks, shukuens } = req.body
 
     if (!name) return res.status(400).json({ error: 'name is required' })
 
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
         yomi: yomi || '',
         rars: rars || [],
         ranks: ranks || [],
-        shukuen: shukuen || { enabled: false, members: [] }
+        shukuens: shukuens || [{enabled:false,members:[]},{enabled:false,members:[]}]
       })
       .select()
       .single()

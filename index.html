@@ -333,14 +333,25 @@ body{overscroll-behavior:none}
     <div class="field"><label>最大レアリティ</label><div class="pick-btns" id="cn-rar-btns" style="margin-top:4px"></div></div>
     <div class="field"><label>最大ランク</label><div class="pick-btns" id="cn-rank-btns" style="margin-top:4px"></div></div>
     <div class="field">
-      <label>宿縁</label>
+      <label>宿縁①</label>
       <div class="shukuen-toggle">
-        <button id="cn-shukuen-off" class="on" onclick="setCnShukuen(false)">無</button>
-        <button id="cn-shukuen-on" onclick="setCnShukuen(true)">有</button>
+        <button id="cn-shukuen-off-0" class="on" onclick="setCnShukuen(0,false)">無</button>
+        <button id="cn-shukuen-on-0" onclick="setCnShukuen(0,true)">有</button>
       </div>
-      <div id="cn-shukuen-detail" style="display:none">
-        <div class="shukuen-member-list" id="cn-shukuen-list"></div>
-        <button class="shukuen-add-btn" onclick="openShukuenAddModal('cn')">＋ キャラを追加</button>
+      <div id="cn-shukuen-detail-0" style="display:none">
+        <div class="shukuen-member-list" id="cn-shukuen-list-0"></div>
+        <button class="shukuen-add-btn" onclick="openShukuenAddModal('cn',0)">＋ キャラを追加</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>宿縁②</label>
+      <div class="shukuen-toggle">
+        <button id="cn-shukuen-off-1" class="on" onclick="setCnShukuen(1,false)">無</button>
+        <button id="cn-shukuen-on-1" onclick="setCnShukuen(1,true)">有</button>
+      </div>
+      <div id="cn-shukuen-detail-1" style="display:none">
+        <div class="shukuen-member-list" id="cn-shukuen-list-1"></div>
+        <button class="shukuen-add-btn" onclick="openShukuenAddModal('cn',1)">＋ キャラを追加</button>
       </div>
     </div>
     <div class="save-bar"><button class="btn pri" onclick="addChar()">追加</button></div>
@@ -355,14 +366,25 @@ body{overscroll-behavior:none}
       <div class="field"><label>最大レアリティ</label><div class="pick-btns" id="cu-rar-btns" style="margin-top:4px"></div></div>
       <div class="field"><label>最大ランク</label><div class="pick-btns" id="cu-rank-btns" style="margin-top:4px"></div></div>
       <div class="field">
-        <label>宿縁</label>
+        <label>宿縁①</label>
         <div class="shukuen-toggle">
-          <button id="cu-shukuen-off" class="on" onclick="setCuShukuen(false)">無</button>
-          <button id="cu-shukuen-on" onclick="setCuShukuen(true)">有</button>
+          <button id="cu-shukuen-off-0" class="on" onclick="setCuShukuen(0,false)">無</button>
+          <button id="cu-shukuen-on-0" onclick="setCuShukuen(0,true)">有</button>
         </div>
-        <div id="cu-shukuen-detail" style="display:none">
-          <div class="shukuen-member-list" id="cu-shukuen-list"></div>
-          <button class="shukuen-add-btn" onclick="openShukuenAddModal('cu')">＋ キャラを追加</button>
+        <div id="cu-shukuen-detail-0" style="display:none">
+          <div class="shukuen-member-list" id="cu-shukuen-list-0"></div>
+          <button class="shukuen-add-btn" onclick="openShukuenAddModal('cu',0)">＋ キャラを追加</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>宿縁②</label>
+        <div class="shukuen-toggle">
+          <button id="cu-shukuen-off-1" class="on" onclick="setCuShukuen(1,false)">無</button>
+          <button id="cu-shukuen-on-1" onclick="setCuShukuen(1,true)">有</button>
+        </div>
+        <div id="cu-shukuen-detail-1" style="display:none">
+          <div class="shukuen-member-list" id="cu-shukuen-list-1"></div>
+          <button class="shukuen-add-btn" onclick="openShukuenAddModal('cu',1)">＋ キャラを追加</button>
         </div>
       </div>
       <div class="save-bar">
@@ -689,21 +711,23 @@ function renderSearch(alreadyNames){
   if(!matched.length){el.innerHTML='<div class="empty">該当キャラが見つかりません</div>';return;}
   let rows=[];
   matched.forEach(cd=>{S.members.forEach((m,mi)=>{
-    if(m.role==='その他')return; // 管理者・利用者ともに非表示
+    if(m.role==='その他')return;
     const c=m.chars.find(x=>x.name===cd.name);if(!c)return;
     if(!rarMatchesFilter(c.rar, S.filRar))return;
     if(S.filRank.length&&!S.filRank.every(fr=>c.ranks&&c.ranks.includes(fr)))return;
     if(S.filRole.length&&!S.filRole.includes(m.role))return;
     const a=av(mi);
     const shBadge=shukuenBadgeHtml(m,cd);
-    rows.push(`<div class="res-card"><div class="av2" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
+    const pt=shukuenPt(m,cd);
+    rows.push({pt, html:`<div class="res-card"><div class="av2" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
       <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">${m.name} <span style="font-size:10px;color:var(--t2)">${m.role}</span></div>
       <div style="font-size:10px;color:var(--t2);margin:1px 0">${cd.name}</div>
       <div class="badges" style="margin-top:3px">${rarBdg(c.rar)}${c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}</div>
-      ${shBadge}</div></div>`);
+      ${shBadge}</div></div>`});
   });});
+  rows.sort((a,b)=>b.pt-a.pt);
   if(!rows.length){el.innerHTML='<div class="empty">条件に合うメンバーがいません</div>';return;}
-  el.innerHTML=`<div style="font-size:11px;color:var(--t2);margin-bottom:7px">${rows.length}件</div>`+rows.join('');
+  el.innerHTML=`<div style="font-size:11px;color:var(--t2);margin-bottom:7px">${rows.length}件</div>`+rows.map(r=>r.html).join('');
 }
 
 /* ========== ③ 援軍表 ========== */
@@ -911,6 +935,14 @@ function renderRSResults(){
   // 既にnameが埋まっている行のメンバー名一覧
   const alreadyNames=new Set(S.reinf.filter(r=>r.memberName).map(r=>r.memberName));
   const results=S.members.filter(m=>m.role!=='その他'&&memberPassesRS(m,row));
+  // 大将宿縁pt降順→副将宿縁pt降順でソート
+  const mainCd=S.chars.find(c=>c.name===row.normalMain);
+  const subCd=S.chars.find(c=>c.name===row.normalSub);
+  results.sort((a,b)=>{
+    const ptA=shukuenPt(a,mainCd), ptB=shukuenPt(b,mainCd);
+    if(ptB!==ptA) return ptB-ptA;
+    return shukuenPt(b,subCd)-shukuenPt(a,subCd);
+  });
   const el=document.getElementById('rs-results');
   document.getElementById('rs-result-count').textContent=results.length+'件';
   if(!results.length){el.innerHTML='<div class="empty">条件に合うメンバーがいません<br><span style="font-size:11px">フィルターを緩めてみてください</span></div>';return;}
@@ -920,8 +952,6 @@ function renderRSResults(){
     const isCurrentRow=row.memberName===m.name;
     const mainC=row.normalMain?m.chars.find(c=>c.name===row.normalMain):null;
     const subC=row.normalSub?m.chars.find(c=>c.name===row.normalSub):null;
-    const mainCd=S.chars.find(c=>c.name===row.normalMain);
-    const subCd=S.chars.find(c=>c.name===row.normalSub);
     const mainShBadge=mainCd?shukuenBadgeHtml(m,mainCd):'';
     const subShBadge=subCd?shukuenBadgeHtml(m,subCd):'';
     return`<div class="reinf-res-card${isAlready?' already':''}">
@@ -990,42 +1020,45 @@ function toggleCnRank(r){toggleWithHierarchy(cnSelRank,r,getRankImplied);renderC
 function toggleCuRar(r){toggleWithHierarchy(cuSelRar,r,getRarImplied);renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');}
 function toggleCuRank(r){toggleWithHierarchy(cuSelRank,r,getRankImplied);renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');}
 // 宿縁の状態
-let cnShukuenEnabled=false, cnShukuenMembers=[];
-let cuShukuenEnabled=false, cuShukuenMembers=[];
-let shukuenAddTarget=null; // 'cn' or 'cu'
+// 宿縁は2スロット: cnShukuens[0], cnShukuens[1]
+let cnShukuens=[{enabled:false,members:[]},{enabled:false,members:[]}];
+let cuShukuens=[{enabled:false,members:[]},{enabled:false,members:[]}];
+let shukuenAddTarget=null; // {prefix:'cn'|'cu', idx:0|1}
 
-function setCnShukuen(enabled){
-  cnShukuenEnabled=enabled;
-  document.getElementById('cn-shukuen-off').className=enabled?'':'on';
-  document.getElementById('cn-shukuen-on').className=enabled?'on':'';
-  document.getElementById('cn-shukuen-detail').style.display=enabled?'block':'none';
-  renderShukuenList('cn',cnShukuenMembers);
+function setCnShukuen(idx,enabled){
+  cnShukuens[idx].enabled=enabled;
+  document.getElementById(`cn-shukuen-off-${idx}`).className=enabled?'':'on';
+  document.getElementById(`cn-shukuen-on-${idx}`).className=enabled?'on':'';
+  document.getElementById(`cn-shukuen-detail-${idx}`).style.display=enabled?'block':'none';
+  renderShukuenList('cn',idx,cnShukuens[idx].members);
 }
-function setCuShukuen(enabled){
-  cuShukuenEnabled=enabled;
-  document.getElementById('cu-shukuen-off').className=enabled?'':'on';
-  document.getElementById('cu-shukuen-on').className=enabled?'on':'';
-  document.getElementById('cu-shukuen-detail').style.display=enabled?'block':'none';
-  renderShukuenList('cu',cuShukuenMembers);
+function setCuShukuen(idx,enabled){
+  cuShukuens[idx].enabled=enabled;
+  document.getElementById(`cu-shukuen-off-${idx}`).className=enabled?'':'on';
+  document.getElementById(`cu-shukuen-on-${idx}`).className=enabled?'on':'';
+  document.getElementById(`cu-shukuen-detail-${idx}`).style.display=enabled?'block':'none';
+  renderShukuenList('cu',idx,cuShukuens[idx].members);
 }
-function renderShukuenList(prefix, members){
-  const el=document.getElementById(prefix+'-shukuen-list');if(!el)return;
+function renderShukuenList(prefix,idx,members){
+  const el=document.getElementById(`${prefix}-shukuen-list-${idx}`);if(!el)return;
   if(!members.length){el.innerHTML='<div style="font-size:11px;color:var(--t3);padding:4px 0">キャラが追加されていません</div>';return;}
   el.innerHTML=members.map((name,i)=>`
     <div class="shukuen-char-row">
       <span style="font-size:12px;flex:1">${name}</span>
-      <button class="shukuen-remove-btn" onclick="removeShukuenMember('${prefix}',${i})">✕</button>
+      <button class="shukuen-remove-btn" onclick="removeShukuenMember('${prefix}',${idx},${i})">✕</button>
     </div>`).join('');
 }
-function removeShukuenMember(prefix,idx){
-  if(prefix==='cn') cnShukuenMembers.splice(idx,1);
-  else cuShukuenMembers.splice(idx,1);
-  renderShukuenList(prefix, prefix==='cn'?cnShukuenMembers:cuShukuenMembers);
+function removeShukuenMember(prefix,idx,i){
+  const arr=prefix==='cn'?cnShukuens:cuShukuens;
+  arr[idx].members.splice(i,1);
+  renderShukuenList(prefix,idx,arr[idx].members);
 }
-function openShukuenAddModal(prefix){
-  shukuenAddTarget=prefix;
-  const current=prefix==='cn'?cnShukuenMembers:cuShukuenMembers;
-  const available=S.chars.filter(c=>!current.includes(c.name));
+function openShukuenAddModal(prefix,idx){
+  shukuenAddTarget={prefix,idx};
+  const arr=prefix==='cn'?cnShukuens:cuShukuens;
+  // 両スロットで使われているキャラは除外
+  const usedAll=arr.flatMap(s=>s.members);
+  const available=S.chars.filter(c=>!usedAll.includes(c.name));
   openModal('shukuen-add',`<h3>宿縁キャラを追加</h3>
     <div class="field"><label>キャラを選択</label>
       <select id="shukuen-char-sel">
@@ -1041,13 +1074,10 @@ function openShukuenAddModal(prefix){
 function addShukuenMember(){
   const name=document.getElementById('shukuen-char-sel').value;
   if(!name)return;
-  if(shukuenAddTarget==='cn'){
-    if(!cnShukuenMembers.includes(name))cnShukuenMembers.push(name);
-    renderShukuenList('cn',cnShukuenMembers);
-  } else {
-    if(!cuShukuenMembers.includes(name))cuShukuenMembers.push(name);
-    renderShukuenList('cu',cuShukuenMembers);
-  }
+  const {prefix,idx}=shukuenAddTarget;
+  const arr=prefix==='cn'?cnShukuens:cuShukuens;
+  if(!arr[idx].members.includes(name))arr[idx].members.push(name);
+  renderShukuenList(prefix,idx,arr[idx].members);
   closeModal();
 }
 
@@ -1065,34 +1095,61 @@ function shukuenLevel(memberChar){
   return 'soji';
 }
 
-/* メンバーの宿縁バッジHTML生成 */
+/* 宿縁バッジHTML: charDefのshukuens配列（複数）に対応 */
 function shukuenBadgeHtml(member, charDef){
-  if(!charDef||!charDef.shukuen||!charDef.shukuen.enabled) return '';
-  const sMembers=charDef.shukuen.members||[];
-  if(!sMembers.length) return '';
-  let g=0,o=0,s=0;
-  sMembers.forEach(sName=>{
-    const mc=member.chars.find(c=>c.name===sName);
-    const lv=shukuenLevel(mc);
-    if(lv==='gikkyoku') g++;
-    else if(lv==='omote6') o++;
-    else if(lv==='soji') s++;
+  const shukuens=charDef.shukuens||[];
+  // 旧形式 {enabled,members} との互換
+  const slots=shukuens.length?shukuens:[charDef.shukuen||{enabled:false,members:[]}];
+  let allPills='';
+  slots.forEach((sh,si)=>{
+    if(!sh||!sh.enabled||!sh.members||!sh.members.length) return;
+    let g=0,o=0,s=0;
+    sh.members.forEach(sName=>{
+      const mc=member.chars.find(c=>c.name===sName);
+      const lv=shukuenLevel(mc);
+      if(lv==='gikkyoku') g++;
+      else if(lv==='omote6') o++;
+      else if(lv==='soji') s++;
+    });
+    if(!g&&!o&&!s) return;
+    const total=sh.members.length;
+    const label=slots.filter(x=>x&&x.enabled).length>1?`<span style="font-size:10px;color:var(--t2)">宿縁${si+1}</span>`:`<span style="font-size:10px;color:var(--t2)">宿縁</span>`;
+    let pills='';
+    if(g) pills+=`<span class="sh-pill gikkyoku"><span class="sh-pill-dot"></span>${g}</span>`;
+    if(o) pills+=`<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
+    if(s) pills+=`<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
+    allPills+=`<div class="sh-badge-wrap">${label}${pills}<span style="font-size:10px;color:var(--t3)">/${total}</span></div>`;
   });
-  if(!g&&!o&&!s) return '';
-  const total=sMembers.length;
-  let pills='';
-  if(g) pills+=`<span class="sh-pill gikkyoku"><span class="sh-pill-dot"></span>${g}</span>`;
-  if(o) pills+=`<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
-  if(s) pills+=`<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
-  return `<div class="sh-badge-wrap"><span style="font-size:10px;color:var(--t2)">宿縁</span>${pills}<span style="font-size:10px;color:var(--t3)">/${total}</span></div>`;
+  return allPills;
+}
+
+/* 宿縁ポイント計算: 紫×3 + 緑×2 + 黄×1 */
+function shukuenPt(member, charDef){
+  if(!charDef) return 0;
+  const shukuens=charDef.shukuens||[];
+  const slots=shukuens.length?shukuens:[charDef.shukuen||{enabled:false,members:[]}];
+  let total=0;
+  slots.forEach(sh=>{
+    if(!sh||!sh.enabled||!sh.members) return;
+    sh.members.forEach(sName=>{
+      const mc=member.chars.find(c=>c.name===sName);
+      const lv=shukuenLevel(mc);
+      if(lv==='gikkyoku') total+=3;
+      else if(lv==='omote6') total+=2;
+      else if(lv==='soji') total+=1;
+    });
+  });
+  return total;
 }
 
 function initCharNewForm(){
-  cnSelRar=[];cnSelRank=[];cnShukuenEnabled=false;cnShukuenMembers=[];
+  cnSelRar=[];cnSelRank=[];
+  cnShukuens=[{enabled:false,members:[]},{enabled:false,members:[]}];
   const el=document.getElementById('cn-name');if(el)el.value='';
+  const ey=document.getElementById('cn-yomi');if(ey)ey.value='';
   renderCharMgmtRarBtns('cn-rar-btns',cnSelRar,'toggleCnRar');
   renderCharMgmtRankBtns('cn-rank-btns',cnSelRank,'toggleCnRank');
-  setCnShukuen(false);
+  setCnShukuen(0,false);setCnShukuen(1,false);
 }
 async function addChar(){
   const name=document.getElementById('cn-name').value;
@@ -1108,7 +1165,7 @@ async function addChar(){
         yomi,
         rars:cnSelRar,
         ranks:cnSelRank,
-        shukuen:{enabled:cnShukuenEnabled,members:cnShukuenMembers}
+        shukuens:cnShukuens
       })
     });
 
@@ -1136,10 +1193,15 @@ function loadCharForUpdate(){
   cuSelRar=[...cd.rars];cuSelRank=[...cd.ranks];
   renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');
   renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');
-  // 宿縁ロード
-  const sh=cd.shukuen||{enabled:false,members:[]};
-  cuShukuenMembers=[...(sh.members||[])];
-  setCuShukuen(!!sh.enabled);
+  // 宿縁ロード（旧形式 {enabled,members} との互換）
+  const raw=cd.shukuens||[];
+  cuShukuens=[0,1].map(i=>{
+    const s=raw[i]||cd.shukuen||{enabled:false,members:[]};
+    return {enabled:!!s.enabled, members:[...(s.members||[])]};
+  });
+  // 旧データで shukuen が1件しかない場合、idx=1 はリセット
+  if(!raw.length&&cd.shukuen){cuShukuens[1]={enabled:false,members:[]};}
+  setCuShukuen(0,cuShukuens[0].enabled);setCuShukuen(1,cuShukuens[1].enabled);
   document.getElementById('cu-detail').style.display='block';
 }
 async function updateChar(){
@@ -1157,7 +1219,7 @@ async function updateChar(){
         yomi,
         rars:cuSelRar,
         ranks:cuSelRank,
-        shukuen:{enabled:cuShukuenEnabled,members:cuShukuenMembers}
+        shukuens:cuShukuens
       })
     });
 

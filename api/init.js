@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     yomi: c.yomi || '',
     rars: c.rars || [],
     ranks: c.ranks || [],
-    shukuen: c.shukuen || { enabled: false, members: [] },
+    shukuens: c.shukuens || (c.shukuen ? [c.shukuen, {enabled:false,members:[]}] : [{enabled:false,members:[]},{enabled:false,members:[]}]),
   }))
 
   // メンバー一覧
