@@ -59,13 +59,17 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 
 /* ① 育成入力 */
 .grid-members{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:9px}
-.grid-chars{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.grid-chars{display:flex;flex-wrap:wrap;gap:8px}
+.grid-chars .cc{flex:1 1 140px;max-width:calc(50% - 4px)}
 .m-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 8px;cursor:pointer;text-align:center;transition:border-color .15s,background .15s}
 .m-card:hover{border-color:var(--bm);background:var(--acc-lt)}
 .avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:13px;margin:0 auto 6px}
 .m-name{font-size:12px;font-weight:500}.m-sub{font-size:11px;color:var(--t2);margin-top:2px}
 .cc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px;cursor:pointer;transition:border-color .15s}
 .cc:hover{border-color:var(--bm)}.cc.sel{border:1.5px solid var(--tab);background:#FAFAFE}
+.cc.trained{order:1} /* 育成済みを後ろに */
+.cc-search-row{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.cc-search-input{flex:1;padding:6px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--card);color:var(--t);font-family:inherit}
 .cc-name{font-size:12px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .badges{display:flex;gap:3px;flex-wrap:wrap}
 .bdg{display:inline-block;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:500}
@@ -270,6 +274,9 @@ body{overscroll-behavior:none}
     <div class="sec-head">
       <h2 id="editing-name"></h2>
       <button class="back-btn" onclick="goBack()">← 戻る</button>
+    </div>
+    <div class="cc-search-row">
+      <input type="text" class="cc-search-input" id="cc-search" placeholder="キャラ名・読み仮名で絞り込み" oninput="filterCharGrid()">
     </div>
     <div class="grid-chars" id="char-grid-edit"></div>
     <div id="lv-panel" style="display:none">
@@ -567,14 +574,30 @@ function selectMember(id){
   document.getElementById('lv-panel').style.display='none';
 }
 function renderCharGridEdit(m){
-  document.getElementById('char-grid-edit').innerHTML=sortByYomi(S.chars).map(cd=>{
+  // 未育成を先頭、育成済みを後ろにソート（yomi順を維持しつつ）
+  const sorted = sortByYomi(S.chars).sort((a,b)=>{
+    const aHas = !!m.chars.find(x=>x.name===a.name);
+    const bHas = !!m.chars.find(x=>x.name===b.name);
+    return aHas - bHas; // falseが先（未育成=先頭）
+  });
+  document.getElementById('char-grid-edit').innerHTML=sorted.map(cd=>{
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
-    return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')">
+    return`<div class="cc${isSel?' sel':''}${c?' trained':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}">
       <div class="cc-name" title="${cd.name}">${cd.name}</div>
       <div class="badges">${c?rarBdg(c.rar):''}${c&&c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}
       ${!c?'<span style="font-size:10px;color:var(--t3)">未育成</span>':''}</div>
     </div>`;
   }).join('');
+  filterCharGrid(); // 検索欄が入力済みなら絞り込みを維持
+}
+function filterCharGrid(){
+  const q=(document.getElementById('cc-search')?.value||'').trim();
+  document.querySelectorAll('#char-grid-edit .cc').forEach(el=>{
+    if(!q){el.style.display='';return;}
+    const name=el.dataset.name||'';
+    const yomi=el.dataset.yomi||'';
+    el.style.display=(name.includes(q)||yomi.includes(q))?'':'none';
+  });
 }
 function selectCharEdit(cn){
   const m=S.members.find(x=>x.id===E.memberId);
@@ -631,6 +654,7 @@ async function saveTraining(){
 function goBack(){
   document.getElementById('v-members').style.display='';
   document.getElementById('v-chars').style.display='none';
+  const cs=document.getElementById('cc-search');if(cs)cs.value='';
   E={memberId:null,charName:null,pendingRar:null,pendingRanks:[]};
 }
 
@@ -653,7 +677,7 @@ function renderSearch(alreadyNames){
   const q=(document.getElementById('s-input').value||'').trim();
   const el=document.getElementById('search-results');
   if(!q){el.innerHTML='<div class="empty">キャラ名を入力してください</div>';return;}
-  const matched=S.chars.filter(cd=>cd.name.includes(q));
+  const matched=S.chars.filter(cd=>cd.name.includes(q)||(cd.yomi||'').includes(q));
   if(!matched.length){el.innerHTML='<div class="empty">該当キャラが見つかりません</div>';return;}
   let rows=[];
   matched.forEach(cd=>{S.members.forEach((m,mi)=>{
