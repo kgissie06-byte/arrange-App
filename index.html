@@ -1090,13 +1090,15 @@ function removeShukuenMember(prefix,idx,i){
 function openShukuenAddModal(prefix,idx){
   shukuenAddTarget={prefix,idx,changeIdx:null};
   const arr=prefix==='cn'?cnShukuens:cuShukuens;
-  const usedAll=arr.flatMap(s=>s.members).filter(n=>n!=='?');
-  const available=S.chars.filter(c=>!usedAll.includes(c.name));
+  // 重複禁止はスロット内のみ（他スロットは除外しない）
+  const usedInSlot=arr[idx].members.filter(n=>n!=='?');
+  const available=S.chars.filter(c=>!usedInSlot.includes(c.name));
   openModal('shukuen-add',`<h3>宿縁キャラを追加</h3>
-    <div class="field"><label>キャラを選択</label>
-      <select id="shukuen-char-sel">
+    <div class="field">
+      <input type="text" id="shukuen-search" placeholder="名前・読み仮名で絞り込み" style="width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;margin-bottom:8px" oninput="filterShukuenSel()">
+      <select id="shukuen-char-sel" size="6" style="width:100%;font-size:14px;border:1px solid var(--bm);border-radius:8px;padding:4px">
         <option value="">-- 選択 --</option>
-        ${sortByYomi(available).map(c=>`<option value="${c.name}">${c.name}</option>`).join('')}
+        ${sortByYomi(available).map(c=>`<option value="${c.name}" data-yomi="${c.yomi||''}">${c.name}</option>`).join('')}
       </select>
     </div>
     <div class="modal-acts">
@@ -1108,19 +1110,29 @@ function openShukuenAddModal(prefix,idx){
 function openShukuenChangeModal(prefix,idx,changeIdx){
   shukuenAddTarget={prefix,idx,changeIdx};
   const arr=prefix==='cn'?cnShukuens:cuShukuens;
-  const usedAll=arr.flatMap(s=>s.members).filter(n=>n!=='?');
-  const available=S.chars.filter(c=>!usedAll.includes(c.name));
+  const usedInSlot=arr[idx].members.filter((n,i)=>n!=='?'&&i!==changeIdx);
+  const available=S.chars.filter(c=>!usedInSlot.includes(c.name));
   openModal('shukuen-add',`<h3>宿縁キャラを変更</h3>
-    <div class="field"><label>キャラを選択</label>
-      <select id="shukuen-char-sel">
+    <div class="field">
+      <input type="text" id="shukuen-search" placeholder="名前・読み仮名で絞り込み" style="width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;margin-bottom:8px" oninput="filterShukuenSel()">
+      <select id="shukuen-char-sel" size="6" style="width:100%;font-size:14px;border:1px solid var(--bm);border-radius:8px;padding:4px">
         <option value="">-- 選択 --</option>
-        ${sortByYomi(available).map(c=>`<option value="${c.name}">${c.name}</option>`).join('')}
+        ${sortByYomi(available).map(c=>`<option value="${c.name}" data-yomi="${c.yomi||''}">${c.name}</option>`).join('')}
       </select>
     </div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
       <button class="btn pri" onclick="addShukuenMember()">変更</button>
     </div>`);
+}
+function filterShukuenSel(){
+  const q=(document.getElementById('shukuen-search')?.value||'').trim();
+  const sel=document.getElementById('shukuen-char-sel');if(!sel)return;
+  Array.from(sel.options).forEach(opt=>{
+    if(!opt.value){opt.style.display='';return;}
+    const name=opt.value;const yomi=opt.dataset.yomi||'';
+    opt.style.display=(!q||name.includes(q)||yomi.includes(q))?'':'none';
+  });
 }
 function addShukuenDummy(){
   const {prefix,idx}=shukuenAddTarget;
@@ -1157,33 +1169,39 @@ function shukuenLevel(memberChar){
   return 'soji';
 }
 
-/* 宿縁バッジHTML: charDefのshukuens配列（複数）に対応 */
+/* 宿縁バッジHTML: 2スロット対応、2段表示 */
 function shukuenBadgeHtml(member, charDef){
   const shukuens=charDef.shukuens||[];
-  // 旧形式 {enabled,members} との互換
   const slots=shukuens.length?shukuens:[charDef.shukuen||{enabled:false,members:[]}];
-  let allPills='';
+  const enabledSlots=slots.filter(x=>x&&x.enabled);
+  const badges=[];
   slots.forEach((sh,si)=>{
     if(!sh||!sh.enabled||!sh.members||!sh.members.length) return;
     let g=0,o=0,s=0;
     sh.members.forEach(sName=>{
-      if(sName==='?') return; // ダミーはスキップ
+      if(sName==='?') return;
       const mc=member.chars.find(c=>c.name===sName);
       const lv=shukuenLevel(mc);
       if(lv==='gikkyoku') g++;
       else if(lv==='omote6') o++;
       else if(lv==='soji') s++;
     });
-    if(!g&&!o&&!s) return;
     const total=sh.members.filter(n=>n!=='?').length;
-    const label=slots.filter(x=>x&&x.enabled).length>1?`<span style="font-size:10px;color:var(--t2)">宿縁${si+1}</span>`:`<span style="font-size:10px;color:var(--t2)">宿縁</span>`;
+    const label=enabledSlots.length>1
+      ?`<span style="font-size:10px;color:var(--t2)">宿縁${si+1}</span>`
+      :`<span style="font-size:10px;color:var(--t2)">宿縁</span>`;
     let pills='';
     if(g) pills+=`<span class="sh-pill gikkyoku"><span class="sh-pill-dot"></span>${g}</span>`;
     if(o) pills+=`<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
     if(s) pills+=`<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
-    allPills+=`<div class="sh-badge-wrap">${label}${pills}<span style="font-size:10px;color:var(--t3)">/${total}</span></div>`;
+    // ポイントが0でも枠は表示（?のみの場合など）
+    badges.push(`<div class="sh-badge-wrap">${label}${pills}<span style="font-size:10px;color:var(--t3)">/${total}</span></div>`);
   });
-  return allPills;
+  if(!badges.length) return '';
+  // 2スロットある場合は縦2段
+  return badges.length>1
+    ?`<div style="display:flex;flex-direction:column;gap:2px">${badges.join('')}</div>`
+    :badges[0];
 }
 
 /* 宿縁ポイント計算: 紫×3 + 緑×2 + 黄×1 */
