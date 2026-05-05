@@ -194,6 +194,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 /* キーボード表示時にbodyを固定 */
 body{overscroll-behavior:none}
 /* ===== ホバースタイルをポインターデバイス限定に（タッチ後に残らないよう） ===== */
+/* @media (hover:none) だけでは不十分なため、JS でbody.touch-deviceクラスを付与して制御 */
 @media (hover: none) {
   /* タッチデバイスではhover・focus・activeスタイルをすべて無効化 */
   .tab:hover:not(.active), .tab:active:not(.active),
@@ -290,7 +291,7 @@ body{overscroll-behavior:none}
         <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div>
       </div>
       <div class="save-bar">
-        <button class="btn" onclick="goBack()">キャンセル</button>
+        <button class="btn" onclick="closeLvPanel()">キャンセル</button>
         <button class="btn pri" onclick="saveTraining()">Save</button>
       </div>
     </div>
@@ -645,12 +646,15 @@ function filterCharGrid(){
     el.style.display=(textOk&&trainedOk)?'':'none';
   });
 }
+function closeLvPanel(){
+  E.charName=null;E.pendingRar=null;E.pendingRanks=[];
+  document.querySelectorAll('#char-grid-edit .cc').forEach(el=>el.classList.remove('sel'));
+  document.getElementById('lv-panel').style.display='none';
+}
 function selectCharEdit(cn){
   // 同じキャラを再クリック → パネルを閉じて選択解除
   if(E.charName===cn){
-    E.charName=null;E.pendingRar=null;E.pendingRanks=[];
-    document.querySelectorAll('#char-grid-edit .cc').forEach(el=>el.classList.remove('sel'));
-    document.getElementById('lv-panel').style.display='none';
+    closeLvPanel();
     return;
   }
   const m=S.members.find(x=>x.id===E.memberId);
