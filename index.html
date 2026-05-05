@@ -66,8 +66,6 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .m-name{font-size:12px;font-weight:500}.m-sub{font-size:11px;color:var(--t2);margin-top:2px}
 .cc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px;cursor:pointer;transition:border-color .15s}
 .cc:hover{border-color:var(--bm)}.cc.sel{border:1.5px solid var(--tab);background:#FAFAFE}
-.cc-search-row{display:flex;align-items:center;gap:6px;margin-bottom:8px}
-.cc-search-input{flex:1;padding:6px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--card);color:var(--t);font-family:inherit}
 .cc-name{font-size:12px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .badges{display:flex;gap:3px;flex-wrap:wrap}
 .bdg{display:inline-block;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:500}
@@ -273,17 +271,10 @@ body{overscroll-behavior:none}
       <h2 id="editing-name"></h2>
       <button class="back-btn" onclick="goBack()">← 戻る</button>
     </div>
-    <div class="cc-search-row">
-      <input type="text" class="cc-search-input" id="cc-search" placeholder="キャラ名・読み仮名で絞り込み" oninput="filterCharGrid()">
-      <button class="f-btn" id="cc-untrained-btn" onclick="toggleUntrainedFilter()">未入力</button>
-    </div>
     <div class="grid-chars" id="char-grid-edit"></div>
     <div id="lv-panel" style="display:none">
       <div class="panel">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
-          <div style="font-size:12px;font-weight:500" id="panel-title"></div>
-          <button id="clear-training-btn" class="btn danger" style="display:none;font-size:11px;padding:3px 10px" onclick="clearTraining()">未入力に戻す</button>
-        </div>
+        <div style="font-size:12px;font-weight:500;margin-bottom:11px" id="panel-title"></div>
         <div class="pick-label">レアリティ</div>
         <div class="pick-btns" id="rar-btns"></div>
         <div class="pick-label">ランク</div>
@@ -293,7 +284,7 @@ body{overscroll-behavior:none}
     </div>
     <div class="save-bar">
       <button class="btn" onclick="goBack()">キャンセル</button>
-      <button class="btn pri" onclick="saveTraining()">Save</button>
+      <button class="btn pri input-admin-only" onclick="saveTraining()">Save</button>
     </div>
   </div>
 </div>
@@ -334,25 +325,14 @@ body{overscroll-behavior:none}
     <div class="field"><label>最大レアリティ</label><div class="pick-btns" id="cn-rar-btns" style="margin-top:4px"></div></div>
     <div class="field"><label>最大ランク</label><div class="pick-btns" id="cn-rank-btns" style="margin-top:4px"></div></div>
     <div class="field">
-      <label>宿縁①</label>
+      <label>宿縁</label>
       <div class="shukuen-toggle">
-        <button id="cn-shukuen-off-0" class="on" onclick="setCnShukuen(0,false)">無</button>
-        <button id="cn-shukuen-on-0" onclick="setCnShukuen(0,true)">有</button>
+        <button id="cn-shukuen-off" class="on" onclick="setCnShukuen(false)">無</button>
+        <button id="cn-shukuen-on" onclick="setCnShukuen(true)">有</button>
       </div>
-      <div id="cn-shukuen-detail-0" style="display:none">
-        <div class="shukuen-member-list" id="cn-shukuen-list-0"></div>
-        <button class="shukuen-add-btn" onclick="openShukuenAddModal('cn',0)">＋ キャラを追加</button>
-      </div>
-    </div>
-    <div class="field">
-      <label>宿縁②</label>
-      <div class="shukuen-toggle">
-        <button id="cn-shukuen-off-1" class="on" onclick="setCnShukuen(1,false)">無</button>
-        <button id="cn-shukuen-on-1" onclick="setCnShukuen(1,true)">有</button>
-      </div>
-      <div id="cn-shukuen-detail-1" style="display:none">
-        <div class="shukuen-member-list" id="cn-shukuen-list-1"></div>
-        <button class="shukuen-add-btn" onclick="openShukuenAddModal('cn',1)">＋ キャラを追加</button>
+      <div id="cn-shukuen-detail" style="display:none">
+        <div class="shukuen-member-list" id="cn-shukuen-list"></div>
+        <button class="shukuen-add-btn" onclick="openShukuenAddModal('cn')">＋ キャラを追加</button>
       </div>
     </div>
     <div class="save-bar"><button class="btn pri" onclick="addChar()">追加</button></div>
@@ -367,25 +347,14 @@ body{overscroll-behavior:none}
       <div class="field"><label>最大レアリティ</label><div class="pick-btns" id="cu-rar-btns" style="margin-top:4px"></div></div>
       <div class="field"><label>最大ランク</label><div class="pick-btns" id="cu-rank-btns" style="margin-top:4px"></div></div>
       <div class="field">
-        <label>宿縁①</label>
+        <label>宿縁</label>
         <div class="shukuen-toggle">
-          <button id="cu-shukuen-off-0" class="on" onclick="setCuShukuen(0,false)">無</button>
-          <button id="cu-shukuen-on-0" onclick="setCuShukuen(0,true)">有</button>
+          <button id="cu-shukuen-off" class="on" onclick="setCuShukuen(false)">無</button>
+          <button id="cu-shukuen-on" onclick="setCuShukuen(true)">有</button>
         </div>
-        <div id="cu-shukuen-detail-0" style="display:none">
-          <div class="shukuen-member-list" id="cu-shukuen-list-0"></div>
-          <button class="shukuen-add-btn" onclick="openShukuenAddModal('cu',0)">＋ キャラを追加</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>宿縁②</label>
-        <div class="shukuen-toggle">
-          <button id="cu-shukuen-off-1" class="on" onclick="setCuShukuen(1,false)">無</button>
-          <button id="cu-shukuen-on-1" onclick="setCuShukuen(1,true)">有</button>
-        </div>
-        <div id="cu-shukuen-detail-1" style="display:none">
-          <div class="shukuen-member-list" id="cu-shukuen-list-1"></div>
-          <button class="shukuen-add-btn" onclick="openShukuenAddModal('cu',1)">＋ キャラを追加</button>
+        <div id="cu-shukuen-detail" style="display:none">
+          <div class="shukuen-member-list" id="cu-shukuen-list"></div>
+          <button class="shukuen-add-btn" onclick="openShukuenAddModal('cu')">＋ キャラを追加</button>
         </div>
       </div>
       <div class="save-bar">
@@ -594,41 +563,18 @@ function selectMember(id){
   document.getElementById('editing-name').textContent=m.name+' の育成キャラ';
   document.getElementById('v-members').style.display='none';
   document.getElementById('v-chars').style.display='block';
-  // 検索バーと未入力フィルターをリセットしてからグリッドを描画
-  const cs=document.getElementById('cc-search');if(cs)cs.value='';
-  _showUntrainedOnly=false;
-  const ub=document.getElementById('cc-untrained-btn');if(ub)ub.classList.remove('on');
   renderCharGridEdit(m);
   document.getElementById('lv-panel').style.display='none';
-}
-let _showUntrainedOnly = false;
-function toggleUntrainedFilter(){
-  _showUntrainedOnly = !_showUntrainedOnly;
-  const btn = document.getElementById('cc-untrained-btn');
-  if(btn) btn.classList.toggle('on', _showUntrainedOnly);
-  filterCharGrid();
 }
 function renderCharGridEdit(m){
   document.getElementById('char-grid-edit').innerHTML=sortByYomi(S.chars).map(cd=>{
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
-    return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}" data-trained="${c?'1':'0'}">
+    return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')">
       <div class="cc-name" title="${cd.name}">${cd.name}</div>
       <div class="badges">${c?rarBdg(c.rar):''}${c&&c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}
       ${!c?'<span style="font-size:10px;color:var(--t3)">未育成</span>':''}</div>
     </div>`;
   }).join('');
-  filterCharGrid();
-}
-function filterCharGrid(){
-  const q=(document.getElementById('cc-search')?.value||'').trim();
-  document.querySelectorAll('#char-grid-edit .cc').forEach(el=>{
-    const name=el.dataset.name||'';
-    const yomi=el.dataset.yomi||'';
-    const trained=el.dataset.trained==='1';
-    const textOk=!q||(name.includes(q)||yomi.includes(q));
-    const trainedOk=!_showUntrainedOnly||!trained;
-    el.style.display=(textOk&&trainedOk)?'':'none';
-  });
 }
 function selectCharEdit(cn){
   const m=S.members.find(x=>x.id===E.memberId);
@@ -637,10 +583,6 @@ function selectCharEdit(cn){
   if(E.charName!==cn){
     E.charName=cn;E.pendingRar=c?c.rar:null;E.pendingRanks=c&&c.ranks?[...c.ranks]:[];
   }
-  // 選択状態をDOMに直接反映（再生成しない）
-  document.querySelectorAll('#char-grid-edit .cc').forEach(el=>{
-    el.classList.toggle('sel', el.dataset.name===cn);
-  });
   document.getElementById('panel-title').textContent=cn+' の育成状況';
   const aR=cd?cd.rars:ALL_RARITIES,aK=cd?cd.ranks:ALL_RANKS;
   document.getElementById('rar-btns').innerHTML=aR.map(r=>{const s=RAR_S[r]||{};const on=E.pendingRar===r;
@@ -648,9 +590,8 @@ function selectCharEdit(cn){
   document.getElementById('rank-btns').innerHTML=aK.map(r=>{const on=E.pendingRanks.includes(r);const top=TOP_RANKS.includes(r);
     return`<button class="p-btn" onclick="pickRank('${r}')" style="${on?`background:${top?'#EEEDFE':'#EDE5D8'};color:${top?'#3C3489':'#634B38'};border-color:${top?'#AFA9EC':'#B4A494'};font-weight:500`:''}">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
   document.getElementById('lv-panel').style.display='block';
-  const clearBtn=document.getElementById('clear-training-btn');
-  if(clearBtn) clearBtn.style.display=c?'':'none';
   document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
+  renderCharGridEdit(m);
 }
 function pickRar(r){E.pendingRar=r;selectCharEdit(E.charName);}
 function pickRank(r){
@@ -678,39 +619,8 @@ async function saveTraining(){
 
     await load();
     toast('保存しました');
-    // 検索クリア・選択解除・パネルを閉じる
-    E.charName=null; E.pendingRar=null; E.pendingRanks=[];
-    const cs=document.getElementById('cc-search');if(cs)cs.value='';
-    _showUntrainedOnly=false;
-    const ub=document.getElementById('cc-untrained-btn');if(ub)ub.classList.remove('on');
-    document.getElementById('lv-panel').style.display='none';
-    const m=S.members.find(x=>x.id===E.memberId);
-    if(m) renderCharGridEdit(m);
+    goBack();
 
-  }catch(e){
-    toast('エラー');
-  } finally {
-    hideLoading();
-  }
-}
-
-async function clearTraining(){
-  if(!E.charName) return;
-  if(!confirm(`${E.charName} の育成データを削除しますか？`)) return;
-  showLoading();
-  try{
-    await fetch('/api/training', {
-      method:'DELETE',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({memberId:E.memberId, charName:E.charName})
-    });
-    await load();
-    toast('未入力に戻しました');
-    // パネルを閉じてグリッド再描画
-    E.pendingRar=null; E.pendingRanks=[];
-    document.getElementById('lv-panel').style.display='none';
-    const m=S.members.find(x=>x.id===E.memberId);
-    if(m) renderCharGridEdit(m);
   }catch(e){
     toast('エラー');
   } finally {
@@ -721,12 +631,8 @@ async function clearTraining(){
 function goBack(){
   document.getElementById('v-members').style.display='';
   document.getElementById('v-chars').style.display='none';
-  const cs=document.getElementById('cc-search');if(cs)cs.value='';
-  _showUntrainedOnly=false;
-  const btn=document.getElementById('cc-untrained-btn');if(btn)btn.classList.remove('on');
   E={memberId:null,charName:null,pendingRar:null,pendingRanks:[]};
 }
-
 
 /* ========== ② 育成検索 ========== */
 function renderFilters(){
@@ -747,27 +653,25 @@ function renderSearch(alreadyNames){
   const q=(document.getElementById('s-input').value||'').trim();
   const el=document.getElementById('search-results');
   if(!q){el.innerHTML='<div class="empty">キャラ名を入力してください</div>';return;}
-  const matched=S.chars.filter(cd=>cd.name.includes(q)||(cd.yomi||'').includes(q));
+  const matched=S.chars.filter(cd=>cd.name.includes(q));
   if(!matched.length){el.innerHTML='<div class="empty">該当キャラが見つかりません</div>';return;}
   let rows=[];
   matched.forEach(cd=>{S.members.forEach((m,mi)=>{
-    if(m.role==='その他')return;
+    if(m.role==='その他')return; // 管理者・利用者ともに非表示
     const c=m.chars.find(x=>x.name===cd.name);if(!c)return;
     if(!rarMatchesFilter(c.rar, S.filRar))return;
     if(S.filRank.length&&!S.filRank.every(fr=>c.ranks&&c.ranks.includes(fr)))return;
     if(S.filRole.length&&!S.filRole.includes(m.role))return;
     const a=av(mi);
     const shBadge=shukuenBadgeHtml(m,cd);
-    const pt=shukuenPt(m,cd);
-    rows.push({pt, html:`<div class="res-card"><div class="av2" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
+    rows.push(`<div class="res-card"><div class="av2" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
       <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">${m.name} <span style="font-size:10px;color:var(--t2)">${m.role}</span></div>
       <div style="font-size:10px;color:var(--t2);margin:1px 0">${cd.name}</div>
       <div class="badges" style="margin-top:3px">${rarBdg(c.rar)}${c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}</div>
-      ${shBadge}</div></div>`});
+      ${shBadge}</div></div>`);
   });});
-  rows.sort((a,b)=>b.pt-a.pt);
   if(!rows.length){el.innerHTML='<div class="empty">条件に合うメンバーがいません</div>';return;}
-  el.innerHTML=`<div style="font-size:11px;color:var(--t2);margin-bottom:7px">${rows.length}件</div>`+rows.map(r=>r.html).join('');
+  el.innerHTML=`<div style="font-size:11px;color:var(--t2);margin-bottom:7px">${rows.length}件</div>`+rows.join('');
 }
 
 /* ========== ③ 援軍表 ========== */
@@ -975,14 +879,6 @@ function renderRSResults(){
   // 既にnameが埋まっている行のメンバー名一覧
   const alreadyNames=new Set(S.reinf.filter(r=>r.memberName).map(r=>r.memberName));
   const results=S.members.filter(m=>m.role!=='その他'&&memberPassesRS(m,row));
-  // 大将宿縁pt降順→副将宿縁pt降順でソート
-  const mainCd=S.chars.find(c=>c.name===row.normalMain);
-  const subCd=S.chars.find(c=>c.name===row.normalSub);
-  results.sort((a,b)=>{
-    const ptA=shukuenPt(a,mainCd), ptB=shukuenPt(b,mainCd);
-    if(ptB!==ptA) return ptB-ptA;
-    return shukuenPt(b,subCd)-shukuenPt(a,subCd);
-  });
   const el=document.getElementById('rs-results');
   document.getElementById('rs-result-count').textContent=results.length+'件';
   if(!results.length){el.innerHTML='<div class="empty">条件に合うメンバーがいません<br><span style="font-size:11px">フィルターを緩めてみてください</span></div>';return;}
@@ -992,6 +888,8 @@ function renderRSResults(){
     const isCurrentRow=row.memberName===m.name;
     const mainC=row.normalMain?m.chars.find(c=>c.name===row.normalMain):null;
     const subC=row.normalSub?m.chars.find(c=>c.name===row.normalSub):null;
+    const mainCd=S.chars.find(c=>c.name===row.normalMain);
+    const subCd=S.chars.find(c=>c.name===row.normalSub);
     const mainShBadge=mainCd?shukuenBadgeHtml(m,mainCd):'';
     const subShBadge=subCd?shukuenBadgeHtml(m,subCd):'';
     return`<div class="reinf-res-card${isAlready?' already':''}">
@@ -1060,109 +958,64 @@ function toggleCnRank(r){toggleWithHierarchy(cnSelRank,r,getRankImplied);renderC
 function toggleCuRar(r){toggleWithHierarchy(cuSelRar,r,getRarImplied);renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');}
 function toggleCuRank(r){toggleWithHierarchy(cuSelRank,r,getRankImplied);renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');}
 // 宿縁の状態
-// 宿縁は2スロット: cnShukuens[0], cnShukuens[1]
-let cnShukuens=[{enabled:false,members:[]},{enabled:false,members:[]}];
-let cuShukuens=[{enabled:false,members:[]},{enabled:false,members:[]}];
-let shukuenAddTarget=null; // {prefix:'cn'|'cu', idx:0|1}
+let cnShukuenEnabled=false, cnShukuenMembers=[];
+let cuShukuenEnabled=false, cuShukuenMembers=[];
+let shukuenAddTarget=null; // 'cn' or 'cu'
 
-function setCnShukuen(idx,enabled){
-  cnShukuens[idx].enabled=enabled;
-  document.getElementById(`cn-shukuen-off-${idx}`).className=enabled?'':'on';
-  document.getElementById(`cn-shukuen-on-${idx}`).className=enabled?'on':'';
-  document.getElementById(`cn-shukuen-detail-${idx}`).style.display=enabled?'block':'none';
-  renderShukuenList('cn',idx,cnShukuens[idx].members);
+function setCnShukuen(enabled){
+  cnShukuenEnabled=enabled;
+  document.getElementById('cn-shukuen-off').className=enabled?'':'on';
+  document.getElementById('cn-shukuen-on').className=enabled?'on':'';
+  document.getElementById('cn-shukuen-detail').style.display=enabled?'block':'none';
+  renderShukuenList('cn',cnShukuenMembers);
 }
-function setCuShukuen(idx,enabled){
-  cuShukuens[idx].enabled=enabled;
-  document.getElementById(`cu-shukuen-off-${idx}`).className=enabled?'':'on';
-  document.getElementById(`cu-shukuen-on-${idx}`).className=enabled?'on':'';
-  document.getElementById(`cu-shukuen-detail-${idx}`).style.display=enabled?'block':'none';
-  renderShukuenList('cu',idx,cuShukuens[idx].members);
+function setCuShukuen(enabled){
+  cuShukuenEnabled=enabled;
+  document.getElementById('cu-shukuen-off').className=enabled?'':'on';
+  document.getElementById('cu-shukuen-on').className=enabled?'on':'';
+  document.getElementById('cu-shukuen-detail').style.display=enabled?'block':'none';
+  renderShukuenList('cu',cuShukuenMembers);
 }
-function renderShukuenList(prefix,idx,members){
-  const el=document.getElementById(`${prefix}-shukuen-list-${idx}`);if(!el)return;
+function renderShukuenList(prefix, members){
+  const el=document.getElementById(prefix+'-shukuen-list');if(!el)return;
   if(!members.length){el.innerHTML='<div style="font-size:11px;color:var(--t3);padding:4px 0">キャラが追加されていません</div>';return;}
-  el.innerHTML=members.map((name,i)=>{
-    const isDummy=name==='?';
-    return`<div class="shukuen-char-row">
-      ${isDummy
-        ?`<span style="font-size:12px;flex:1;color:var(--t2);cursor:pointer;text-decoration:underline" onclick="openShukuenChangeModal('${prefix}',${idx},${i})">？（未確定）▸ 変更</span>`
-        :`<span style="font-size:12px;flex:1">${name}</span>`
-      }
-      <button class="shukuen-remove-btn" onclick="removeShukuenMember('${prefix}',${idx},${i})">✕</button>
-    </div>`;
-  }).join('');
+  el.innerHTML=members.map((name,i)=>`
+    <div class="shukuen-char-row">
+      <span style="font-size:12px;flex:1">${name}</span>
+      <button class="shukuen-remove-btn" onclick="removeShukuenMember('${prefix}',${i})">✕</button>
+    </div>`).join('');
 }
-function removeShukuenMember(prefix,idx,i){
-  const arr=prefix==='cn'?cnShukuens:cuShukuens;
-  arr[idx].members.splice(i,1);
-  renderShukuenList(prefix,idx,arr[idx].members);
+function removeShukuenMember(prefix,idx){
+  if(prefix==='cn') cnShukuenMembers.splice(idx,1);
+  else cuShukuenMembers.splice(idx,1);
+  renderShukuenList(prefix, prefix==='cn'?cnShukuenMembers:cuShukuenMembers);
 }
-function openShukuenAddModal(prefix,idx){
-  shukuenAddTarget={prefix,idx,changeIdx:null};
-  const arr=prefix==='cn'?cnShukuens:cuShukuens;
-  // 重複禁止はスロット内のみ（他スロットは除外しない）
-  const usedInSlot=arr[idx].members.filter(n=>n!=='?');
-  const available=S.chars.filter(c=>!usedInSlot.includes(c.name));
+function openShukuenAddModal(prefix){
+  shukuenAddTarget=prefix;
+  const current=prefix==='cn'?cnShukuenMembers:cuShukuenMembers;
+  const available=S.chars.filter(c=>!current.includes(c.name));
   openModal('shukuen-add',`<h3>宿縁キャラを追加</h3>
-    <div class="field">
-      <input type="text" id="shukuen-search" placeholder="名前・読み仮名で絞り込み" style="width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;margin-bottom:8px" oninput="filterShukuenSel()">
-      <select id="shukuen-char-sel" size="6" style="width:100%;font-size:14px;border:1px solid var(--bm);border-radius:8px;padding:4px">
+    <div class="field"><label>キャラを選択</label>
+      <select id="shukuen-char-sel">
         <option value="">-- 選択 --</option>
-        ${sortByYomi(available).map(c=>`<option value="${c.name}" data-yomi="${c.yomi||''}">${c.name}</option>`).join('')}
+        ${sortByYomi(available).map(c=>`<option value="${c.name}">${c.name}</option>`).join('')}
       </select>
     </div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
-      <button class="btn" onclick="addShukuenDummy()">？を追加</button>
       <button class="btn pri" onclick="addShukuenMember()">追加</button>
     </div>`);
-}
-function openShukuenChangeModal(prefix,idx,changeIdx){
-  shukuenAddTarget={prefix,idx,changeIdx};
-  const arr=prefix==='cn'?cnShukuens:cuShukuens;
-  const usedInSlot=arr[idx].members.filter((n,i)=>n!=='?'&&i!==changeIdx);
-  const available=S.chars.filter(c=>!usedInSlot.includes(c.name));
-  openModal('shukuen-add',`<h3>宿縁キャラを変更</h3>
-    <div class="field">
-      <input type="text" id="shukuen-search" placeholder="名前・読み仮名で絞り込み" style="width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;margin-bottom:8px" oninput="filterShukuenSel()">
-      <select id="shukuen-char-sel" size="6" style="width:100%;font-size:14px;border:1px solid var(--bm);border-radius:8px;padding:4px">
-        <option value="">-- 選択 --</option>
-        ${sortByYomi(available).map(c=>`<option value="${c.name}" data-yomi="${c.yomi||''}">${c.name}</option>`).join('')}
-      </select>
-    </div>
-    <div class="modal-acts">
-      <button class="btn" onclick="closeModal()">キャンセル</button>
-      <button class="btn pri" onclick="addShukuenMember()">変更</button>
-    </div>`);
-}
-function filterShukuenSel(){
-  const q=(document.getElementById('shukuen-search')?.value||'').trim();
-  const sel=document.getElementById('shukuen-char-sel');if(!sel)return;
-  Array.from(sel.options).forEach(opt=>{
-    if(!opt.value){opt.style.display='';return;}
-    const name=opt.value;const yomi=opt.dataset.yomi||'';
-    opt.style.display=(!q||name.includes(q)||yomi.includes(q))?'':'none';
-  });
-}
-function addShukuenDummy(){
-  const {prefix,idx}=shukuenAddTarget;
-  const arr=prefix==='cn'?cnShukuens:cuShukuens;
-  arr[idx].members.push('?');
-  renderShukuenList(prefix,idx,arr[idx].members);
-  closeModal();
 }
 function addShukuenMember(){
   const name=document.getElementById('shukuen-char-sel').value;
   if(!name)return;
-  const {prefix,idx,changeIdx}=shukuenAddTarget;
-  const arr=prefix==='cn'?cnShukuens:cuShukuens;
-  if(changeIdx!=null){
-    arr[idx].members[changeIdx]=name; // ？を実キャラに置き換え
+  if(shukuenAddTarget==='cn'){
+    if(!cnShukuenMembers.includes(name))cnShukuenMembers.push(name);
+    renderShukuenList('cn',cnShukuenMembers);
   } else {
-    if(!arr[idx].members.includes(name))arr[idx].members.push(name);
+    if(!cuShukuenMembers.includes(name))cuShukuenMembers.push(name);
+    renderShukuenList('cu',cuShukuenMembers);
   }
-  renderShukuenList(prefix,idx,arr[idx].members);
   closeModal();
 }
 
@@ -1180,69 +1033,34 @@ function shukuenLevel(memberChar){
   return 'soji';
 }
 
-/* 宿縁バッジHTML: 2スロット対応、2段表示 */
+/* メンバーの宿縁バッジHTML生成 */
 function shukuenBadgeHtml(member, charDef){
-  const shukuens=charDef.shukuens||[];
-  const slots=shukuens.length?shukuens:[charDef.shukuen||{enabled:false,members:[]}];
-  const enabledSlots=slots.filter(x=>x&&x.enabled);
-  const badges=[];
-  slots.forEach((sh,si)=>{
-    if(!sh||!sh.enabled||!sh.members||!sh.members.length) return;
-    let g=0,o=0,s=0;
-    sh.members.forEach(sName=>{
-      if(sName==='?') return;
-      const mc=member.chars.find(c=>c.name===sName);
-      const lv=shukuenLevel(mc);
-      if(lv==='gikkyoku') g++;
-      else if(lv==='omote6') o++;
-      else if(lv==='soji') s++;
-    });
-    const total=sh.members.filter(n=>n!=='?').length;
-    const label=enabledSlots.length>1
-      ?`<span style="font-size:10px;color:var(--t2)">宿縁${si+1}</span>`
-      :`<span style="font-size:10px;color:var(--t2)">宿縁</span>`;
-    let pills='';
-    if(g) pills+=`<span class="sh-pill gikkyoku"><span class="sh-pill-dot"></span>${g}</span>`;
-    if(o) pills+=`<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
-    if(s) pills+=`<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
-    // ポイントが0でも枠は表示（?のみの場合など）
-    badges.push(`<div class="sh-badge-wrap">${label}${pills}<span style="font-size:10px;color:var(--t3)">/${total}</span></div>`);
+  if(!charDef||!charDef.shukuen||!charDef.shukuen.enabled) return '';
+  const sMembers=charDef.shukuen.members||[];
+  if(!sMembers.length) return '';
+  let g=0,o=0,s=0;
+  sMembers.forEach(sName=>{
+    const mc=member.chars.find(c=>c.name===sName);
+    const lv=shukuenLevel(mc);
+    if(lv==='gikkyoku') g++;
+    else if(lv==='omote6') o++;
+    else if(lv==='soji') s++;
   });
-  if(!badges.length) return '';
-  // 2スロットある場合は縦2段
-  return badges.length>1
-    ?`<div style="display:flex;flex-direction:column;gap:2px">${badges.join('')}</div>`
-    :badges[0];
-}
-
-/* 宿縁ポイント計算: 紫×3 + 緑×2 + 黄×1 */
-function shukuenPt(member, charDef){
-  if(!charDef) return 0;
-  const shukuens=charDef.shukuens||[];
-  const slots=shukuens.length?shukuens:[charDef.shukuen||{enabled:false,members:[]}];
-  let total=0;
-  slots.forEach(sh=>{
-    if(!sh||!sh.enabled||!sh.members) return;
-    sh.members.forEach(sName=>{
-      if(sName==='?') return; // ダミーはポイント計算対象外
-      const mc=member.chars.find(c=>c.name===sName);
-      const lv=shukuenLevel(mc);
-      if(lv==='gikkyoku') total+=3;
-      else if(lv==='omote6') total+=2;
-      else if(lv==='soji') total+=1;
-    });
-  });
-  return total;
+  if(!g&&!o&&!s) return '';
+  const total=sMembers.length;
+  let pills='';
+  if(g) pills+=`<span class="sh-pill gikkyoku"><span class="sh-pill-dot"></span>${g}</span>`;
+  if(o) pills+=`<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
+  if(s) pills+=`<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
+  return `<div class="sh-badge-wrap"><span style="font-size:10px;color:var(--t2)">宿縁</span>${pills}<span style="font-size:10px;color:var(--t3)">/${total}</span></div>`;
 }
 
 function initCharNewForm(){
-  cnSelRar=[];cnSelRank=[];
-  cnShukuens=[{enabled:false,members:[]},{enabled:false,members:[]}];
+  cnSelRar=[];cnSelRank=[];cnShukuenEnabled=false;cnShukuenMembers=[];
   const el=document.getElementById('cn-name');if(el)el.value='';
-  const ey=document.getElementById('cn-yomi');if(ey)ey.value='';
   renderCharMgmtRarBtns('cn-rar-btns',cnSelRar,'toggleCnRar');
   renderCharMgmtRankBtns('cn-rank-btns',cnSelRank,'toggleCnRank');
-  setCnShukuen(0,false);setCnShukuen(1,false);
+  setCnShukuen(false);
 }
 async function addChar(){
   const name=document.getElementById('cn-name').value;
@@ -1258,7 +1076,7 @@ async function addChar(){
         yomi,
         rars:cnSelRar,
         ranks:cnSelRank,
-        shukuens:cnShukuens
+        shukuen:{enabled:cnShukuenEnabled,members:cnShukuenMembers}
       })
     });
 
@@ -1286,15 +1104,10 @@ function loadCharForUpdate(){
   cuSelRar=[...cd.rars];cuSelRank=[...cd.ranks];
   renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');
   renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');
-  // 宿縁ロード（旧形式 {enabled,members} との互換）
-  const raw=cd.shukuens||[];
-  cuShukuens=[0,1].map(i=>{
-    const s=raw[i]||cd.shukuen||{enabled:false,members:[]};
-    return {enabled:!!s.enabled, members:[...(s.members||[])]};
-  });
-  // 旧データで shukuen が1件しかない場合、idx=1 はリセット
-  if(!raw.length&&cd.shukuen){cuShukuens[1]={enabled:false,members:[]};}
-  setCuShukuen(0,cuShukuens[0].enabled);setCuShukuen(1,cuShukuens[1].enabled);
+  // 宿縁ロード
+  const sh=cd.shukuen||{enabled:false,members:[]};
+  cuShukuenMembers=[...(sh.members||[])];
+  setCuShukuen(!!sh.enabled);
   document.getElementById('cu-detail').style.display='block';
 }
 async function updateChar(){
@@ -1312,7 +1125,7 @@ async function updateChar(){
         yomi,
         rars:cuSelRar,
         ranks:cuSelRank,
-        shukuens:cuShukuens
+        shukuen:{enabled:cuShukuenEnabled,members:cuShukuenMembers}
       })
     });
 
