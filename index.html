@@ -589,23 +589,25 @@ function renderMembers(){
   </div>`;}).join('');
 }
 function selectMember(id){
-  const m = S.members.find(x => x.id === id); if(!m) return;
-  E = {memberId: id, charName: null, pendingRar: null, pendingRanks: []};
-  document.getElementById('editing-name').textContent = m.name + ' の育成キャラ';
-  document.getElementById('v-members').style.display = 'none';
-  document.getElementById('v-chars').style.display = 'block';
-
-  // ↓ この2行を追加
-  const cs = document.getElementById('cc-search');
-  if(cs) cs.value = '';
-  _showUntrainedOnly = false;
-  const btn = document.getElementById('cc-untrained-btn');
-  if(btn) btn.classList.remove('on');
-
+  const m=S.members.find(x=>x.id===id);if(!m)return;
+  E={memberId:id,charName:null,pendingRar:null,pendingRanks:[]};
+  document.getElementById('editing-name').textContent=m.name+' の育成キャラ';
+  document.getElementById('v-members').style.display='none';
+  document.getElementById('v-chars').style.display='block';
+  // 検索バーと未入力フィルターをリセットしてからグリッドを描画
+  const cs=document.getElementById('cc-search');if(cs)cs.value='';
+  _showUntrainedOnly=false;
+  const ub=document.getElementById('cc-untrained-btn');if(ub)ub.classList.remove('on');
   renderCharGridEdit(m);
-  document.getElementById('lv-panel').style.display = 'none';
+  document.getElementById('lv-panel').style.display='none';
 }
-
+let _showUntrainedOnly = false;
+function toggleUntrainedFilter(){
+  _showUntrainedOnly = !_showUntrainedOnly;
+  const btn = document.getElementById('cc-untrained-btn');
+  if(btn) btn.classList.toggle('on', _showUntrainedOnly);
+  filterCharGrid();
+}
 function renderCharGridEdit(m){
   document.getElementById('char-grid-edit').innerHTML=sortByYomi(S.chars).map(cd=>{
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
@@ -744,7 +746,8 @@ function toggleFil(type,val){
 function renderSearch(alreadyNames){
   const q=(document.getElementById('s-input').value||'').trim();
   const el=document.getElementById('search-results');
-  const matched=!q?S.chars:S.chars.filter(cd=>cd.name.includes(q)||(cd.yomi||'').includes(q));
+  if(!q){el.innerHTML='<div class="empty">キャラ名を入力してください</div>';return;}
+  const matched=S.chars.filter(cd=>cd.name.includes(q)||(cd.yomi||'').includes(q));
   if(!matched.length){el.innerHTML='<div class="empty">該当キャラが見つかりません</div>';return;}
   let rows=[];
   matched.forEach(cd=>{S.members.forEach((m,mi)=>{
