@@ -194,8 +194,6 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 /* キーボード表示時にbodyを固定 */
 body{overscroll-behavior:none}
 /* ===== ホバースタイルをポインターデバイス限定に（タッチ後に残らないよう） ===== */
-/* @media (hover:none) だけでは不十分なため、JS でbody.touch-deviceクラスを付与して制御 */
-/* ① タッチ非対応デバイス（@media） */
 @media (hover: none) {
   /* タッチデバイスではhover・focus・activeスタイルをすべて無効化 */
   .tab:hover:not(.active), .tab:active:not(.active),
@@ -221,30 +219,6 @@ body{overscroll-behavior:none}
 
   *:focus, *:focus-visible { outline: none !important; box-shadow: none !important; border-color: inherit !important; }
 }
-/* ② JS で付与される .touch-device クラスによる制御（@media と同内容） */
-body.touch-device .tab:hover:not(.active), body.touch-device .tab:active:not(.active),
-body.touch-device .btn:hover, body.touch-device .btn.pri:hover, body.touch-device .btn:active,
-body.touch-device .back-btn:hover, body.touch-device .back-btn:active,
-body.touch-device .m-card:hover, body.touch-device .m-card:active,
-body.touch-device .cc:hover, body.touch-device .cc:active,
-body.touch-device .p-btn:hover, body.touch-device .p-btn:active,
-body.touch-device .f-btn:hover, body.touch-device .f-btn:active,
-body.touch-device .name-cell:hover, body.touch-device .name-cell:active,
-body.touch-device .pair-cell-inner:hover, body.touch-device .pair-cell-inner:active,
-body.touch-device .del-btn:hover, body.touch-device .del-btn:active,
-body.touch-device .add-row-btn:hover, body.touch-device .add-row-btn:active,
-body.touch-device .sub-tab:hover, body.touch-device .sub-tab:active,
-body.touch-device .logout-btn:hover, body.touch-device .logout-btn:active,
-body.touch-device .shukuen-add-btn:hover, body.touch-device .shukuen-add-btn:active,
-body.touch-device .shukuen-remove-btn:hover, body.touch-device .shukuen-remove-btn:active,
-body.touch-device .add-to-table-btn:hover:not(:disabled), body.touch-device .add-to-table-btn:active,
-body.touch-device .login-box button:hover, body.touch-device .login-box button:active,
-body.touch-device .shukuen-toggle button:hover, body.touch-device .shukuen-toggle button:active,
-body.touch-device .c-card:hover, body.touch-device .c-card:active
-{ background:revert !important; opacity:revert !important; color:revert !important; border-color:revert !important; }
-
-body.touch-device *:focus, body.touch-device *:focus-visible
-{ outline: none !important; box-shadow: none !important; border-color: inherit !important; }
 </style>
 
 <!-- ローディングオーバーレイ -->
@@ -315,12 +289,12 @@ body.touch-device *:focus, body.touch-device *:focus-visible
         <div class="pick-btns" id="rank-btns"></div>
         <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div>
       </div>
+      <div class="save-bar">
+        <button class="btn" onclick="goBack()">キャンセル</button>
+        <button class="btn pri" onclick="saveTraining()">Save</button>
+      </div>
     </div>
     <div class="grid-chars" id="char-grid-edit"></div>
-    <div class="save-bar">
-      <button class="btn" onclick="goBack()">キャンセル</button>
-      <button class="btn pri" onclick="saveTraining()">Save</button>
-    </div>
   </div>
 </div>
 
