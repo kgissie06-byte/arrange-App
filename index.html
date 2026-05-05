@@ -277,7 +277,6 @@ body{overscroll-behavior:none}
       <input type="text" class="cc-search-input" id="cc-search" placeholder="キャラ名・読み仮名で絞り込み" oninput="filterCharGrid()">
       <button class="f-btn" id="cc-untrained-btn" onclick="toggleUntrainedFilter()">未入力</button>
     </div>
-    <div class="grid-chars" id="char-grid-edit"></div>
     <div id="lv-panel" style="display:none">
       <div class="panel">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
@@ -291,6 +290,7 @@ body{overscroll-behavior:none}
         <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div>
       </div>
     </div>
+    <div class="grid-chars" id="char-grid-edit"></div>
     <div class="save-bar">
       <button class="btn" onclick="goBack()">キャンセル</button>
       <button class="btn pri" onclick="saveTraining()">Save</button>
