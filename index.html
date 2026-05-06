@@ -705,7 +705,11 @@ function renderLvPanel(){
   const aR=cd?cd.rars:ALL_RARITIES,aK=cd?cd.ranks:ALL_RANKS;
   document.getElementById('rar-btns').innerHTML=aR.map(r=>{const s=RAR_S[r]||{};const on=E.pendingRar===r;
     return`<button class="p-btn" onclick="pickRar('${r}')" style="${on?`background:${s.bg};color:${s.c};border-color:${s.bd};font-weight:500`:''}">${r}</button>`;}).join('');
-  document.getElementById('rank-btns').innerHTML=aK.map(r=>{const on=E.pendingRanks.includes(r);const top=TOP_RANKS.includes(r);
+  // SR以下選択時に非表示にする上位ランクの判定
+  const hideHighRanks = cd && isUrWithLowerRar(cd) && E.pendingRar && SR_OR_BELOW.includes(E.pendingRar);
+  document.getElementById('rank-btns').innerHTML=aK.map(r=>{
+    if(hideHighRanks && HIGH_RANKS_BLOCKED.includes(r)) return '';
+    const on=E.pendingRanks.includes(r);const top=TOP_RANKS.includes(r);
     return`<button class="p-btn" onclick="pickRank('${r}')" style="${on?`background:${top?'#EEEDFE':'#EDE5D8'};color:${top?'#3C3489':'#634B38'};border-color:${top?'#AFA9EC':'#B4A494'};font-weight:500`:''}">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
   document.getElementById('lv-panel').style.display='block';
   const clearBtn=document.getElementById('clear-training-btn');
@@ -745,7 +749,29 @@ function selectCharEdit(cn){
   }
   renderLvPanel();
 }
-function pickRar(r){E.pendingRar=r;renderLvPanel();}
+// SR以下のレアリティ（UR持ちキャラで制限対象）
+const SR_OR_BELOW=['SR','R','N'];
+// SR以下選択時に非表示にする上位ランク
+const HIGH_RANKS_BLOCKED=['全技極','裏技極','技極','表6','裏6'];
+
+function pickRar(r){
+  E.pendingRar=r;
+  // 「URあり かつ SR以下も存在するキャラ」でSR以下を選択した場合、上位ランクを強制解除
+  const cd=S.chars.find(x=>x.name===E.charName);
+  if(cd && isUrWithLowerRar(cd) && SR_OR_BELOW.includes(r)){
+    HIGH_RANKS_BLOCKED.forEach(rank=>{
+      const i=E.pendingRanks.indexOf(rank);
+      if(i>=0) E.pendingRanks.splice(i,1);
+    });
+  }
+  renderLvPanel();
+}
+
+// URを持ち、かつSR以下のレアリティも持つキャラか判定
+function isUrWithLowerRar(cd){
+  if(!cd||!cd.rars) return false;
+  return cd.rars.includes('UR') && cd.rars.some(r=>SR_OR_BELOW.includes(r));
+}
 function pickRank(r){
   const cd=S.chars.find(x=>x.name===E.charName);
   const allowed=cd?cd.ranks:ALL_RANKS;
