@@ -642,6 +642,8 @@ function selectMember(id){
   const ub=document.getElementById('cc-untrained-btn');if(ub)ub.classList.remove('on');
   renderCharGridEdit(m);
   document.getElementById('lv-panel').style.display='none';
+  // 画面切り替え時にスクロール位置をトップに戻す
+  window.scrollTo({top:0,behavior:'instant'});
 }
 let _showUntrainedOnly = false;
 function toggleUntrainedFilter(){
@@ -787,6 +789,8 @@ function goBack(){
   _showUntrainedOnly=false;
   const btn=document.getElementById('cc-untrained-btn');if(btn)btn.classList.remove('on');
   E={memberId:null,charName:null,pendingRar:null,pendingRanks:[]};
+  // 戻る時もスクロール位置をトップに戻す
+  window.scrollTo({top:0,behavior:'instant'});
 }
 
 
