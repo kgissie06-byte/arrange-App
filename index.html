@@ -6,12 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/icons/icon-180.png">
-<link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png">
-<link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-120.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <title>育成管理</title>
 </head>
 <body>
@@ -200,7 +194,6 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 /* キーボード表示時にbodyを固定 */
 body{overscroll-behavior:none}
 /* ===== ホバースタイルをポインターデバイス限定に（タッチ後に残らないよう） ===== */
-/* @media (hover:none) だけでは不十分なため、JS でbody.touch-deviceクラスを付与して制御 */
 @media (hover: none) {
   /* タッチデバイスではhover・focus・activeスタイルをすべて無効化 */
   .tab:hover:not(.active), .tab:active:not(.active),
@@ -222,32 +215,10 @@ body{overscroll-behavior:none}
   .login-box button:hover, .login-box button:active,
   .shukuen-toggle button:hover, .shukuen-toggle button:active,
   .c-card:hover, .c-card:active
-  { background:revert !important; opacity:revert !important; color:revert !important; border-color:inherit !important; }
+  { background:revert !important; opacity:revert !important; color:revert !important; border-color:revert !important; }
 
   *:focus, *:focus-visible { outline: none !important; box-shadow: none !important; border-color: inherit !important; }
 }
-body.touch-device .tab:hover:not(.active), body.touch-device .tab:active:not(.active),
-body.touch-device .btn:hover, body.touch-device .btn.pri:hover, body.touch-device .btn:active,
-body.touch-device .back-btn:hover, body.touch-device .back-btn:active,
-body.touch-device .m-card:hover, body.touch-device .m-card:active,
-body.touch-device .cc:hover, body.touch-device .cc:active,
-body.touch-device .p-btn:hover, body.touch-device .p-btn:active,
-body.touch-device .f-btn:hover, body.touch-device .f-btn:active,
-body.touch-device .name-cell:hover, body.touch-device .name-cell:active,
-body.touch-device .pair-cell-inner:hover, body.touch-device .pair-cell-inner:active,
-body.touch-device .del-btn:hover, body.touch-device .del-btn:active,
-body.touch-device .add-row-btn:hover, body.touch-device .add-row-btn:active,
-body.touch-device .sub-tab:hover, body.touch-device .sub-tab:active,
-body.touch-device .logout-btn:hover, body.touch-device .logout-btn:active,
-body.touch-device .shukuen-add-btn:hover, body.touch-device .shukuen-add-btn:active,
-body.touch-device .shukuen-remove-btn:hover, body.touch-device .shukuen-remove-btn:active,
-body.touch-device .add-to-table-btn:hover:not(:disabled), body.touch-device .add-to-table-btn:active,
-body.touch-device .login-box button:hover, body.touch-device .login-box button:active,
-body.touch-device .shukuen-toggle button:hover, body.touch-device .shukuen-toggle button:active,
-body.touch-device .c-card:hover, body.touch-device .c-card:active
-{ background:revert !important; opacity:revert !important; color:revert !important; border-color:inherit !important; }
-body.touch-device *:focus, body.touch-device *:focus-visible
-{ outline: none !important; box-shadow: none !important; border-color: inherit !important; }
 </style>
 
 <!-- ローディングオーバーレイ -->
@@ -306,6 +277,7 @@ body.touch-device *:focus, body.touch-device *:focus-visible
       <input type="text" class="cc-search-input" id="cc-search" placeholder="キャラ名・読み仮名で絞り込み" oninput="filterCharGrid()">
       <button class="f-btn" id="cc-untrained-btn" onclick="toggleUntrainedFilter()">未入力</button>
     </div>
+    <div class="grid-chars" id="char-grid-edit"></div>
     <div id="lv-panel" style="display:none">
       <div class="panel">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
@@ -318,12 +290,11 @@ body.touch-device *:focus, body.touch-device *:focus-visible
         <div class="pick-btns" id="rank-btns"></div>
         <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div>
       </div>
-      <div class="save-bar">
-        <button class="btn" onclick="closeLvPanel()">キャンセル</button>
-        <button class="btn pri" onclick="saveTraining()">Save</button>
-      </div>
     </div>
-    <div class="grid-chars" id="char-grid-edit"></div>
+    <div class="save-bar">
+      <button class="btn" onclick="goBack()">キャンセル</button>
+      <button class="btn pri" onclick="saveTraining()">Save</button>
+    </div>
   </div>
 </div>
 
@@ -466,15 +437,6 @@ body.touch-device *:focus, body.touch-device *:focus-visible
 </div>
 
 <script>
-// タッチデバイス検出：最初のtouchstartでbodyにクラスを付与しhoverを無効化
-(function(){
-  function onFirstTouch(){
-    document.body.classList.add('touch-device');
-    document.removeEventListener('touchstart', onFirstTouch);
-  }
-  document.addEventListener('touchstart', onFirstTouch, { passive: true });
-})();
-
 // タッチ操作後にフォーカス・アクティブ状態を即座に解除
 document.addEventListener('touchend', () => {
   setTimeout(() => {
@@ -659,12 +621,6 @@ function renderCharGridEdit(m){
 }
 function filterCharGrid(){
   const q=(document.getElementById('cc-search')?.value||'').trim();
-  // 検索入力中はパネルを閉じて選択解除
-  if(q){
-    E.charName=null;E.pendingRar=null;E.pendingRanks=[];
-    document.querySelectorAll('#char-grid-edit .cc').forEach(el=>el.classList.remove('sel'));
-    document.getElementById('lv-panel').style.display='none';
-  }
   document.querySelectorAll('#char-grid-edit .cc').forEach(el=>{
     const name=el.dataset.name||'';
     const yomi=el.dataset.yomi||'';
@@ -674,21 +630,13 @@ function filterCharGrid(){
     el.style.display=(textOk&&trainedOk)?'':'none';
   });
 }
-function closeLvPanel(){
-  E.charName=null;E.pendingRar=null;E.pendingRanks=[];
-  document.querySelectorAll('#char-grid-edit .cc').forEach(el=>el.classList.remove('sel'));
-  document.getElementById('lv-panel').style.display='none';
-}
 function selectCharEdit(cn){
-  // 同じキャラを再クリック → パネルを閉じて選択解除
-  if(E.charName===cn){
-    closeLvPanel();
-    return;
-  }
   const m=S.members.find(x=>x.id===E.memberId);
   const c=m&&m.chars.find(x=>x.name===cn);
   const cd=S.chars.find(x=>x.name===cn);
-  E.charName=cn;E.pendingRar=c?c.rar:null;E.pendingRanks=c&&c.ranks?[...c.ranks]:[];
+  if(E.charName!==cn){
+    E.charName=cn;E.pendingRar=c?c.rar:null;E.pendingRanks=c&&c.ranks?[...c.ranks]:[];
+  }
   // 選択状態をDOMに直接反映（再生成しない）
   document.querySelectorAll('#char-grid-edit .cc').forEach(el=>{
     el.classList.toggle('sel', el.dataset.name===cn);
