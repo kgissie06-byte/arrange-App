@@ -222,7 +222,7 @@ body{overscroll-behavior:none}
   .login-box button:hover, .login-box button:active,
   .shukuen-toggle button:hover, .shukuen-toggle button:active,
   .c-card:hover, .c-card:active
-  { background:revert !important; opacity:revert !important; color:revert !important; border-color:revert !important; }
+  { background:revert !important; opacity:revert !important; color:revert !important; border-color:inherit !important; }
 
   *:focus, *:focus-visible { outline: none !important; box-shadow: none !important; border-color: inherit !important; }
 }
@@ -245,11 +245,9 @@ body.touch-device .add-to-table-btn:hover:not(:disabled), body.touch-device .add
 body.touch-device .login-box button:hover, body.touch-device .login-box button:active,
 body.touch-device .shukuen-toggle button:hover, body.touch-device .shukuen-toggle button:active,
 body.touch-device .c-card:hover, body.touch-device .c-card:active
-{ background:revert !important; opacity:revert !important; color:revert !important; border-color:revert !important; }
+{ background:revert !important; opacity:revert !important; color:revert !important; border-color:inherit !important; }
 body.touch-device *:focus, body.touch-device *:focus-visible
 { outline: none !important; box-shadow: none !important; border-color: inherit !important; }
-body.touch-device *, body.touch-device *::before, body.touch-device *::after
-{ cursor: none !important; caret-color: auto; }
 </style>
 
 <!-- ローディングオーバーレイ -->
