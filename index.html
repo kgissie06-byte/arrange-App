@@ -66,6 +66,7 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 /* ① 育成入力 */
 .grid-members{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:9px}
 .grid-chars{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+#char-grid-edit #lv-panel{grid-column:1/-1;margin-bottom:0}
 .m-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 8px;cursor:pointer;text-align:center;transition:border-color .15s,background .15s}
 .m-card:hover{border-color:var(--bm);background:var(--acc-lt)}
 .avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:13px;margin:0 auto 6px}
@@ -310,6 +311,7 @@ body.touch-device *:focus-visible {
       <input type="text" class="cc-search-input" id="cc-search" placeholder="キャラ名・読み仮名で絞り込み" oninput="filterCharGrid()">
       <button class="f-btn" id="cc-untrained-btn" onclick="toggleUntrainedFilter()">未入力</button>
     </div>
+    <div class="grid-chars" id="char-grid-edit" style="margin-top:10px"></div>
     <div id="lv-panel" style="display:none">
       <div class="panel">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
@@ -327,7 +329,6 @@ body.touch-device *:focus-visible {
         <button class="btn pri" onclick="saveTraining()">Save</button>
       </div>
     </div>
-    <div class="grid-chars" id="char-grid-edit" style="margin-top:10px"></div>
   </div>
 </div>
 
@@ -653,7 +654,11 @@ function toggleUntrainedFilter(){
   filterCharGrid();
 }
 function renderCharGridEdit(m){
-  document.getElementById('char-grid-edit').innerHTML=sortByYomi(S.chars).map(cd=>{
+  // grid内にpanelが入っていたら退避（innerHTML書き換えで消えるのを防ぐ）
+  const _grid=document.getElementById('char-grid-edit');
+  const _panel=document.getElementById('lv-panel');
+  if(_panel.parentNode===_grid){ _grid.parentNode.insertBefore(_panel,_grid.nextSibling); }
+  _grid.innerHTML=sortByYomi(S.chars).map(cd=>{
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
     return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}" data-trained="${c?'1':'0'}">
       <div class="cc-name" title="${cd.name}">${cd.name}</div>
@@ -683,7 +688,13 @@ function filterCharGrid(){
 function closeLvPanel(){
   E.charName=null;E.pendingRar=null;E.pendingRanks=[];
   document.querySelectorAll('#char-grid-edit .cc').forEach(el=>el.classList.remove('sel'));
-  document.getElementById('lv-panel').style.display='none';
+  // panelをgrid外（gridの直後）に戻して非表示
+  const grid=document.getElementById('char-grid-edit');
+  const panel=document.getElementById('lv-panel');
+  panel.style.display='none';
+  if(panel.parentNode===grid){
+    grid.parentNode.insertBefore(panel,grid.nextSibling);
+  }
 }
 function renderLvPanel(){
   const cn=E.charName;
@@ -714,6 +725,24 @@ function selectCharEdit(cn){
   document.querySelectorAll('#char-grid-edit .cc').forEach(el=>{
     el.classList.toggle('sel', el.dataset.name===cn);
   });
+  // クリックした.ccの直前行の先頭にlv-panelを挿入する
+  const grid=document.getElementById('char-grid-edit');
+  const panel=document.getElementById('lv-panel');
+  const clickedEl=grid.querySelector(`.cc[data-name="${CSS.escape(cn)}"]`);
+  if(clickedEl){
+    // 表示中の.ccだけ収集
+    const items=[...grid.querySelectorAll('.cc')].filter(el=>el.style.display!=='none');
+    // クリックされた要素と同じ行の最初の要素をoffsetTopで判定
+    const clickedTop=clickedEl.offsetTop;
+    const firstInRow=items.find(el=>el.offsetTop===clickedTop)||clickedEl;
+    // panelをgrid内のその行先頭要素の直前に挿入（grid-cols: 100%幅になるようstyle付与）
+    panel.style.width='100%';
+    panel.style.marginBottom='8px';
+    grid.insertBefore(panel,firstInRow);
+    panel.style.display='block';
+  } else {
+    panel.style.display='block';
+  }
   renderLvPanel();
 }
 function pickRar(r){E.pendingRar=r;renderLvPanel();}
