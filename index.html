@@ -213,11 +213,10 @@ body.touch-device .m-card:hover,
 body.touch-device .m-card:active,
 body.touch-device .cc:hover,
 body.touch-device .cc:active,
-body.touch-device .p-btn:hover,
-body.touch-device .p-btn:focus,
-body.touch-device .p-btn:active,
-body.touch-device .f-btn:hover,
-body.touch-device .f-btn:active,
+body.touch-device .p-btn:not([style*="background"]):hover,
+body.touch-device .p-btn:not([style*="background"]):active,
+body.touch-device .f-btn:not(.on):hover,
+body.touch-device .f-btn:not(.on):active,
 body.touch-device .name-cell:hover,
 body.touch-device .name-cell:active,
 body.touch-device .pair-cell-inner:hover,
@@ -317,15 +316,13 @@ body.touch-device *:focus-visible {
       <div class="panel">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
           <div style="font-size:12px;font-weight:500" id="panel-title"></div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <button id="assist-toggle-btn" onclick="toggleAssist()" style="padding:2px 9px;font-size:10px;border-radius:20px;border:1px solid var(--bm);background:var(--acc);color:#FFF8F0;cursor:pointer;font-family:inherit;transition:all .15s">入力補助 ON</button>
-            <button id="clear-training-btn" class="btn danger" style="display:none;font-size:11px;padding:3px 10px" onclick="clearTraining()">未入力に戻す</button>
-          </div>
+          <button id="clear-training-btn" class="btn danger" style="display:none;font-size:11px;padding:3px 10px" onclick="clearTraining()">未入力に戻す</button>
         </div>
         <div class="pick-label">レアリティ</div>
         <div class="pick-btns" id="rar-btns"></div>
-        <div style="margin-bottom:4px">
-          <div class="pick-label">ランク</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div class="pick-label" style="margin-bottom:0">ランク</div>
+          <button id="assist-toggle-btn" onclick="toggleAssist()" style="padding:2px 9px;font-size:10px;border-radius:20px;border:1px solid var(--bm);background:var(--acc);color:#FFF8F0;cursor:pointer;font-family:inherit;transition:all .15s">入力補助 ON</button>
         </div>
         <div class="pick-btns" id="rank-btns"></div>
         <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div>
@@ -719,7 +716,13 @@ function renderLvPanel(){
     return`<button class="p-btn" onclick="pickRank('${r}')" style="${on?`background:${top?'#EEEDFE':'#EDE5D8'};color:${top?'#3C3489':'#634B38'};border-color:${top?'#AFA9EC':'#B4A494'};font-weight:500`:''}">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
   document.getElementById('lv-panel').style.display='block';
   // 入力補助ボタンの表示を同期
-  syncAssistBtn();
+  const assistBtn = document.getElementById('assist-toggle-btn');
+  if(assistBtn){
+    assistBtn.textContent = '入力補助 ' + (_assistMode ? 'ON' : 'OFF');
+    assistBtn.style.background = _assistMode ? 'var(--acc)' : 'var(--bg)';
+    assistBtn.style.color = _assistMode ? '#FFF8F0' : 'var(--t2)';
+    assistBtn.style.borderColor = _assistMode ? 'var(--acc)' : 'var(--bm)';
+  }
   const clearBtn=document.getElementById('clear-training-btn');
   if(clearBtn) clearBtn.style.display=c?'':'none';
   document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
@@ -782,7 +785,8 @@ function isUrWithLowerRar(cd){
 }
 // 入力補助モード（デフォルトON）
 let _assistMode = true;
-function syncAssistBtn(){
+function toggleAssist(){
+  _assistMode = !_assistMode;
   const btn = document.getElementById('assist-toggle-btn');
   if(btn){
     btn.textContent = '入力補助 ' + (_assistMode ? 'ON' : 'OFF');
@@ -790,10 +794,6 @@ function syncAssistBtn(){
     btn.style.color = _assistMode ? '#FFF8F0' : 'var(--t2)';
     btn.style.borderColor = _assistMode ? 'var(--acc)' : 'var(--bm)';
   }
-}
-function toggleAssist(){
-  _assistMode = !_assistMode;
-  syncAssistBtn();
 }
 function pickRank(r){
   const cd=S.chars.find(x=>x.name===E.charName);
@@ -1638,11 +1638,7 @@ function switchTab(tab,el){
   document.getElementById('page-'+tab).classList.add('active');
   if(tab==='search'){renderFilters();renderSearch();}
   if(tab==='reinf')renderReinfTable();
-  if(tab==='chars'){
-    // キャラ管理タブでは入力補助を強制OFFにする
-    if(_assistMode){ _assistMode=false; syncAssistBtn(); }
-    initCharNewForm();renderCharListDisplay();
-  }
+  if(tab==='chars'){initCharNewForm();renderCharListDisplay();}
 }
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
