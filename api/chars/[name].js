@@ -12,7 +12,7 @@ export default async function handler(req, res) {
 
   // キャラ更新（名前変更含む）
   if (req.method === 'PUT') {
-    const { name: newName, yomi, rars, ranks, shukuen, shukuens } = req.body
+    const { name: newName, yomi, rars, ranks, shukuen, shukuens, img } = req.body
 
     const updates = {}
     if (newName) updates.name = newName
@@ -21,6 +21,7 @@ export default async function handler(req, res) {
     if (ranks !== undefined) updates.ranks = ranks
     if (shukuens !== undefined) updates.shukuens = shukuens
     else if (shukuen !== undefined) updates.shukuen = shukuen
+    if (img !== undefined) updates.img = img || null
 
     const { error } = await supabase
       .from('chars')
@@ -42,8 +43,21 @@ export default async function handler(req, res) {
     return res.json({ ok: true })
   }
 
-  // キャラ削除（関連する育成データも削除）
+  // キャラ削除（関連する育成データ・Storage画像も削除）
   if (req.method === 'DELETE') {
+    // 画像URLを取得してStorageからも削除
+    const { data: charData } = await supabase
+      .from('chars')
+      .select('img')
+      .eq('name', name)
+      .single()
+
+    if (charData?.img) {
+      // 公開URLからファイル名だけ取り出す
+      const fileName = charData.img.split('/').pop()
+      await supabase.storage.from('char-images').remove([fileName])
+    }
+
     // 育成データを先に削除
     const { error: trainingErr } = await supabase
       .from('training')

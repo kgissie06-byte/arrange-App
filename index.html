@@ -65,17 +65,27 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 
 /* ① 育成入力 */
 .grid-members{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:9px}
-.grid-chars{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.grid-chars{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
 #char-grid-edit #lv-panel{grid-column:1/-1;margin-bottom:0}
 .m-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 8px;cursor:pointer;text-align:center;transition:border-color .15s,background .15s}
 .m-card:hover{border-color:var(--bm);background:var(--acc-lt)}
 .avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:13px;margin:0 auto 6px}
 .m-name{font-size:12px;font-weight:500}.m-sub{font-size:11px;color:var(--t2);margin-top:2px}
-.cc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px;cursor:pointer;transition:border-color .15s}
+.cc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px;cursor:pointer;transition:border-color .15s;display:flex;align-items:center;gap:9px}
 .cc:not(.sel):hover{border-color:var(--bm);background:var(--acc-lt);}.cc.sel{border:1.5px solid var(--tab);background:#f4f4ff}
 .cc-search-row{display:flex;align-items:center;gap:6px;margin-bottom:8px}
 .cc-search-input{flex:1;padding:6px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--card);color:var(--t);font-family:inherit}
 .cc-name{font-size:12px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cc-img{width:52px;height:52px;border-radius:8px;flex-shrink:0;object-fit:cover;background:var(--bg);border:1px solid var(--border)}
+.cc-img.empty{display:flex;align-items:center;justify-content:center}
+.cc-info{flex:1;min-width:0}
+/* 画像アップロードUI */
+.img-upload-area{border:1.5px dashed var(--bm);border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;background:var(--bg);transition:background .15s;position:relative}
+.img-upload-area:hover{background:var(--acc-lt)}
+.img-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.img-preview-wrap{position:relative;display:inline-block}
+.img-preview{width:80px;height:80px;border-radius:10px;object-fit:cover;border:1px solid var(--border);display:block}
+.img-remove-btn{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--danger);color:#fff;border:none;cursor:pointer;font-size:12px;line-height:20px;text-align:center;padding:0}
 .badges{display:flex;gap:3px;flex-wrap:wrap}
 .bdg{display:inline-block;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:500}
 .panel{margin-top:10px;padding:13px;background:var(--card);border:1px solid var(--border);border-radius:12px}
@@ -213,10 +223,10 @@ body.touch-device .m-card:hover,
 body.touch-device .m-card:active,
 body.touch-device .cc:hover,
 body.touch-device .cc:active,
-body.touch-device .p-btn:not([style*="background"]):hover,
-body.touch-device .p-btn:not([style*="background"]):active,
-body.touch-device .f-btn:not(.on):hover,
-body.touch-device .f-btn:not(.on):active,
+body.touch-device .p-btn:hover,
+body.touch-device .p-btn:active,
+body.touch-device .f-btn:hover,
+body.touch-device .f-btn:active,
 body.touch-device .name-cell:hover,
 body.touch-device .name-cell:active,
 body.touch-device .pair-cell-inner:hover,
@@ -368,6 +378,16 @@ body.touch-device *:focus-visible {
   <div id="char-new-form">
     <div class="field"><label>キャラ名</label><input type="text" id="cn-name" placeholder="例: 昭王"></div>
     <div class="field"><label>読み仮名</label><input type="text" id="cn-yomi" placeholder="例: しょうおう"></div>
+    <div class="field">
+      <label>キャラ画像</label>
+      <div id="cn-img-area" style="margin-top:4px">
+        <div class="img-upload-area">
+          <input type="file" id="cn-img-input" accept="image/*" onchange="handleImgSelect('cn',this)">
+          <div style="font-size:12px;color:var(--t2)">タップして画像を選択</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px">正方形にトリミングして保存されます</div>
+        </div>
+      </div>
+    </div>
     <div class="field"><label>最大レアリティ</label><div class="pick-btns" id="cn-rar-btns" style="margin-top:4px"></div></div>
     <div class="field"><label>最大ランク</label><div class="pick-btns" id="cn-rank-btns" style="margin-top:4px"></div></div>
     <div class="field">
@@ -401,6 +421,16 @@ body.touch-device *:focus-visible {
     <div id="cu-detail" style="display:none">
       <div class="field"><label>キャラ名</label><input type="text" id="cu-name"></div>
       <div class="field"><label>読み仮名</label><input type="text" id="cu-yomi" placeholder="例: しょうおう"></div>
+      <div class="field">
+        <label>キャラ画像</label>
+        <div id="cu-img-area" style="margin-top:4px">
+          <div class="img-upload-area">
+            <input type="file" id="cu-img-input" accept="image/*" onchange="handleImgSelect('cu',this)">
+            <div style="font-size:12px;color:var(--t2)">タップして画像を選択</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:2px">正方形にトリミングして保存されます</div>
+          </div>
+        </div>
+      </div>
       <div class="field"><label>最大レアリティ</label><div class="pick-btns" id="cu-rar-btns" style="margin-top:4px"></div></div>
       <div class="field"><label>最大ランク</label><div class="pick-btns" id="cu-rank-btns" style="margin-top:4px"></div></div>
       <div class="field">
@@ -663,10 +693,16 @@ function renderCharGridEdit(m){
   if(_panel.parentNode===_grid){ _grid.parentNode.insertBefore(_panel,_grid.nextSibling); }
   _grid.innerHTML=sortByYomi(S.chars).map(cd=>{
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
+    const imgHtml=cd.img
+      ?`<img class="cc-img" src="${cd.img}" alt="">`
+      :`<div class="cc-img empty"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--bm)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
     return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}" data-trained="${c?'1':'0'}">
-      <div class="cc-name" title="${cd.name}">${cd.name}</div>
-      <div class="badges">${c?rarBdg(c.rar):''}${c&&c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}
-      ${!c?'<span style="font-size:10px;color:var(--t3)">未育成</span>':''}</div>
+      ${imgHtml}
+      <div class="cc-info">
+        <div class="cc-name" title="${cd.name}">${cd.name}</div>
+        <div class="badges">${c?rarBdg(c.rar):''}${c&&c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}
+        ${!c?'<span style="font-size:10px;color:var(--t3)">未育成</span>':''}</div>
+      </div>
     </div>`;
   }).join('');
   filterCharGrid();
@@ -1391,10 +1427,96 @@ function initCharNewForm(){
   cnShukuens=[{enabled:false,members:[]},{enabled:false,members:[]}];
   const el=document.getElementById('cn-name');if(el)el.value='';
   const ey=document.getElementById('cn-yomi');if(ey)ey.value='';
+  _cnImg = null;
+  resetImgArea('cn');
   renderCharMgmtRarBtns('cn-rar-btns',cnSelRar,'toggleCnRar');
   renderCharMgmtRankBtns('cn-rank-btns',cnSelRank,'toggleCnRank');
   setCnShukuen(0,false);setCnShukuen(1,false);
 }
+// ===== 画像処理 (Supabase Storage方式) =====
+// _cnImg / _cuImg はアップロード済みの公開URL or null or ''(削除)
+let _cnImg = null;
+let _cuImg = null;
+
+function handleImgSelect(prefix, input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    cropSquare(e.target.result, 400, async blob => {
+      // プレビューを先に表示（UX向上）
+      const previewUrl = URL.createObjectURL(blob);
+      renderImgPreview(prefix, previewUrl, true); // uploading=true
+      try {
+        const url = await uploadCharImage(blob);
+        if(prefix==='cn') _cnImg = url;
+        else              _cuImg = url;
+        renderImgPreview(prefix, url, false);
+      } catch(e) {
+        toast('画像のアップロードに失敗しました');
+        resetImgArea(prefix);
+      }
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+// Canvas でセンタークロップ → Blob で返す
+function cropSquare(src, size, cb){
+  const img = new Image();
+  img.onload = () => {
+    const s = Math.min(img.width, img.height);
+    const ox = (img.width  - s) / 2;
+    const oy = (img.height - s) / 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    canvas.getContext('2d').drawImage(img, ox, oy, s, s, 0, 0, size, size);
+    canvas.toBlob(cb, 'image/jpeg', 0.82);
+  };
+  img.src = src;
+}
+
+// Supabase Storage にアップロードして公開URLを返す
+async function uploadCharImage(blob){
+  const fd = new FormData();
+  fd.append('file', blob, 'char.jpg');
+  const res = await fetch('/api/chars/upload-image', { method:'POST', body:fd });
+  if(!res.ok) throw new Error('upload failed');
+  const data = await res.json();
+  return data.url;
+}
+
+function renderImgPreview(prefix, url, uploading=false){
+  const area = document.getElementById(`${prefix}-img-area`);
+  if(!area) return;
+  area.innerHTML = `<div style="display:flex;align-items:flex-start;gap:10px">
+    <div class="img-preview-wrap">
+      <img class="img-preview" src="${url}" alt="" style="${uploading?'opacity:.5':''}">
+      ${uploading?`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--t2)">送信中...</div>`
+        :`<button class="img-remove-btn" onclick="removeImg('${prefix}')" title="削除">✕</button>`}
+    </div>
+    ${!uploading?`<label class="img-upload-area" style="display:inline-block;padding:6px 14px;font-size:11px;color:var(--t2);cursor:pointer;margin-top:0">
+      <input type="file" id="${prefix}-img-input" accept="image/*" onchange="handleImgSelect('${prefix}',this)" style="display:none">
+      画像を変更
+    </label>`:''}
+  </div>`;
+}
+
+function removeImg(prefix){
+  if(prefix==='cn'){ _cnImg = null; resetImgArea('cn'); }
+  else             { _cuImg = '';   resetImgArea('cu'); }
+}
+
+function resetImgArea(prefix){
+  const area = document.getElementById(`${prefix}-img-area`);
+  if(!area) return;
+  area.innerHTML = `<div class="img-upload-area">
+    <input type="file" id="${prefix}-img-input" accept="image/*" onchange="handleImgSelect('${prefix}',this)">
+    <div style="font-size:12px;color:var(--t2)">タップして画像を選択</div>
+    <div style="font-size:10px;color:var(--t3);margin-top:2px">正方形にトリミングして保存されます</div>
+  </div>`;
+}
+
 async function addChar(){
   const name=document.getElementById('cn-name').value;
   const yomi=document.getElementById('cn-yomi').value.trim();
@@ -1409,7 +1531,8 @@ async function addChar(){
         yomi,
         rars:cnSelRar,
         ranks:cnSelRank,
-        shukuens:cnShukuens
+        shukuens:cnShukuens,
+        img: _cnImg || null
       })
     });
 
@@ -1435,6 +1558,10 @@ function loadCharForUpdate(){
   document.getElementById('cu-name').value=cd.name;
   document.getElementById('cu-yomi').value=cd.yomi||'';
   cuSelRar=[...cd.rars];cuSelRank=[...cd.ranks];
+  // 画像プレビュー
+  _cuImg = null; // nullで「変更なし」状態にリセット
+  if(cd.img){ renderImgPreview('cu', cd.img); }
+  else       { resetImgArea('cu'); }
   renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');
   renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');
   // 宿縁ロード（旧形式 {enabled,members} との互換）
@@ -1455,16 +1582,18 @@ async function updateChar(){
 
   showLoading();
   try {
+    const body = {
+      name, yomi,
+      rars:cuSelRar,
+      ranks:cuSelRank,
+      shukuens:cuShukuens,
+    };
+    // _cuImg===null → 変更なし(送らない), _cuImg==='' → 削除, それ以外 → 新画像
+    if(_cuImg !== null) body.img = _cuImg;
     await fetch(`/api/chars/${oldName}`,{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        name,
-        yomi,
-        rars:cuSelRar,
-        ranks:cuSelRank,
-        shukuens:cuShukuens
-      })
+      body:JSON.stringify(body)
     });
 
     await load();
