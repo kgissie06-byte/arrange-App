@@ -285,6 +285,7 @@ body.touch-device *:focus-visible {
 <div class="wrap" id="main-wrap" style="display:none">
 <div class="top-action-bar">
   <span id="role-badge-wrap"></span>
+  <button class="logout-btn" id="reload-btn" onclick="manualReload()">🔄 更新</button>
   <button class="logout-btn admin-only" onclick="openChangePwModal()">🔑 パスワード変更</button>
   <button class="logout-btn" onclick="doLogout()">ログアウト</button>
 </div>
@@ -1783,29 +1784,18 @@ function hideLoading(){document.getElementById('loading-overlay').classList.remo
 
 let currentRole = null; // 'admin' or 'user'
 
-// ===== 定期ポーリング（30秒ごとに全員の画面を更新） =====
-let _pollTimer = null;
-function startPolling(){
-  stopPolling();
-  _pollTimer = setInterval(async ()=>{
-    if(!currentRole) return;
-    try {
-      const res = await fetch('/api/init');
-      if(!res.ok) return;
-      const data = await res.json();
-      if(JSON.stringify(data) !== JSON.stringify(S)){
-        S = data;
-        renderAll();
-        // 再描画後にフォーカスが残らないよう外す
-        if(document.activeElement && document.activeElement !== document.body){
-          document.activeElement.blur();
-        }
-      }
-    } catch(e){ /* ネットワークエラーは無視 */ }
-  }, 30000);
-}
-function stopPolling(){
-  if(_pollTimer){ clearInterval(_pollTimer); _pollTimer = null; }
+// ===== 手動更新 =====
+async function manualReload(){
+  const btn = document.getElementById('reload-btn');
+  if(btn){ btn.disabled = true; btn.textContent = '更新中...'; }
+  try {
+    await load();
+    toast('最新データに更新しました');
+  } catch(e) {
+    toast('更新に失敗しました');
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = '🔄 更新'; }
+  }
 }
 
 // ===== セッション保持 =====
@@ -1822,7 +1812,6 @@ function getSavedRole(){ return sessionStorage.getItem('role'); }
     document.getElementById('main-wrap').style.display = '';
     applyRole();
     load();
-    startPolling();
   }
 })();
 
@@ -1853,7 +1842,6 @@ async function doLogin(){
     document.getElementById('main-wrap').style.display = '';
     applyRole();
     load();
-    startPolling();
   } catch(e) {
     errEl.textContent = 'エラーが発生しました';
   } finally {
@@ -1865,7 +1853,6 @@ async function doLogin(){
 function doLogout(){
   currentRole = null;
   clearSession();
-  stopPolling();
   document.getElementById('login-pw').value = '';
   document.getElementById('login-error').textContent = '';
   document.getElementById('main-wrap').style.display = 'none';
