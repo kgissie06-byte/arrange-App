@@ -644,8 +644,13 @@ function esc(s){return(s||'').replace(/'/g,"\\'");}
 function av(i){return AVC[((i%AVC.length)+AVC.length)%AVC.length];}
 function ini(n){return n.slice(0,2).toUpperCase();}
 function exNumLabel(ex){
-  if(!ex||ex==='未所持') return '0';
-  const m=ex.match(/\d+/);return m?m[0]:'';
+  if(!ex||ex==='未所持') return null;
+  const m=ex.match(/\d+/);return m?m[0]:null;
+}
+function exBdg(ex){
+  const n=exNumLabel(ex);
+  if(!n) return '';
+  return `<span class="ex-bdg">EX${n}</span>`;
 }
 function rarBdg(r){const s=RAR_S[r]||{bg:'#F1EFE8',c:'#5F5E5A',bd:'#B4B2A9'};return`<span class="bdg" style="background:${s.bg};color:${s.c};border:.5px solid ${s.bd}">${r}</span>`;}
 function rankBdg(r){const top=TOP_RANKS.includes(r);return`<span class="bdg" style="background:${top?'#EEEDFE':'#F1EFE8'};color:${top?'#3C3489':'#5F5E5A'};border:.5px solid ${top?'#AFA9EC':'#D3D1C7'}">${r}</span>`;}
@@ -756,7 +761,7 @@ function renderCharGridEdit(m){
       <div class="cc-info">
         <div class="cc-name" title="${cd.name}">${cd.name}</div>
         <div class="badges">${c?rarBdg(c.rar):''}${c&&c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}
-        ${c&&c.ex?`<span class="ex-bdg">EX${exNumLabel(c.ex)}</span>`:''}
+        ${c&&c.ex?exBdg(c.ex):''}
         ${!c?'<span style="font-size:10px;color:var(--t3)">未育成</span>':''}</div>
       </div>
     </div>`;
@@ -822,7 +827,7 @@ function renderLvPanel(){
   const exEl=document.getElementById('ex-btns');
   const exLabel=document.getElementById('ex-btns')?.previousElementSibling;
   if(cd&&cd.exSotsui){
-    const EX_LEVELS=['星6','星5','星4','星3','星2','星1','未所持'];
+    const EX_LEVELS=['星6','星5','星4','星3','星2','星1'];
     if(exEl) exEl.innerHTML=EX_LEVELS.map(lv=>{const on=E.pendingEx===lv;
       return`<button class="p-btn" onclick="pickEx('${lv}')" style="${on?`background:#FDF6E0;color:#7A5E10;border-color:#C89B20;font-weight:500`:''}">${lv}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
     if(exEl) exEl.style.display='';
@@ -1055,7 +1060,7 @@ function renderSearch(alreadyNames){
     rows.push({pt, html:`<div class="res-card"><div class="av2" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
       <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">${m.name} <span style="font-size:10px;color:var(--t2)">${m.role}</span></div>
       <div style="font-size:10px;color:var(--t2);margin:1px 0">${cd.name}</div>
-      <div class="badges" style="margin-top:3px">${rarBdg(c.rar)}${c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}${c.ex?`<span class="ex-bdg">EX${exNumLabel(c.ex)}</span>`:''}</div>
+      <div class="badges" style="margin-top:3px">${rarBdg(c.rar)}${c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}${c.ex?exBdg(c.ex):''}</div>
       ${shBadge}</div></div>`});
   });});
   rows.sort((a,b)=>b.pt-a.pt);
@@ -1914,7 +1919,7 @@ async function manualReload(){
   } catch(e) {
     toast('更新に失敗しました');
   } finally {
-    if(btn){ btn.disabled = false; btn.textContent = '更新'; }
+    if(btn){ btn.disabled = false; btn.textContent = '🔄 更新'; }
   }
 }
 
