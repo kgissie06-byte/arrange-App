@@ -24,6 +24,7 @@ export default async function handler(req, res) {
     ranks: c.ranks || [],
     shukuens: c.shukuens || (c.shukuen ? [c.shukuen, {enabled:false,members:[]}] : [{enabled:false,members:[]},{enabled:false,members:[]}]),
     img: c.img || null,
+    exSotsui: c.ex_sotsui || false,  // EX追想の有無
   }))
 
   // メンバー一覧
@@ -50,6 +51,7 @@ export default async function handler(req, res) {
         name: t.char_name,
         rar: t.rarity,
         ranks: t.ranks || [],
+        ex: t.ex || null,  // EX追想レベル
       })),
   }))
 

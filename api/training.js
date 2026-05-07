@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
   // 保存（upsert: member_id + char_name の複合キーで上書き）
   if (req.method === 'POST') {
-    const { memberId, charName, rar, ranks } = req.body
+    const { memberId, charName, rar, ranks, ex } = req.body
 
     if (!memberId || !charName) {
       return res.status(400).json({ error: 'memberId and charName are required' })
@@ -32,7 +32,8 @@ export default async function handler(req, res) {
         member_id: memberId,
         char_name: charName,
         rarity: rar,
-        ranks: ranks
+        ranks: ranks,
+        ex: ex || null,  // EX追想レベル
       }, {
         onConflict: 'member_id,char_name'
       })

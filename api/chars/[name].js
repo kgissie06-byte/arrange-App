@@ -12,7 +12,7 @@ export default async function handler(req, res) {
 
   // キャラ更新（名前変更含む）
   if (req.method === 'PUT') {
-    const { name: newName, yomi, rars, ranks, shukuen, shukuens, img } = req.body
+    const { name: newName, yomi, rars, ranks, shukuen, shukuens, img, exSotsui } = req.body
 
     const updates = {}
     if (newName) updates.name = newName
@@ -22,6 +22,7 @@ export default async function handler(req, res) {
     if (shukuens !== undefined) updates.shukuens = shukuens
     else if (shukuen !== undefined) updates.shukuen = shukuen
     if (img !== undefined) updates.img = img || null
+    if (exSotsui !== undefined) updates.ex_sotsui = exSotsui  // EX追想の有無
 
     const { error } = await supabase
       .from('chars')
@@ -53,7 +54,6 @@ export default async function handler(req, res) {
       .single()
 
     if (charData?.img) {
-      // 公開URLからファイル名だけ取り出す
       const fileName = charData.img.split('/').pop()
       await supabase.storage.from('char-images').remove([fileName])
     }

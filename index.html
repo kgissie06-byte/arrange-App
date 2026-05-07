@@ -88,6 +88,7 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .img-remove-btn{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--danger);color:#fff;border:none;cursor:pointer;font-size:12px;line-height:20px;text-align:center;padding:0}
 .badges{display:flex;gap:3px;flex-wrap:wrap}
 .bdg{display:inline-block;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:500}
+.ex-bdg{display:inline-block;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;background:#FDF6E0;color:#7A5E10;border:.5px solid #C89B20}
 .panel{margin-top:10px;padding:13px;background:var(--card);border:1px solid var(--border);border-radius:12px}
 .pick-label{font-size:11px;color:var(--t2);margin-bottom:4px;font-weight:500}
 .pick-btns{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px}
@@ -346,6 +347,8 @@ body.touch-device *:focus-visible {
         </div>
         <div class="pick-btns" id="rank-btns"></div>
         <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div>
+        <div class="pick-label" style="margin-top:10px">EX追想</div>
+        <div class="pick-btns" id="ex-btns"></div>
       </div>
       <div class="save-bar">
         <button class="btn" onclick="closeLvPanel()">キャンセル</button>
@@ -401,6 +404,13 @@ body.touch-device *:focus-visible {
     <div class="field"><label>最大レアリティ</label><div class="pick-btns" id="cn-rar-btns" style="margin-top:4px"></div></div>
     <div class="field"><label>最大ランク</label><div class="pick-btns" id="cn-rank-btns" style="margin-top:4px"></div></div>
     <div class="field">
+      <label>EX追想</label>
+      <div class="shukuen-toggle">
+        <button id="cn-ex-off" class="on" onclick="setCnEx(false)">無</button>
+        <button id="cn-ex-on" onclick="setCnEx(true)">有</button>
+      </div>
+    </div>
+    <div class="field">
       <label>宿縁①</label>
       <div class="shukuen-toggle">
         <button id="cn-shukuen-off-0" class="on" onclick="setCnShukuen(0,false)">無</button>
@@ -443,6 +453,13 @@ body.touch-device *:focus-visible {
       </div>
       <div class="field"><label>最大レアリティ</label><div class="pick-btns" id="cu-rar-btns" style="margin-top:4px"></div></div>
       <div class="field"><label>最大ランク</label><div class="pick-btns" id="cu-rank-btns" style="margin-top:4px"></div></div>
+      <div class="field">
+        <label>EX追想</label>
+        <div class="shukuen-toggle">
+          <button id="cu-ex-off" class="on" onclick="setCuEx(false)">無</button>
+          <button id="cu-ex-on" onclick="setCuEx(true)">有</button>
+        </div>
+      </div>
       <div class="field">
         <label>宿縁①</label>
         <div class="shukuen-toggle">
@@ -617,14 +634,19 @@ let S={
   nextId:5, nextReinfId:1,
   filRar:[],filRank:[],filRole:[],
 };
-let E={memberId:null,charName:null,pendingRar:null,pendingRanks:[]};
+let E={memberId:null,charName:null,pendingRar:null,pendingRanks:[],pendingEx:null};
 let cnSelRar=[],cnSelRank=[],cuSelRar=[],cuSelRank=[];
+let cnExSotsui=false, cuExSotsui=false;
 // 援軍検索状態
 let RS={rowId:null,mainRar:[],mainRank:[],subRar:[],subRank:[],roleFilter:[]};
 
 function esc(s){return(s||'').replace(/'/g,"\\'");}
 function av(i){return AVC[((i%AVC.length)+AVC.length)%AVC.length];}
 function ini(n){return n.slice(0,2).toUpperCase();}
+function exNumLabel(ex){
+  if(!ex||ex==='未所持') return '0';
+  const m=ex.match(/\d+/);return m?m[0]:'';
+}
 function rarBdg(r){const s=RAR_S[r]||{bg:'#F1EFE8',c:'#5F5E5A',bd:'#B4B2A9'};return`<span class="bdg" style="background:${s.bg};color:${s.c};border:.5px solid ${s.bd}">${r}</span>`;}
 function rankBdg(r){const top=TOP_RANKS.includes(r);return`<span class="bdg" style="background:${top?'#EEEDFE':'#F1EFE8'};color:${top?'#3C3489':'#5F5E5A'};border:.5px solid ${top?'#AFA9EC':'#D3D1C7'}">${r}</span>`;}
 
@@ -734,6 +756,7 @@ function renderCharGridEdit(m){
       <div class="cc-info">
         <div class="cc-name" title="${cd.name}">${cd.name}</div>
         <div class="badges">${c?rarBdg(c.rar):''}${c&&c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}
+        ${c&&c.ex?`<span class="ex-bdg">EX${exNumLabel(c.ex)}</span>`:''}
         ${!c?'<span style="font-size:10px;color:var(--t3)">未育成</span>':''}</div>
       </div>
     </div>`;
@@ -758,7 +781,7 @@ function filterCharGrid(){
   });
 }
 function closeLvPanel(){
-  E.charName=null;E.pendingRar=null;E.pendingRanks=[];
+  E.charName=null;E.pendingRar=null;E.pendingRanks=[];E.pendingEx=null;
   document.querySelectorAll('#char-grid-edit .cc').forEach(el=>el.classList.remove('sel'));
   // panelをgrid外（gridの直後）に戻して非表示
   const grid=document.getElementById('char-grid-edit');
@@ -795,6 +818,19 @@ function renderLvPanel(){
   const clearBtn=document.getElementById('clear-training-btn');
   if(clearBtn) clearBtn.style.display=c?'':'none';
   document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
+  // EX追想ボタン（キャラ定義に exSotsui:true がある場合のみ表示）
+  const exEl=document.getElementById('ex-btns');
+  const exLabel=document.getElementById('ex-btns')?.previousElementSibling;
+  if(cd&&cd.exSotsui){
+    const EX_LEVELS=['星6','星5','星4','星3','星2','星1','未所持'];
+    if(exEl) exEl.innerHTML=EX_LEVELS.map(lv=>{const on=E.pendingEx===lv;
+      return`<button class="p-btn" onclick="pickEx('${lv}')" style="${on?`background:#FDF6E0;color:#7A5E10;border-color:#C89B20;font-weight:500`:''}">${lv}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
+    if(exEl) exEl.style.display='';
+    if(exLabel) exLabel.style.display='';
+  } else {
+    if(exEl){ exEl.innerHTML=''; exEl.style.display='none'; }
+    if(exLabel) exLabel.style.display='none';
+  }
 }
 function selectCharEdit(cn){
   // 同じキャラを再クリック → パネルを閉じて選択解除
@@ -804,7 +840,7 @@ function selectCharEdit(cn){
   }
   const m=S.members.find(x=>x.id===E.memberId);
   const c=m&&m.chars.find(x=>x.name===cn);
-  E.charName=cn;E.pendingRar=c?c.rar:null;E.pendingRanks=c&&c.ranks?[...c.ranks]:[];
+  E.charName=cn;E.pendingRar=c?c.rar:null;E.pendingRanks=c&&c.ranks?[...c.ranks]:[];E.pendingEx=c&&c.ex?c.ex:null;
   // 選択状態をDOMに直接反映（再生成しない）
   document.querySelectorAll('#char-grid-edit .cc').forEach(el=>{
     el.classList.toggle('sel', el.dataset.name===cn);
@@ -877,6 +913,10 @@ function pickRank(r){
   }
   renderLvPanel();
 }
+function pickEx(lv){
+  E.pendingEx = E.pendingEx===lv ? null : lv;
+  renderLvPanel();
+}
 async function saveTraining(){
   if(!E.charName){toast('キャラを選んでください');return;}
   if(!E.pendingRar||!E.pendingRanks.length){toast('選択してください');return;}
@@ -890,14 +930,15 @@ async function saveTraining(){
         memberId:E.memberId,
         charName:E.charName,
         rar:E.pendingRar,
-        ranks:E.pendingRanks
+        ranks:E.pendingRanks,
+        ex:E.pendingEx||null
       })
     });
 
     await load();
     toast('保存しました');
     // 検索クリア・選択解除・パネルを閉じる
-    E.charName=null; E.pendingRar=null; E.pendingRanks=[];
+    E.charName=null; E.pendingRar=null; E.pendingRanks=[]; E.pendingEx=null;
     const cs=document.getElementById('cc-search');if(cs)cs.value='';
     _showUntrainedOnly=false;
     const ub=document.getElementById('cc-untrained-btn');if(ub)ub.classList.remove('on');
@@ -974,7 +1015,7 @@ function goBack(){
   const cs=document.getElementById('cc-search');if(cs)cs.value='';
   _showUntrainedOnly=false;
   const btn=document.getElementById('cc-untrained-btn');if(btn)btn.classList.remove('on');
-  E={memberId:null,charName:null,pendingRar:null,pendingRanks:[]};
+  E={memberId:null,charName:null,pendingRar:null,pendingRanks:[],pendingEx:null};
   // 戻る時もスクロール位置をトップに戻す
   window.scrollTo({top:0,behavior:'instant'});
 }
@@ -1014,7 +1055,7 @@ function renderSearch(alreadyNames){
     rows.push({pt, html:`<div class="res-card"><div class="av2" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
       <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">${m.name} <span style="font-size:10px;color:var(--t2)">${m.role}</span></div>
       <div style="font-size:10px;color:var(--t2);margin:1px 0">${cd.name}</div>
-      <div class="badges" style="margin-top:3px">${rarBdg(c.rar)}${c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}</div>
+      <div class="badges" style="margin-top:3px">${rarBdg(c.rar)}${c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}${c.ex?`<span class="ex-bdg">EX${exNumLabel(c.ex)}</span>`:''}</div>
       ${shBadge}</div></div>`});
   });});
   rows.sort((a,b)=>b.pt-a.pt);
@@ -1331,6 +1372,16 @@ function setCuShukuen(idx,enabled){
   document.getElementById(`cu-shukuen-detail-${idx}`).style.display=enabled?'block':'none';
   renderShukuenList('cu',idx,cuShukuens[idx].members);
 }
+function setCnEx(enabled){
+  cnExSotsui=enabled;
+  const off=document.getElementById('cn-ex-off');const on=document.getElementById('cn-ex-on');
+  if(off)off.className=enabled?'':'on';if(on)on.className=enabled?'on':'';
+}
+function setCuEx(enabled){
+  cuExSotsui=enabled;
+  const off=document.getElementById('cu-ex-off');const on=document.getElementById('cu-ex-on');
+  if(off)off.className=enabled?'':'on';if(on)on.className=enabled?'on':'';
+}
 function renderShukuenList(prefix,idx,members){
   const el=document.getElementById(`${prefix}-shukuen-list-${idx}`);if(!el)return;
   if(!members.length){el.innerHTML='<div style="font-size:11px;color:var(--t3);padding:4px 0">キャラが追加されていません</div>';return;}
@@ -1497,6 +1548,7 @@ function initCharNewForm(){
   renderCharMgmtRarBtns('cn-rar-btns',cnSelRar,'toggleCnRar');
   renderCharMgmtRankBtns('cn-rank-btns',cnSelRank,'toggleCnRank');
   setCnShukuen(0,false);setCnShukuen(1,false);
+  setCnEx(false);
 }
 // ===== 画像処理 (Supabase Storage方式) =====
 // _cnImg / _cuImg はアップロード済みの公開URL or null or ''(削除)
@@ -1597,6 +1649,7 @@ async function addChar(){
         rars:cnSelRar,
         ranks:cnSelRank,
         shukuens:cnShukuens,
+        exSotsui:cnExSotsui,
         img: _cnImg || null
       })
     });
@@ -1638,6 +1691,8 @@ function loadCharForUpdate(){
   // 旧データで shukuen が1件しかない場合、idx=1 はリセット
   if(!raw.length&&cd.shukuen){cuShukuens[1]={enabled:false,members:[]};}
   setCuShukuen(0,cuShukuens[0].enabled);setCuShukuen(1,cuShukuens[1].enabled);
+  // EX追想
+  setCuEx(!!cd.exSotsui);
   document.getElementById('cu-detail').style.display='block';
 }
 async function updateChar(){
@@ -1652,6 +1707,7 @@ async function updateChar(){
       rars:cuSelRar,
       ranks:cuSelRank,
       shukuens:cuShukuens,
+      exSotsui:cuExSotsui,
     };
     // _cuImg===null → 変更なし(送らない), _cuImg==='' → 削除, それ以外 → 新画像
     if(_cuImg !== null) body.img = _cuImg;
@@ -1858,7 +1914,7 @@ async function manualReload(){
   } catch(e) {
     toast('更新に失敗しました');
   } finally {
-    if(btn){ btn.disabled = false; btn.textContent = '🔄 更新'; }
+    if(btn){ btn.disabled = false; btn.textContent = '更新'; }
   }
 }
 
