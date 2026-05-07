@@ -180,10 +180,15 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .sh-pill.omote6 .sh-pill-dot{background:#1D9E75}
 .sh-pill.soji .sh-pill-dot{background:#C89B20}
 .sh-badge-wrap{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:5px}
-/* 宿縁リボンバッジ（ccカード右上） */
+/* 宿縁アイコンバッジ（ccカード右上） */
 .cc{position:relative}
-.shukuen-ribbon{position:absolute;top:-1px;right:-1px;background:#7F77DD;color:#fff;font-size:9px;font-weight:700;line-height:1;padding:3px 6px 3px 7px;border-radius:0 10px 0 8px;letter-spacing:.3px;pointer-events:none;z-index:2;box-shadow:0 1px 3px rgba(0,0,0,.18);white-space:nowrap}
-.shukuen-ribbon::before{content:'';position:absolute;bottom:-5px;left:0;border-top:5px solid #5a52b0;border-left:5px solid transparent}
+.shukuen-icon{position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:50%;background:#7F77DD;color:#fff;font-size:11px;font-weight:900;line-height:18px;text-align:center;cursor:pointer;z-index:2;box-shadow:0 1px 4px rgba(0,0,0,.22);border:1.5px solid #fff;flex-shrink:0;user-select:none}
+.shukuen-icon:hover{background:#5a52b0}
+/* 宿縁ポップアップ */
+.shukuen-popup{position:fixed;background:var(--card);border:1px solid var(--bm);border-radius:10px;padding:9px 12px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:500;min-width:130px;max-width:220px}
+.shukuen-popup-title{font-size:10px;color:var(--t2);margin-bottom:5px;font-weight:500}
+.shukuen-popup-item{font-size:12px;font-weight:500;color:var(--t);padding:2px 0;display:flex;align-items:center;gap:5px}
+.shukuen-popup-item::before{content:'';width:7px;height:7px;border-radius:50%;background:#7F77DD;flex-shrink:0}
 .shukuen-member-list{display:flex;flex-direction:column;gap:4px;margin-top:6px;padding:8px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
 .shukuen-char-row{display:flex;align-items:center;gap:6px;padding:3px 0}
 .shukuen-add-btn{display:flex;align-items:center;gap:4px;padding:5px 10px;font-size:11px;border:1px dashed var(--bm);border-radius:7px;background:none;cursor:pointer;color:var(--t2);font-family:inherit;transition:background .15s;margin-top:5px}
@@ -290,7 +295,7 @@ body.touch-device *:focus-visible {
 <div class="top-action-bar">
   <span id="role-badge-wrap"></span>
   <button class="logout-btn" id="reload-btn" onclick="manualReload()">更新</button>
-  <button class="logout-btn admin-only" onclick="openChangePwModal()">パスワード変更</button>
+  <button class="logout-btn admin-only" onclick="openChangePwModal()">🔑 パスワード変更</button>
   <button class="logout-btn" onclick="doLogout()">ログアウト</button>
 </div>
 <div class="top-bar">
@@ -715,7 +720,7 @@ function renderCharGridEdit(m){
       :`<div class="cc-img empty"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--bm)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
     const hasShukuen=shukuenMemberSet.has(cd.name);
     return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}" data-trained="${c?'1':'0'}">
-      ${hasShukuen?`<div class="shukuen-ribbon">宿縁</div>`:''}
+      ${hasShukuen?`<div class="shukuen-icon" onclick="showShukuenPopup(event,'${esc(cd.name)}')">!</div>`:''}
       ${imgHtml}
       <div class="cc-info">
         <div class="cc-name" title="${cd.name}">${cd.name}</div>
@@ -922,6 +927,38 @@ async function clearTraining(){
   }
 }
 
+/* ===== 宿縁ポップアップ ===== */
+function showShukuenPopup(e, charName){
+  e.stopPropagation();
+  closeShukuenPopup();
+  // このキャラが宿縁メンバーとして含まれているキャラ名一覧を収集
+  const owners=[];
+  S.chars.forEach(cd=>{
+    const slots=cd.shukuens&&cd.shukuens.length?cd.shukuens:[cd.shukuen].filter(Boolean);
+    const hit=slots.some(s=>s&&s.enabled&&s.members&&s.members.includes(charName));
+    if(hit) owners.push(cd.name);
+  });
+  const pop=document.createElement('div');
+  pop.className='shukuen-popup';
+  pop.id='shukuen-popup';
+  pop.innerHTML=`<div class="shukuen-popup-title">「${charName}」が含まれる宿縁</div>`
+    +owners.map(n=>`<div class="shukuen-popup-item">${n}</div>`).join('');
+  document.body.appendChild(pop);
+  // 表示位置（アイコンの近く、画面外にはみ出さないよう調整）
+  const r=e.target.getBoundingClientRect();
+  let top=r.bottom+4, left=r.left;
+  const pw=220, ph=pop.offsetHeight||100;
+  if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
+  if(top+ph>window.innerHeight-8) top=r.top-ph-4;
+  pop.style.top=top+'px';
+  pop.style.left=left+'px';
+  // 外側クリックで閉じる
+  setTimeout(()=>document.addEventListener('click',closeShukuenPopup,{once:true}),0);
+}
+function closeShukuenPopup(){
+  const p=document.getElementById('shukuen-popup');
+  if(p) p.remove();
+}
 function goBack(){
   document.getElementById('v-members').style.display='';
   document.getElementById('v-chars').style.display='none';
