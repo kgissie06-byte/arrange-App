@@ -180,6 +180,10 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .sh-pill.omote6 .sh-pill-dot{background:#1D9E75}
 .sh-pill.soji .sh-pill-dot{background:#C89B20}
 .sh-badge-wrap{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:5px}
+/* 宿縁リボンバッジ（ccカード右上） */
+.cc{position:relative}
+.shukuen-ribbon{position:absolute;top:-1px;right:-1px;background:#7F77DD;color:#fff;font-size:9px;font-weight:700;line-height:1;padding:3px 6px 3px 7px;border-radius:0 10px 0 8px;letter-spacing:.3px;pointer-events:none;z-index:2;box-shadow:0 1px 3px rgba(0,0,0,.18);white-space:nowrap}
+.shukuen-ribbon::before{content:'';position:absolute;bottom:-5px;left:0;border-top:5px solid #5a52b0;border-left:5px solid transparent}
 .shukuen-member-list{display:flex;flex-direction:column;gap:4px;margin-top:6px;padding:8px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
 .shukuen-char-row{display:flex;align-items:center;gap:6px;padding:3px 0}
 .shukuen-add-btn{display:flex;align-items:center;gap:4px;padding:5px 10px;font-size:11px;border:1px dashed var(--bm);border-radius:7px;background:none;cursor:pointer;color:var(--t2);font-family:inherit;transition:background .15s;margin-top:5px}
@@ -285,8 +289,8 @@ body.touch-device *:focus-visible {
 <div class="wrap" id="main-wrap" style="display:none">
 <div class="top-action-bar">
   <span id="role-badge-wrap"></span>
-  <button class="logout-btn" id="reload-btn" onclick="manualReload()">🔄 更新</button>
-  <button class="logout-btn admin-only" onclick="openChangePwModal()">🔑 パスワード変更</button>
+  <button class="logout-btn" id="reload-btn" onclick="manualReload()">更新</button>
+  <button class="logout-btn admin-only" onclick="openChangePwModal()">パスワード変更</button>
   <button class="logout-btn" onclick="doLogout()">ログアウト</button>
 </div>
 <div class="top-bar">
@@ -692,12 +696,26 @@ function renderCharGridEdit(m){
   const _grid=document.getElementById('char-grid-edit');
   const _panel=document.getElementById('lv-panel');
   if(_panel.parentNode===_grid){ _grid.parentNode.insertBefore(_panel,_grid.nextSibling); }
+  // 全キャラの宿縁メンバーに一度でも名前が登録されているキャラ名のSet
+  const shukuenMemberSet=(function(){
+    const set=new Set();
+    S.chars.forEach(charDef=>{
+      const slots=charDef.shukuens&&charDef.shukuens.length?charDef.shukuens:[charDef.shukuen].filter(Boolean);
+      slots.forEach(s=>{
+        if(!s||!s.enabled||!s.members)return;
+        s.members.forEach(n=>{if(n&&n!=='?')set.add(n);});
+      });
+    });
+    return set;
+  })();
   _grid.innerHTML=sortByYomi(S.chars).map(cd=>{
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
     const imgHtml=cd.img
       ?`<img class="cc-img" src="${cd.img}" alt="">`
       :`<div class="cc-img empty"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--bm)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
+    const hasShukuen=shukuenMemberSet.has(cd.name);
     return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}" data-trained="${c?'1':'0'}">
+      ${hasShukuen?`<div class="shukuen-ribbon">宿縁</div>`:''}
       ${imgHtml}
       <div class="cc-info">
         <div class="cc-name" title="${cd.name}">${cd.name}</div>
