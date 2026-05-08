@@ -207,7 +207,6 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .role-badge.admin{background:#EEEDFE;color:#3C3489;border:.5px solid #AFA9EC}
 .role-badge.user{background:var(--acc-bg);color:var(--acc);border:.5px solid var(--bm)}
 /* ===== 縦画面固定（スマホのみ）===== */
-/* max-height:600px かつ landscape = スマホの横向き */
 @media screen and (orientation: landscape) and (max-height: 600px) {
   body::before{
     content:'縦画面でご利用ください';
@@ -218,7 +217,6 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
   body>*{display:none!important}
   body::before{display:flex!important}
 }
-/* キーボード表示時にbodyを固定 */
 body{overscroll-behavior:none}
 
 /* ===== タッチデバイス専用 ===== */
@@ -266,8 +264,6 @@ body.touch-device .c-card:active {
   color: inherit !important;
   opacity: 1 !important;
 }
-
-/* フォーカスだけ消す */
 body.touch-device *:focus,
 body.touch-device *:focus-visible {
   outline: none !important;
@@ -401,7 +397,13 @@ body.touch-device *:focus-visible {
         </div>
       </div>
     </div>
-    <div class="field"><label>最大レアリティ</label><div class="pick-btns" id="cn-rar-btns" style="margin-top:4px"></div></div>
+    <div class="field">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+        <label style="margin-bottom:0">最大レアリティ</label>
+        <button id="char-assist-toggle-btn" onclick="toggleCharAssist()" style="padding:2px 9px;font-size:10px;border-radius:20px;border:1px solid var(--acc);background:var(--acc);color:#FFF8F0;cursor:pointer;font-family:inherit;transition:all .15s">入力補助 ON</button>
+      </div>
+      <div class="pick-btns" id="cn-rar-btns" style="margin-top:4px"></div>
+    </div>
     <div class="field"><label>最大ランク</label><div class="pick-btns" id="cn-rank-btns" style="margin-top:4px"></div></div>
     <div class="field">
       <label>EX追想</label>
@@ -451,7 +453,13 @@ body.touch-device *:focus-visible {
           </div>
         </div>
       </div>
-      <div class="field"><label>最大レアリティ</label><div class="pick-btns" id="cu-rar-btns" style="margin-top:4px"></div></div>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+          <label style="margin-bottom:0">最大レアリティ</label>
+          <button id="char-assist-toggle-btn-cu" onclick="toggleCharAssist()" style="padding:2px 9px;font-size:10px;border-radius:20px;border:1px solid var(--acc);background:var(--acc);color:#FFF8F0;cursor:pointer;font-family:inherit;transition:all .15s">入力補助 ON</button>
+        </div>
+        <div class="pick-btns" id="cu-rar-btns" style="margin-top:4px"></div>
+      </div>
       <div class="field"><label>最大ランク</label><div class="pick-btns" id="cu-rank-btns" style="margin-top:4px"></div></div>
       <div class="field">
         <label>EX追想</label>
@@ -531,7 +539,6 @@ body.touch-device *:focus-visible {
 </div>
 
 <script>
-// タッチデバイス検出：最初のtouchstartでbodyにクラスを付与しhoverを無効化
 (function(){
   function onFirstTouch(){
     document.body.classList.add('touch-device');
@@ -540,11 +547,9 @@ body.touch-device *:focus-visible {
   document.addEventListener('touchstart', onFirstTouch, { passive: true });
 })();
 
-// タッチ操作後にフォーカス・アクティブ状態を即座に解除
 document.addEventListener('touchend', () => {
   setTimeout(() => {
     const el = document.activeElement;
-    // input・select・textareaはキーボード入力が必要なのでblurしない
     if (el && el !== document.body && !['INPUT','SELECT','TEXTAREA'].includes(el.tagName)) {
       el.blur();
     }
@@ -554,7 +559,6 @@ document.addEventListener('touchend', () => {
 const ALL_RARITIES=['LG3','LG2','LG1','LG','UR','SR','R','N'];
 const ALL_RANKS=['全技極','裏技極','技極','表1','表2','表3','表4','表5','表6','裏1','裏2','裏3','裏4','裏5','裏6'];
 
-// レアリティ階層：クリックしたレアリティ以下をすべて返す
 const RAR_ORDER=['LG3','LG2','LG1','LG','UR','SR','R','N'];
 function getRarImplied(r){
   const idx=RAR_ORDER.indexOf(r);
@@ -562,7 +566,6 @@ function getRarImplied(r){
   return RAR_ORDER.slice(idx);
 }
 
-// ランク階層：クリックしたランクが含むランク一覧を返す
 const OMOTE_RANKS=['表1','表2','表3','表4','表5','表6'];
 const URA_RANKS=['裏1','裏2','裏3','裏4','裏5','裏6'];
 function getRankImplied(r){
@@ -570,39 +573,31 @@ function getRankImplied(r){
   if(r==='裏技極') return['裏技極',...OMOTE_RANKS,...URA_RANKS];
   if(r==='技極')   return['技極',...OMOTE_RANKS,'裏1'];
   if(OMOTE_RANKS.includes(r)){
-    // 表N以下の表ランクをすべて含む
     const idx=OMOTE_RANKS.indexOf(r);
     return OMOTE_RANKS.slice(0,idx+1);
   }
   if(URA_RANKS.includes(r)){
-    // 裏Nは裏N以下の裏ランク＋表1〜6すべてを含む
     const idx=URA_RANKS.indexOf(r);
     return[...URA_RANKS.slice(0,idx+1),...OMOTE_RANKS];
   }
   return[r];
 }
 
-// レアリティフィルター判定：フィルターに選んだレアリティ以上（より上位）も含める
-// 例：フィルターにLGを選んだ場合、LG・LG1・LG2・LG3を持つメンバーもヒット
 function rarMatchesFilter(memberRar, filterRars){
   if(!filterRars.length) return true;
-  // filterRarsのどれかに対して、memberRarがそのレアリティ以上（RAR_ORDER上でより左）ならtrue
   return filterRars.some(fr=>{
     const fi=RAR_ORDER.indexOf(fr);
     const mi=RAR_ORDER.indexOf(memberRar);
-    return mi>=0&&fi>=0&&mi<=fi; // memberRarがfrと同じかより上位
+    return mi>=0&&fi>=0&&mi<=fi;
   });
 }
 
-// 選択配列をトグル（階層考慮）
 function toggleWithHierarchy(arr, r, impliedFn){
   const implied=impliedFn(r);
   const allOn=implied.every(x=>arr.includes(x));
   if(allOn){
-    // すでに全部ON → 全部OFF
     implied.forEach(x=>{const i=arr.indexOf(x);if(i>=0)arr.splice(i,1);});
   } else {
-    // 一部または全部OFF → 全部ON
     implied.forEach(x=>{if(!arr.includes(x))arr.push(x);});
   }
 }
@@ -625,11 +620,8 @@ const AVC=[
 ];
 
 let S={
-  members:[
-  ],
-  chars:[
-  ],
-  // reinf rows: {id, memberName(null), normalMain, normalSub, castleMain, castleSub}
+  members:[],
+  chars:[],
   reinf:[],
   nextId:5, nextReinfId:1,
   filRar:[],filRank:[],filRole:[],
@@ -637,7 +629,6 @@ let S={
 let E={memberId:null,charName:null,pendingRar:null,pendingRanks:[],pendingEx:null};
 let cnSelRar=[],cnSelRank=[],cuSelRar=[],cuSelRank=[];
 let cnExSotsui=false, cuExSotsui=false;
-// 援軍検索状態
 let RS={rowId:null,mainRar:[],mainRank:[],subRar:[],subRank:[],roleFilter:[]};
 
 function esc(s){return(s||'').replace(/'/g,"\\'");}
@@ -655,7 +646,6 @@ function exBdg(ex){
 function rarBdg(r){const s=RAR_S[r]||{bg:'#F1EFE8',c:'#5F5E5A',bd:'#B4B2A9'};return`<span class="bdg" style="background:${s.bg};color:${s.c};border:.5px solid ${s.bd}">${r}</span>`;}
 function rankBdg(r){const top=TOP_RANKS.includes(r);return`<span class="bdg" style="background:${top?'#EEEDFE':'#F1EFE8'};color:${top?'#3C3489':'#5F5E5A'};border:.5px solid ${top?'#AFA9EC':'#D3D1C7'}">${r}</span>`;}
 
-// ランク表示を要約：選択済みランク配列から表示すべきランクの配列を返す
 function summarizeRanks(ranks){
   if(!ranks||!ranks.length) return[];
   if(ranks.includes('全技極')) return['全技極'];
@@ -666,7 +656,6 @@ function summarizeRanks(ranks){
   if(ranks.includes('技極')){
     return topUra?['技極',topUra]:['技極'];
   }
-  // 技極なし：裏→表の優先順で最大1つ
   const best=topUra||OMOTE_ORDER.find(r=>ranks.includes(r));
   return best?[best]:[];
 }
@@ -682,10 +671,8 @@ async function load() {
   }
 }
 
-
 function renderAll(){
   renderMembers();renderCharListDisplay();renderReinfTable();renderFilters();renderCharUpdateSel();
-  // キャラグリッド表示中なら再描画（更新ボタン押下時などに画面を最新化）
   const vChars=document.getElementById('v-chars');
   if(vChars&&vChars.style.display!=='none'&&E.memberId!=null){
     const m=S.members.find(x=>x.id===E.memberId);
@@ -699,7 +686,6 @@ function renderAll(){
 /* ========== ① 育成入力 ========== */
 function renderMembers(){
   const el=document.getElementById('member-list');
-  // 利用者ロールでは「その他」所属のメンバーを表示しない
   const visible = currentRole === 'user'
     ? S.members.filter(m => m.role !== 'その他')
     : S.members;
@@ -716,13 +702,11 @@ function selectMember(id){
   document.getElementById('editing-name').textContent=m.name+' の育成キャラ';
   document.getElementById('v-members').style.display='none';
   document.getElementById('v-chars').style.display='block';
-  // 検索バーと未入力フィルターをリセットしてからグリッドを描画
   const cs=document.getElementById('cc-search');if(cs)cs.value='';
   _showUntrainedOnly=false;
   const ub=document.getElementById('cc-untrained-btn');if(ub)ub.classList.remove('on');
   renderCharGridEdit(m);
   document.getElementById('lv-panel').style.display='none';
-  // 画面切り替え時にスクロール位置をトップに戻す
   window.scrollTo({top:0,behavior:'instant'});
 }
 let _showUntrainedOnly = false;
@@ -733,11 +717,9 @@ function toggleUntrainedFilter(){
   filterCharGrid();
 }
 function renderCharGridEdit(m){
-  // grid内にpanelが入っていたら退避（innerHTML書き換えで消えるのを防ぐ）
   const _grid=document.getElementById('char-grid-edit');
   const _panel=document.getElementById('lv-panel');
   if(_panel.parentNode===_grid){ _grid.parentNode.insertBefore(_panel,_grid.nextSibling); }
-  // 全キャラの宿縁メンバーに一度でも名前が登録されているキャラ名のSet
   const shukuenMemberSet=(function(){
     const set=new Set();
     S.chars.forEach(charDef=>{
@@ -770,7 +752,6 @@ function renderCharGridEdit(m){
 }
 function filterCharGrid(){
   const q=(document.getElementById('cc-search')?.value||'').trim();
-  // 検索入力中はパネルを閉じて選択解除
   if(q){
     E.charName=null;E.pendingRar=null;E.pendingRanks=[];
     document.querySelectorAll('#char-grid-edit .cc').forEach(el=>el.classList.remove('sel'));
@@ -788,7 +769,6 @@ function filterCharGrid(){
 function closeLvPanel(){
   E.charName=null;E.pendingRar=null;E.pendingRanks=[];E.pendingEx=null;
   document.querySelectorAll('#char-grid-edit .cc').forEach(el=>el.classList.remove('sel'));
-  // panelをgrid外（gridの直後）に戻して非表示
   const grid=document.getElementById('char-grid-edit');
   const panel=document.getElementById('lv-panel');
   panel.style.display='none';
@@ -805,14 +785,12 @@ function renderLvPanel(){
   const aR=cd?cd.rars:ALL_RARITIES,aK=cd?cd.ranks:ALL_RANKS;
   document.getElementById('rar-btns').innerHTML=aR.map(r=>{const s=RAR_S[r]||{};const on=E.pendingRar===r;
     return`<button class="p-btn" onclick="pickRar('${r}')" style="${on?`background:${s.bg};color:${s.c};border-color:${s.bd};font-weight:500`:''}">${r}</button>`;}).join('');
-  // SR以下選択時に非表示にする上位ランクの判定
   const hideHighRanks = cd && isUrWithLowerRar(cd) && E.pendingRar && SR_OR_BELOW.includes(E.pendingRar);
   document.getElementById('rank-btns').innerHTML=aK.map(r=>{
     if(hideHighRanks && HIGH_RANKS_BLOCKED.includes(r)) return '';
     const on=E.pendingRanks.includes(r);const top=TOP_RANKS.includes(r);
     return`<button class="p-btn" onclick="pickRank('${r}')" style="${on?`background:${top?'#EEEDFE':'#EDE5D8'};color:${top?'#3C3489':'#634B38'};border-color:${top?'#AFA9EC':'#B4A494'};font-weight:500`:''}">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
   document.getElementById('lv-panel').style.display='block';
-  // 入力補助ボタンの表示を同期
   const assistBtn = document.getElementById('assist-toggle-btn');
   if(assistBtn){
     assistBtn.textContent = '入力補助 ' + (_assistMode ? 'ON' : 'OFF');
@@ -823,7 +801,6 @@ function renderLvPanel(){
   const clearBtn=document.getElementById('clear-training-btn');
   if(clearBtn) clearBtn.style.display=c?'':'none';
   document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
-  // EX追想ボタン（キャラ定義に exSotsui:true がある場合のみ表示）
   const exEl=document.getElementById('ex-btns');
   const exLabel=document.getElementById('ex-btns')?.previousElementSibling;
   if(cd&&cd.exSotsui){
@@ -838,7 +815,6 @@ function renderLvPanel(){
   }
 }
 function selectCharEdit(cn){
-  // 同じキャラを再クリック → パネルを閉じて選択解除
   if(E.charName===cn){
     closeLvPanel();
     return;
@@ -846,21 +822,16 @@ function selectCharEdit(cn){
   const m=S.members.find(x=>x.id===E.memberId);
   const c=m&&m.chars.find(x=>x.name===cn);
   E.charName=cn;E.pendingRar=c?c.rar:null;E.pendingRanks=c&&c.ranks?[...c.ranks]:[];E.pendingEx=c&&c.ex?c.ex:null;
-  // 選択状態をDOMに直接反映（再生成しない）
   document.querySelectorAll('#char-grid-edit .cc').forEach(el=>{
     el.classList.toggle('sel', el.dataset.name===cn);
   });
-  // クリックした.ccの直前行の先頭にlv-panelを挿入する
   const grid=document.getElementById('char-grid-edit');
   const panel=document.getElementById('lv-panel');
   const clickedEl=grid.querySelector(`.cc[data-name="${CSS.escape(cn)}"]`);
   if(clickedEl){
-    // 表示中の.ccだけ収集
     const items=[...grid.querySelectorAll('.cc')].filter(el=>el.style.display!=='none');
-    // クリックされた要素と同じ行の最初の要素をoffsetTopで判定
     const clickedTop=clickedEl.offsetTop;
     const firstInRow=items.find(el=>el.offsetTop===clickedTop)||clickedEl;
-    // panelをgrid内のその行先頭要素の直前に挿入（grid-cols: 100%幅になるようstyle付与）
     panel.style.width='100%';
     panel.style.marginBottom='8px';
     grid.insertBefore(panel,firstInRow);
@@ -870,14 +841,11 @@ function selectCharEdit(cn){
   }
   renderLvPanel();
 }
-// SR以下のレアリティ（UR持ちキャラで制限対象）
 const SR_OR_BELOW=['SR','R','N'];
-// SR以下選択時に非表示にする上位ランク
 const HIGH_RANKS_BLOCKED=['全技極','裏技極','技極','表6','裏6'];
 
 function pickRar(r){
   E.pendingRar=r;
-  // 「URあり かつ SR以下も存在するキャラ」でSR以下を選択した場合、上位ランクを強制解除
   const cd=S.chars.find(x=>x.name===E.charName);
   if(cd && isUrWithLowerRar(cd) && SR_OR_BELOW.includes(r)){
     HIGH_RANKS_BLOCKED.forEach(rank=>{
@@ -888,12 +856,11 @@ function pickRar(r){
   renderLvPanel();
 }
 
-// URを持ち、かつSR以下のレアリティも持つキャラか判定
 function isUrWithLowerRar(cd){
   if(!cd||!cd.rars) return false;
   return cd.rars.includes('UR') && cd.rars.some(r=>SR_OR_BELOW.includes(r));
 }
-// 入力補助モード（デフォルトON）
+
 let _assistMode = true;
 function toggleAssist(){
   _assistMode = !_assistMode;
@@ -911,7 +878,6 @@ function pickRank(r){
   if(_assistMode){
     toggleWithHierarchy(E.pendingRanks,r,v=>getRankImplied(v).filter(x=>allowed.includes(x)));
   } else {
-    // 補助OFFのときは1個だけトグル
     const i=E.pendingRanks.indexOf(r);
     if(i>=0) E.pendingRanks.splice(i,1);
     else E.pendingRanks.push(r);
@@ -925,7 +891,6 @@ function pickEx(lv){
 async function saveTraining(){
   if(!E.charName){toast('キャラを選んでください');return;}
   if(!E.pendingRar||!E.pendingRanks.length){toast('選択してください');return;}
-
   showLoading();
   try{
     await fetch('/api/training', {
@@ -939,10 +904,8 @@ async function saveTraining(){
         ex:E.pendingEx||null
       })
     });
-
     await load();
     toast('保存しました');
-    // 検索クリア・選択解除・パネルを閉じる
     E.charName=null; E.pendingRar=null; E.pendingRanks=[]; E.pendingEx=null;
     const cs=document.getElementById('cc-search');if(cs)cs.value='';
     _showUntrainedOnly=false;
@@ -950,7 +913,6 @@ async function saveTraining(){
     document.getElementById('lv-panel').style.display='none';
     const m=S.members.find(x=>x.id===E.memberId);
     if(m) renderCharGridEdit(m);
-
   }catch(e){
     toast('エラー');
   } finally {
@@ -970,7 +932,6 @@ async function clearTraining(){
     });
     await load();
     toast('未入力に戻しました');
-    // パネルを閉じてグリッド再描画
     E.pendingRar=null; E.pendingRanks=[];
     document.getElementById('lv-panel').style.display='none';
     const m=S.members.find(x=>x.id===E.memberId);
@@ -986,7 +947,6 @@ async function clearTraining(){
 function showShukuenPopup(e, charName){
   e.stopPropagation();
   closeShukuenPopup();
-  // このキャラが宿縁メンバーとして含まれているキャラ名一覧を収集
   const owners=[];
   S.chars.forEach(cd=>{
     const slots=cd.shukuens&&cd.shukuens.length?cd.shukuens:[cd.shukuen].filter(Boolean);
@@ -999,7 +959,6 @@ function showShukuenPopup(e, charName){
   pop.innerHTML=`<div class="shukuen-popup-title">「${charName}」が含まれる宿縁</div>`
     +owners.map(n=>`<div class="shukuen-popup-item">${n}</div>`).join('');
   document.body.appendChild(pop);
-  // 表示位置（アイコンの近く、画面外にはみ出さないよう調整）
   const r=e.target.getBoundingClientRect();
   let top=r.bottom+4, left=r.left;
   const pw=220, ph=pop.offsetHeight||100;
@@ -1007,7 +966,6 @@ function showShukuenPopup(e, charName){
   if(top+ph>window.innerHeight-8) top=r.top-ph-4;
   pop.style.top=top+'px';
   pop.style.left=left+'px';
-  // 外側クリックで閉じる
   setTimeout(()=>document.addEventListener('click',closeShukuenPopup,{once:true}),0);
 }
 function closeShukuenPopup(){
@@ -1021,10 +979,8 @@ function goBack(){
   _showUntrainedOnly=false;
   const btn=document.getElementById('cc-untrained-btn');if(btn)btn.classList.remove('on');
   E={memberId:null,charName:null,pendingRar:null,pendingRanks:[],pendingEx:null};
-  // 戻る時もスクロール位置をトップに戻す
   window.scrollTo({top:0,behavior:'instant'});
 }
-
 
 /* ========== ② 育成検索 ========== */
 function renderFilters(){
@@ -1148,7 +1104,6 @@ function openPairEditModal(rowId,type){
   const mainKey=type==='normal'?'normalMain':'castleMain';
   const subKey=type==='normal'?'normalSub':'castleSub';
   const label=type==='normal'?'通常':'城';
-  const opts=`<option value="">なし</option>`+S.chars.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
   const curMain=row[mainKey]||'';const curSub=row[subKey]||'';
   openModal(`pair-edit`,`<h3>${label}ペアを変更</h3>
     <div class="field"><label>大将</label>
@@ -1168,12 +1123,8 @@ async function savePairEdit(rowId,type){
   const subKey=type==='normal'?'normalSub':'castleSub';
   const newMain=document.getElementById('pe-main').value||null;
   const newSub=document.getElementById('pe-sub').value||null;
-
-  // ローカル更新
   row[mainKey]=newMain;
   row[subKey]=newSub;
-
-  // API保存
   try {
     await fetch(`/api/reinf/${rowId}`, {
       method: 'PUT',
@@ -1189,7 +1140,6 @@ async function savePairEdit(rowId,type){
   } catch(err) {
     console.error(err);
   }
-
   renderReinfTable();closeModal();
 }
 
@@ -1270,10 +1220,8 @@ function memberPassesRS(m,row){
 
 function renderRSResults(){
   const row=S.reinf.find(r=>r.id===RS.rowId);if(!row)return;
-  // 既にnameが埋まっている行のメンバー名一覧
   const alreadyNames=new Set(S.reinf.filter(r=>r.memberName).map(r=>r.memberName));
   const results=S.members.filter(m=>m.role!=='その他'&&memberPassesRS(m,row));
-  // 大将宿縁pt降順→副将宿縁pt降順でソート
   const mainCd=S.chars.find(c=>c.name===row.normalMain);
   const subCd=S.chars.find(c=>c.name===row.normalSub);
   results.sort((a,b)=>{
@@ -1320,7 +1268,6 @@ function renderRSResults(){
 async function setReinfMember(rowId,name){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
   row.memberName=name||null;
-
   try {
     await fetch(`/api/reinf/${rowId}`, {
       method: 'PUT',
@@ -1336,7 +1283,6 @@ async function setReinfMember(rowId,name){
   } catch(err) {
     console.error(err);
   }
-
   renderReinfTable();
   if(name)toast(name+'を追加しました');else toast('解除しました');
   renderRSResults();
@@ -1345,6 +1291,21 @@ async function setReinfMember(rowId,name){
 function closeReinfSearch(){document.getElementById('reinf-search-overlay').style.display='none';}
 
 /* ========== キャラ管理 ========== */
+// 入力補助モード（キャラ管理用、デフォルトON）
+let _charAssistMode = true;
+function toggleCharAssist(){
+  _charAssistMode = !_charAssistMode;
+  // 新規・更新どちらのボタンも同期
+  ['char-assist-toggle-btn','char-assist-toggle-btn-cu'].forEach(id=>{
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    btn.textContent = '入力補助 ' + (_charAssistMode ? 'ON' : 'OFF');
+    btn.style.background = _charAssistMode ? 'var(--acc)' : 'var(--bg)';
+    btn.style.color = _charAssistMode ? '#FFF8F0' : 'var(--t2)';
+    btn.style.borderColor = _charAssistMode ? 'var(--acc)' : 'var(--bm)';
+  });
+}
+
 function renderCharMgmtRarBtns(elId,sel,fn){
   document.getElementById(elId).innerHTML=ALL_RARITIES.map(r=>{const on=sel.includes(r);const s=RAR_S[r]||{};
     return`<button class="p-btn" onclick="${fn}('${r}')" style="${on?`background:${s.bg};color:${s.c};border-color:${s.bd};font-weight:500`:''}">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
@@ -1353,15 +1314,34 @@ function renderCharMgmtRankBtns(elId,sel,fn){
   document.getElementById(elId).innerHTML=ALL_RANKS.map(r=>{const on=sel.includes(r);const top=TOP_RANKS.includes(r);
     return`<button class="p-btn" onclick="${fn}('${r}')" style="${on?`background:${top?'#EEEDFE':'#EDE5D8'};color:${top?'#3C3489':'#634B38'};border-color:${top?'#AFA9EC':'#B4A494'};font-weight:500`:''}">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
 }
-function toggleCnRar(r){toggleWithHierarchy(cnSelRar,r,getRarImplied);renderCharMgmtRarBtns('cn-rar-btns',cnSelRar,'toggleCnRar');renderCharMgmtRankBtns('cn-rank-btns',cnSelRank,'toggleCnRank');}
-function toggleCnRank(r){toggleWithHierarchy(cnSelRank,r,getRankImplied);renderCharMgmtRarBtns('cn-rar-btns',cnSelRar,'toggleCnRar');renderCharMgmtRankBtns('cn-rank-btns',cnSelRank,'toggleCnRank');}
-function toggleCuRar(r){toggleWithHierarchy(cuSelRar,r,getRarImplied);renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');}
-function toggleCuRank(r){toggleWithHierarchy(cuSelRank,r,getRankImplied);renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');}
-// 宿縁の状態
-// 宿縁は2スロット: cnShukuens[0], cnShukuens[1]
+function toggleCnRar(r){
+  if(_charAssistMode){ toggleWithHierarchy(cnSelRar,r,getRarImplied); }
+  else { const i=cnSelRar.indexOf(r); if(i>=0)cnSelRar.splice(i,1); else cnSelRar.push(r); }
+  renderCharMgmtRarBtns('cn-rar-btns',cnSelRar,'toggleCnRar');
+  renderCharMgmtRankBtns('cn-rank-btns',cnSelRank,'toggleCnRank');
+}
+function toggleCnRank(r){
+  if(_charAssistMode){ toggleWithHierarchy(cnSelRank,r,getRankImplied); }
+  else { const i=cnSelRank.indexOf(r); if(i>=0)cnSelRank.splice(i,1); else cnSelRank.push(r); }
+  renderCharMgmtRarBtns('cn-rar-btns',cnSelRar,'toggleCnRar');
+  renderCharMgmtRankBtns('cn-rank-btns',cnSelRank,'toggleCnRank');
+}
+function toggleCuRar(r){
+  if(_charAssistMode){ toggleWithHierarchy(cuSelRar,r,getRarImplied); }
+  else { const i=cuSelRar.indexOf(r); if(i>=0)cuSelRar.splice(i,1); else cuSelRar.push(r); }
+  renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');
+  renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');
+}
+function toggleCuRank(r){
+  if(_charAssistMode){ toggleWithHierarchy(cuSelRank,r,getRankImplied); }
+  else { const i=cuSelRank.indexOf(r); if(i>=0)cuSelRank.splice(i,1); else cuSelRank.push(r); }
+  renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');
+  renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');
+}
+
 let cnShukuens=[{enabled:false,members:[]},{enabled:false,members:[]}];
 let cuShukuens=[{enabled:false,members:[]},{enabled:false,members:[]}];
-let shukuenAddTarget=null; // {prefix:'cn'|'cu', idx:0|1}
+let shukuenAddTarget=null;
 
 function setCnShukuen(idx,enabled){
   cnShukuens[idx].enabled=enabled;
@@ -1409,7 +1389,6 @@ function removeShukuenMember(prefix,idx,i){
 function openShukuenAddModal(prefix,idx){
   shukuenAddTarget={prefix,idx,changeIdx:null};
   const arr=prefix==='cn'?cnShukuens:cuShukuens;
-  // 重複禁止はスロット内のみ（他スロットは除外しない）
   const usedInSlot=arr[idx].members.filter(n=>n!=='?');
   const available=S.chars.filter(c=>!usedInSlot.includes(c.name));
   openModal('shukuen-add',`<h3>宿縁キャラを追加</h3>
@@ -1466,7 +1445,7 @@ function addShukuenMember(){
   const {prefix,idx,changeIdx}=shukuenAddTarget;
   const arr=prefix==='cn'?cnShukuens:cuShukuens;
   if(changeIdx!=null){
-    arr[idx].members[changeIdx]=name; // ？を実キャラに置き換え
+    arr[idx].members[changeIdx]=name;
   } else {
     if(!arr[idx].members.includes(name))arr[idx].members.push(name);
   }
@@ -1474,11 +1453,6 @@ function addShukuenMember(){
   closeModal();
 }
 
-/* 宿縁レベル計算: メンバーの育成データからレベルを判定 */
-// ranks配列に技極・裏技極が含まれる → 'gikkyoku'
-// 技極なしで表6以上 → 'omote6'  (表6, 裏1〜裏6, 裏技極は除外済みなのでこちら考慮不要)
-// それ以外で何か入力あり → 'soji'
-// 未入力 → null
 function shukuenLevel(memberChar){
   if(!memberChar||!memberChar.ranks||!memberChar.ranks.length) return null;
   const ranks=memberChar.ranks;
@@ -1488,7 +1462,6 @@ function shukuenLevel(memberChar){
   return 'soji';
 }
 
-/* 宿縁バッジHTML: 2スロット対応、2段表示 */
 function shukuenBadgeHtml(member, charDef){
   const shukuens=charDef.shukuens||[];
   const slots=shukuens.length?shukuens:[charDef.shukuen||{enabled:false,members:[]}];
@@ -1513,17 +1486,14 @@ function shukuenBadgeHtml(member, charDef){
     if(g) pills+=`<span class="sh-pill gikkyoku"><span class="sh-pill-dot"></span>${g}</span>`;
     if(o) pills+=`<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
     if(s) pills+=`<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
-    // ポイントが0でも枠は表示（?のみの場合など）
     badges.push(`<div class="sh-badge-wrap">${label}${pills}<span style="font-size:10px;color:var(--t3)">/${total}</span></div>`);
   });
   if(!badges.length) return '';
-  // 2スロットある場合は縦2段
   return badges.length>1
     ?`<div style="display:flex;flex-direction:column;gap:2px">${badges.join('')}</div>`
     :badges[0];
 }
 
-/* 宿縁ポイント計算: 紫×3 + 緑×2 + 黄×1 */
 function shukuenPt(member, charDef){
   if(!charDef) return 0;
   const shukuens=charDef.shukuens||[];
@@ -1532,7 +1502,7 @@ function shukuenPt(member, charDef){
   slots.forEach(sh=>{
     if(!sh||!sh.enabled||!sh.members) return;
     sh.members.forEach(sName=>{
-      if(sName==='?') return; // ダミーはポイント計算対象外
+      if(sName==='?') return;
       const mc=member.chars.find(c=>c.name===sName);
       const lv=shukuenLevel(mc);
       if(lv==='gikkyoku') total+=3;
@@ -1554,9 +1524,16 @@ function initCharNewForm(){
   renderCharMgmtRankBtns('cn-rank-btns',cnSelRank,'toggleCnRank');
   setCnShukuen(0,false);setCnShukuen(1,false);
   setCnEx(false);
+  // 入力補助ボタンの表示を同期
+  const btn = document.getElementById('char-assist-toggle-btn');
+  if(btn){
+    btn.textContent = '入力補助 ' + (_charAssistMode ? 'ON' : 'OFF');
+    btn.style.background = _charAssistMode ? 'var(--acc)' : 'var(--bg)';
+    btn.style.color = _charAssistMode ? '#FFF8F0' : 'var(--t2)';
+    btn.style.borderColor = _charAssistMode ? 'var(--acc)' : 'var(--bm)';
+  }
 }
-// ===== 画像処理 (Supabase Storage方式) =====
-// _cnImg / _cuImg はアップロード済みの公開URL or null or ''(削除)
+
 let _cnImg = null;
 let _cuImg = null;
 
@@ -1566,9 +1543,8 @@ function handleImgSelect(prefix, input){
   const reader = new FileReader();
   reader.onload = e => {
     cropSquare(e.target.result, 400, async blob => {
-      // プレビューを先に表示（UX向上）
       const previewUrl = URL.createObjectURL(blob);
-      renderImgPreview(prefix, previewUrl, true); // uploading=true
+      renderImgPreview(prefix, previewUrl, true);
       try {
         const url = await uploadCharImage(blob);
         if(prefix==='cn') _cnImg = url;
@@ -1583,7 +1559,6 @@ function handleImgSelect(prefix, input){
   reader.readAsDataURL(file);
 }
 
-// Canvas でセンタークロップ → Blob で返す
 function cropSquare(src, size, cb){
   const img = new Image();
   img.onload = () => {
@@ -1598,7 +1573,6 @@ function cropSquare(src, size, cb){
   img.src = src;
 }
 
-// Supabase Storage にアップロードして公開URLを返す
 async function uploadCharImage(blob){
   const fd = new FormData();
   fd.append('file', blob, 'char.jpg');
@@ -1642,7 +1616,6 @@ function resetImgArea(prefix){
 async function addChar(){
   const name=document.getElementById('cn-name').value;
   const yomi=document.getElementById('cn-yomi').value.trim();
-
   showLoading();
   try {
     await fetch('/api/chars',{
@@ -1658,7 +1631,6 @@ async function addChar(){
         img: _cnImg || null
       })
     });
-
     await load();
     toast('追加しました');
   } finally {
@@ -1666,7 +1638,6 @@ async function addChar(){
   }
 }
 
-// 読み仮名でソート（なければキャラ名フォールバック）
 function sortByYomi(arr){ return [...arr].sort((a,b)=>(a.yomi||a.name).localeCompare(b.yomi||b.name,'ja')); }
 
 function renderCharUpdateSel(){
@@ -1681,30 +1652,33 @@ function loadCharForUpdate(){
   document.getElementById('cu-name').value=cd.name;
   document.getElementById('cu-yomi').value=cd.yomi||'';
   cuSelRar=[...cd.rars];cuSelRank=[...cd.ranks];
-  // 画像プレビュー
-  _cuImg = null; // nullで「変更なし」状態にリセット
+  _cuImg = null;
   if(cd.img){ renderImgPreview('cu', cd.img); }
   else       { resetImgArea('cu'); }
   renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');
   renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');
-  // 宿縁ロード（旧形式 {enabled,members} との互換）
   const raw=cd.shukuens||[];
   cuShukuens=[0,1].map(i=>{
     const s=raw[i]||cd.shukuen||{enabled:false,members:[]};
     return {enabled:!!s.enabled, members:[...(s.members||[])]};
   });
-  // 旧データで shukuen が1件しかない場合、idx=1 はリセット
   if(!raw.length&&cd.shukuen){cuShukuens[1]={enabled:false,members:[]};}
   setCuShukuen(0,cuShukuens[0].enabled);setCuShukuen(1,cuShukuens[1].enabled);
-  // EX追想
   setCuEx(!!cd.exSotsui);
+  // 入力補助ボタンの表示を同期
+  const btn = document.getElementById('char-assist-toggle-btn-cu');
+  if(btn){
+    btn.textContent = '入力補助 ' + (_charAssistMode ? 'ON' : 'OFF');
+    btn.style.background = _charAssistMode ? 'var(--acc)' : 'var(--bg)';
+    btn.style.color = _charAssistMode ? '#FFF8F0' : 'var(--t2)';
+    btn.style.borderColor = _charAssistMode ? 'var(--acc)' : 'var(--bm)';
+  }
   document.getElementById('cu-detail').style.display='block';
 }
 async function updateChar(){
   const oldName=document.getElementById('cu-sel').value;
   const name=document.getElementById('cu-name').value;
   const yomi=document.getElementById('cu-yomi').value.trim();
-
   showLoading();
   try {
     const body = {
@@ -1714,14 +1688,12 @@ async function updateChar(){
       shukuens:cuShukuens,
       exSotsui:cuExSotsui,
     };
-    // _cuImg===null → 変更なし(送らない), _cuImg==='' → 削除, それ以外 → 新画像
     if(_cuImg !== null) body.img = _cuImg;
     await fetch(`/api/chars/${oldName}`,{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(body)
     });
-
     await load();
     toast('更新しました');
   } finally {
@@ -1731,46 +1703,48 @@ async function updateChar(){
 
 async function deleteChar(){
   const name = document.getElementById('cu-sel').value;
-  if(!name){
-    toast('キャラを選択してください');
-    return;
-  }
-
-  // 確認ダイアログ（事故防止）
+  if(!name){ toast('キャラを選択してください'); return; }
   if(!confirm(`${name} を削除しますか？`)) return;
-
   try{
-    const res = await fetch(`/api/chars/${encodeURIComponent(name)}`, {
-      method: 'DELETE'
-    });
-
-    if(!res.ok){
-      throw new Error('削除失敗');
-    }
-
-    // 再読み込み（DBと同期）
+    const res = await fetch(`/api/chars/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    if(!res.ok){ throw new Error('削除失敗'); }
     await load();
-
-    // UIリセット
     document.getElementById('cu-detail').style.display = 'none';
-
     toast('削除しました');
-
   } catch(err){
     console.error(err);
     toast('削除に失敗しました');
   }
 }
 
+// ===== renderCharListDisplay (修正版) =====
 function renderCharListDisplay(){
   const el=document.getElementById('char-list-display');if(!el)return;
   if(!S.chars.length){el.innerHTML='<div class="empty">キャラが登録されていません</div>';return;}
   el.innerHTML=sortByYomi(S.chars).map(cd=>{
-    const sh=cd.shukuen||{enabled:false,members:[]};
-    const shHtml=sh.enabled&&sh.members.length
-      ?`<div style="font-size:10px;color:var(--t2);margin-top:6px;margin-bottom:2px">宿縁</div>
-        <div style="font-size:10px;color:var(--t)">${sh.members.join('・')}</div>`
-      :`<div style="font-size:10px;color:var(--t3);margin-top:4px">宿縁なし</div>`;
+    // shukuens 配列（2スロット）を優先、なければ旧 shukuen 単体を fallback
+    const shukuens = cd.shukuens && cd.shukuens.length
+      ? cd.shukuens
+      : [cd.shukuen || {enabled:false,members:[]}, {enabled:false,members:[]}];
+
+    // 宿縁①②の表示
+    const shHtml = shukuens.map((sh, i) => {
+      if(!sh) return `<div style="font-size:10px;color:var(--t3);margin-top:4px">宿縁${i+1}なし</div>`;
+      if(sh.enabled){
+        return `<div style="font-size:10px;margin-top:4px">
+          <span style="font-weight:500;color:var(--t)">宿縁${i+1}あり</span>
+          ${sh.members&&sh.members.length ? `<span style="color:var(--t3)">（${sh.members.length}体）</span>` : ''}
+        </div>`;
+      } else {
+        return `<div style="font-size:10px;color:var(--t3);margin-top:4px">宿縁${i+1}なし</div>`;
+      }
+    }).join('');
+
+    // EX追想バッジ
+    const exHtml = cd.exSotsui
+      ? `<div style="margin-top:5px"><span class="ex-bdg">EXあり</span></div>`
+      : '';
+
     return`<div class="c-card">
       <div style="font-size:12px;font-weight:500;margin-bottom:5px">${cd.name}</div>
       <div style="font-size:10px;color:var(--t2);margin-bottom:3px">レアリティ</div>
@@ -1778,9 +1752,11 @@ function renderCharListDisplay(){
       <div style="font-size:10px;color:var(--t2);margin-bottom:3px">ランク</div>
       <div class="badges">${cd.ranks.map(rankBdg).join('')||'<span style="font-size:10px;color:var(--t3)">未設定</span>'}</div>
       ${shHtml}
+      ${exHtml}
     </div>`;
   }).join('');
 }
+
 function switchCharMode(mode,el){
   document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
   document.getElementById('char-new-form').style.display=mode==='new'?'block':'none';
@@ -1821,7 +1797,6 @@ async function saveMemberEdit(){
   const id=parseInt(document.getElementById('me-sel').value);
   const name=document.getElementById('me-name').value;
   const role=document.getElementById('me-role').value;
-
   showLoading();
   try {
     await fetch(`/api/members/${id}`,{
@@ -1829,7 +1804,6 @@ async function saveMemberEdit(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({name,role})
     });
-
     await load();
     closeModal();
     toast('更新しました');
@@ -1840,13 +1814,9 @@ async function saveMemberEdit(){
 
 async function deleteMember(){
   const id=parseInt(document.getElementById('me-sel').value);
-
   showLoading();
   try {
-    await fetch(`/api/members/${id}`,{
-      method:'DELETE'
-    });
-
+    await fetch(`/api/members/${id}`,{ method:'DELETE' });
     await load();
     closeModal();
     toast('削除しました');
@@ -1859,7 +1829,6 @@ async function addMember(){
   const name=(document.getElementById('mm-name').value||'').trim();
   const role=(document.getElementById('mm-role').value||'').trim();
   if(!name)return;
-
   showLoading();
   try {
     const res = await fetch('/api/members', {
@@ -1867,16 +1836,10 @@ async function addMember(){
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, role })
     });
-
-    if(!res.ok){
-      throw new Error('保存失敗');
-    }
-
+    if(!res.ok){ throw new Error('保存失敗'); }
     await load();
-
     closeModal();
     toast('追加しました');
-
   } catch(err){
     console.error(err);
     toast('エラーが発生しました');
@@ -1884,7 +1847,6 @@ async function addMember(){
     hideLoading();
   }
 }
-
 
 /* ========== タブ切替 ========== */
 function switchTab(tab,el){
@@ -1902,14 +1864,9 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 function showLoading(){document.getElementById('loading-overlay').classList.add('show');}
 function hideLoading(){document.getElementById('loading-overlay').classList.remove('show');}
 
-/* ========== ログイン (Supabase DB管理) ========== */
-// パスワードはSupabaseのpasswordsテーブルで管理
-// テーブル構成: id(text PK), password(text)
-// レコード例: {id:'admin', password:'xxxx'}, {id:'user', password:'yyyy'}
+/* ========== ログイン ========== */
+let currentRole = null;
 
-let currentRole = null; // 'admin' or 'user'
-
-// ===== 手動更新 =====
 async function manualReload(){
   const btn = document.getElementById('reload-btn');
   if(btn){ btn.disabled = true; btn.textContent = '更新中...'; }
@@ -1923,12 +1880,10 @@ async function manualReload(){
   }
 }
 
-// ===== セッション保持 =====
 function saveSession(role){ sessionStorage.setItem('role', role); }
 function clearSession(){ sessionStorage.removeItem('role'); }
 function getSavedRole(){ return sessionStorage.getItem('role'); }
 
-// ページ読み込み時にセッション復元
 (function restoreSession(){
   const saved = getSavedRole();
   if(saved){
@@ -1945,11 +1900,9 @@ async function doLogin(){
   const errEl = document.getElementById('login-error');
   const btn = document.querySelector('#login-screen button');
   if(!pw){ errEl.textContent = 'パスワードを入力してください'; return; }
-
   btn.disabled = true;
   btn.textContent = '確認中...';
   errEl.textContent = '';
-
   try {
     const res = await fetch('/api/auth/verify', {
       method: 'POST',
@@ -1961,7 +1914,7 @@ async function doLogin(){
       errEl.textContent = data.error || 'パスワードが違います';
       return;
     }
-    currentRole = data.role; // 'admin' or 'user'
+    currentRole = data.role;
     saveSession(currentRole);
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('main-wrap').style.display = '';
@@ -1982,29 +1935,19 @@ function doLogout(){
   document.getElementById('login-error').textContent = '';
   document.getElementById('main-wrap').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
-  // 最初のタブをリセット
-  document.querySelectorAll('.tab').forEach((t,i) => {
-    t.classList.toggle('active', i===0);
-  });
-  document.querySelectorAll('.page').forEach((p,i) => {
-    p.classList.toggle('active', i===0);
-  });
+  document.querySelectorAll('.tab').forEach((t,i) => { t.classList.toggle('active', i===0); });
+  document.querySelectorAll('.page').forEach((p,i) => { p.classList.toggle('active', i===0); });
 }
 
 function applyRole(){
   const isAdmin = currentRole === 'admin';
-  document.querySelectorAll('.admin-only').forEach(el => {
-    el.style.display = isAdmin ? '' : 'none';
-  });
-  document.querySelectorAll('.input-admin-only').forEach(el => {
-    el.style.display = isAdmin ? '' : 'none';
-  });
-  // ロールバッジ
+  document.querySelectorAll('.admin-only').forEach(el => { el.style.display = isAdmin ? '' : 'none'; });
+  document.querySelectorAll('.input-admin-only').forEach(el => { el.style.display = isAdmin ? '' : 'none'; });
   document.getElementById('role-badge-wrap').innerHTML =
     `<span class="role-badge ${isAdmin?'admin':'user'}">${isAdmin?'管理者':'利用者'}</span>`;
 }
 
-/* ========== パスワード変更モーダル (管理者専用) ========== */
+/* ========== パスワード変更モーダル ========== */
 function openChangePwModal(){
   openModal('change-pw', `<h3>利用者パスワード変更</h3>
     <div class="field"><label>新しいパスワード</label>
@@ -2027,7 +1970,6 @@ async function saveUserPassword(){
   if(!nw){ errEl.textContent = 'パスワードを入力してください'; return; }
   if(nw !== cf){ errEl.textContent = '確認パスワードが一致しません'; return; }
   if(nw.length < 4){ errEl.textContent = '4文字以上で設定してください'; return; }
-
   showLoading();
   try {
     const res = await fetch('/api/auth/change-password', {
@@ -2045,7 +1987,6 @@ async function saveUserPassword(){
     hideLoading();
   }
 }
-
 </script>
 </body>
 </html>
