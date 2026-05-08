@@ -132,7 +132,20 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 
 /* キャラ管理 */
 .grid-charlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
-.c-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px}
+.c-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;position:relative;cursor:pointer;transition:border-color .15s,background .15s}  /* ← position/cursor/transition追記 */
+.c-card:hover{border-color:var(--bm);background:var(--acc-lt)}  /* ← 追加 */
+.c-card-shukuen-badge{
+  position:absolute;top:6px;right:6px;
+  width:0;height:0;
+  border-left:9px solid transparent;
+  border-right:9px solid transparent;
+  border-bottom:16px solid #C89B20;
+  cursor:default;
+}
+.c-card-shukuen-badge::after{
+  content:'!';position:absolute;top:3px;left:-4px;
+  font-size:9px;font-weight:900;color:#fff;line-height:1;
+}
 .sub-tabs{display:flex;gap:5px;margin-bottom:1rem}
 .sub-tab{padding:5px 13px;font-size:11px;border:1px solid var(--bm);border-radius:20px;cursor:pointer;background:var(--bg);color:var(--t2);font-family:inherit;transition:all .15s}
 .sub-tab.active{background:var(--acc);color:#FFF8F0;border-color:var(--acc)}
@@ -1722,12 +1735,12 @@ function renderCharListDisplay(){
   const el=document.getElementById('char-list-display');if(!el)return;
   if(!S.chars.length){el.innerHTML='<div class="empty">キャラが登録されていません</div>';return;}
   el.innerHTML=sortByYomi(S.chars).map(cd=>{
-    // shukuens 配列（2スロット）を優先、なければ旧 shukuen 単体を fallback
     const shukuens = cd.shukuens && cd.shukuens.length
       ? cd.shukuens
       : [cd.shukuen || {enabled:false,members:[]}, {enabled:false,members:[]}];
 
-    // 宿縁①②の表示
+    const hasShukuen = shukuens.some(sh => sh && sh.enabled && sh.members && sh.members.includes('?'));
+
     const shHtml = shukuens.map((sh, i) => {
       if(!sh) return `<div style="font-size:10px;color:var(--t3);margin-top:4px">宿縁${i+1}なし</div>`;
       if(sh.enabled){
@@ -1740,13 +1753,18 @@ function renderCharListDisplay(){
       }
     }).join('');
 
-    // EX追想バッジ
     const exHtml = cd.exSotsui
       ? `<div style="margin-top:5px"><span class="ex-bdg">EXあり</span></div>`
       : '';
 
-    return`<div class="c-card">
-      <div style="font-size:12px;font-weight:500;margin-bottom:5px">${cd.name}</div>
+    // △！バッジHTML
+    const shukuenBadge = hasShukuen
+      ? `<div class="c-card-shukuen-badge" title="宿縁あり"></div>`
+      : '';
+
+    return`<div class="c-card" onclick="jumpToCharUpdate('${esc(cd.name)}')">
+      ${shukuenBadge}
+      <div style="font-size:12px;font-weight:500;margin-bottom:5px;padding-right:14px">${cd.name}</div>
       <div style="font-size:10px;color:var(--t2);margin-bottom:3px">レアリティ</div>
       <div class="badges" style="margin-bottom:5px">${cd.rars.map(rarBdg).join('')||'<span style="font-size:10px;color:var(--t3)">未設定</span>'}</div>
       <div style="font-size:10px;color:var(--t2);margin-bottom:3px">ランク</div>
@@ -1755,6 +1773,21 @@ function renderCharListDisplay(){
       ${exHtml}
     </div>`;
   }).join('');
+}
+
+function jumpToCharUpdate(charName){
+  // 「更新」サブタブに切り替え
+  const updateTab = document.querySelector('#page-chars .sub-tab:nth-child(2)');
+  if(updateTab) switchCharMode('update', updateTab);
+
+  // セレクトに値をセットしてイベントを発火
+  const sel = document.getElementById('cu-sel');
+  if(!sel) return;
+  sel.value = charName;
+  loadCharForUpdate();
+
+  // 画面上部へスクロール
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function switchCharMode(mode,el){
