@@ -2100,21 +2100,15 @@ async function manualReload(){
 // roleのみメモリ上に保持してUI制御に使う
 
 (async function restoreSession(){
-  // ページ読み込み時にAPIを叩いてCookieが有効か確認
   try {
     const res = await fetch('/api/init');
     if(res.ok){
-      // Cookieが有効 → roleはinitレスポンスから取れないため、
-      // セッション確認用エンドポイントで取得
-      const chk = await fetch('/api/auth/session');
-      if(chk.ok){
-        const d = await chk.json();
-        currentRole = d.role;
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('main-wrap').style.display = '';
-        applyRole();
-        load();
-      }
+      const d = await res.json();
+      currentRole = d.role;
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('main-wrap').style.display = '';
+      applyRole();
+      load();
     }
   } catch(e) {}
 })();

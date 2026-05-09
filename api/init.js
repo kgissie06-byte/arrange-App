@@ -83,5 +83,6 @@ export default async function handler(req, res) {
     filRar: [],
     filRank: [],
     filRole: [],
+    role: auth.role,
   })
 }
