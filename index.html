@@ -555,9 +555,18 @@ body.touch-device *:focus-visible {
         <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-castle-sub-rank"></div></div>
       </div>
     </div>
-    <div class="fil-sec" style="margin-bottom:.75rem">
-      <div class="fil-label">所属で絞り込み</div>
-      <div class="fil-btns" id="rs-role"></div>
+    <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:.75rem">
+      <div class="fil-sec" style="flex:1;min-width:0">
+        <div class="fil-label">所属で絞り込み</div>
+        <div class="fil-btns" id="rs-role"></div>
+      </div>
+      <div class="fil-sec" style="flex-shrink:0">
+        <div class="fil-label">ソート優先度</div>
+        <div style="display:flex;gap:4px">
+          <button id="rs-sort-rar" class="f-btn on" onclick="setRSSort('rar')" style="background:#EDE5D8;color:#634B38;border-color:#B4A494;white-space:nowrap">レア＞ランク</button>
+          <button id="rs-sort-rank" class="f-btn" onclick="setRSSort('rank')" style="white-space:nowrap">ランク＞レア</button>
+        </div>
+      </div>
     </div>
     <div style="font-size:11px;color:var(--t2);margin-bottom:8px" id="rs-result-count"></div>
     <div class="reinf-results-list" id="rs-results"></div>
@@ -656,7 +665,7 @@ let S={
 let E={memberId:null,charName:null,pendingRar:null,pendingRanks:[],pendingEx:null};
 let cnSelRar=[],cnSelRank=[],cuSelRar=[],cuSelRank=[];
 let cnExSotsui=false, cuExSotsui=false;
-let RS={rowId:null,mainRar:[],mainRank:[],subRar:[],subRank:[],roleFilter:[]};
+let RS={rowId:null,mainRar:[],mainRank:[],subRar:[],subRank:[],castleMainRar:[],castleMainRank:[],castleSubRar:[],castleSubRank:[],roleFilter:[],sortMode:'rar',dualMode:false};
 
 function esc(s){return(s||'').replace(/'/g,"\\'");}
 function av(i){return AVC[((i%AVC.length)+AVC.length)%AVC.length];}
@@ -1193,8 +1202,13 @@ async function savePairEdit(rowId,type){
 /* ===== 援軍専用検索 ===== */
 function openReinfSearch(rowId){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
-  RS={rowId,mainRar:[],mainRank:[],subRar:[],subRank:[],castleMainRar:[],castleMainRank:[],castleSubRar:[],castleSubRank:[],roleFilter:[]};
-  // 通常と城の両方が埋まっていて内容が異なる場合は2パネル
+  const prevSortMode=RS.sortMode||'rar';
+  RS={rowId,mainRar:[],mainRank:[],subRar:[],subRank:[],castleMainRar:[],castleMainRank:[],castleSubRar:[],castleSubRank:[],roleFilter:[],sortMode:prevSortMode,dualMode:false};
+  // ソートボタン表示を同期
+  const onStyle='background:#EDE5D8;color:#634B38;border-color:#B4A494';
+  const rarBtn=document.getElementById('rs-sort-rar');const rankBtn=document.getElementById('rs-sort-rank');
+  if(rarBtn){rarBtn.className='f-btn'+(prevSortMode==='rar'?' on':'');rarBtn.style.cssText=(prevSortMode==='rar'?onStyle+';':'')+'white-space:nowrap';}
+  if(rankBtn){rankBtn.className='f-btn'+(prevSortMode==='rank'?' on':'');rankBtn.style.cssText=(prevSortMode==='rank'?onStyle+';':'')+'white-space:nowrap';}
   const dualMode=!!(row.normalMain&&row.castleMain&&(row.normalMain!==row.castleMain||row.normalSub!==row.castleSub));
   RS.dualMode=dualMode;
   const normalPanel=document.querySelector('.reinf-search-filters');
@@ -1313,6 +1327,47 @@ function memberPassesRS(m,row){
   return true;
 }
 
+const RS_RAR_SCORE={'LG3':8,'LG2':7,'LG1':6,'LG':5,'UR':4,'SR':3,'R':2,'N':1};
+const RS_RANK_SCORE={'全技極':15,'裏技極':14,'技極':13,'裏6':12,'裏5':11,'裏4':10,'裏3':9,'裏2':8,'裏1':7,'表6':6,'表5':5,'表4':4,'表3':3,'表2':2,'表1':1};
+
+function rsCharRarScore(member, charName){
+  if(!charName) return 0;
+  const c=member.chars.find(x=>x.name===charName);
+  if(!c) return 0;
+  return RS_RAR_SCORE[c.rar]||0;
+}
+function rsCharRankScore(member, charName){
+  if(!charName) return 0;
+  const c=member.chars.find(x=>x.name===charName);
+  if(!c||!c.ranks||!c.ranks.length) return 0;
+  return Math.max(...c.ranks.map(r=>RS_RANK_SCORE[r]||0));
+}
+function rsMemberRarScore(m, row){
+  return Math.max(
+    rsCharRarScore(m,row.normalMain),
+    rsCharRarScore(m,row.normalSub),
+    RS.dualMode?rsCharRarScore(m,row.castleMain):0,
+    RS.dualMode?rsCharRarScore(m,row.castleSub):0
+  );
+}
+function rsMemberRankScore(m, row){
+  return Math.max(
+    rsCharRankScore(m,row.normalMain),
+    rsCharRankScore(m,row.normalSub),
+    RS.dualMode?rsCharRankScore(m,row.castleMain):0,
+    RS.dualMode?rsCharRankScore(m,row.castleSub):0
+  );
+}
+function setRSSort(mode){
+  RS.sortMode=mode;
+  document.getElementById('rs-sort-rar').className='f-btn'+(mode==='rar'?' on':'');
+  document.getElementById('rs-sort-rank').className='f-btn'+(mode==='rank'?' on':'');
+  const onStyle='background:#EDE5D8;color:#634B38;border-color:#B4A494';
+  document.getElementById('rs-sort-rar').style.cssText=(mode==='rar'?onStyle+';':'')+'white-space:nowrap';
+  document.getElementById('rs-sort-rank').style.cssText=(mode==='rank'?onStyle+';':'')+'white-space:nowrap';
+  renderRSResults();
+}
+
 function renderRSResults(){
   const row=S.reinf.find(r=>r.id===RS.rowId);if(!row)return;
   const alreadyNames=new Set(S.reinf.filter(r=>r.memberName).map(r=>r.memberName));
@@ -1322,9 +1377,18 @@ function renderRSResults(){
   const castleMainCd=RS.dualMode?S.chars.find(c=>c.name===row.castleMain):null;
   const castleSubCd=RS.dualMode?S.chars.find(c=>c.name===row.castleSub):null;
   results.sort((a,b)=>{
-    const ptA=shukuenPt(a,mainCd), ptB=shukuenPt(b,mainCd);
-    if(ptB!==ptA) return ptB-ptA;
-    return shukuenPt(b,subCd)-shukuenPt(a,subCd);
+    const rarA=rsMemberRarScore(a,row), rarB=rsMemberRarScore(b,row);
+    const rankA=rsMemberRankScore(a,row), rankB=rsMemberRankScore(b,row);
+    const shA=shukuenPt(a,mainCd)+(RS.dualMode?shukuenPt(a,castleMainCd):0);
+    const shB=shukuenPt(b,mainCd)+(RS.dualMode?shukuenPt(b,castleMainCd):0);
+    if(RS.sortMode==='rar'){
+      if(rarB!==rarA) return rarB-rarA;
+      if(rankB!==rankA) return rankB-rankA;
+    } else {
+      if(rankB!==rankA) return rankB-rankA;
+      if(rarB!==rarA) return rarB-rarA;
+    }
+    return shB-shA;
   });
   const el=document.getElementById('rs-results');
   document.getElementById('rs-result-count').textContent=results.length+'件';
