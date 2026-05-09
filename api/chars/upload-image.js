@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import formidable from 'formidable'
 import fs from 'fs'
-import { requireAuth } from '../../lib/auth'
+import { requireAuth } from '../../lib/auth.js'
 
 export const config = { api: { bodyParser: false } }
 

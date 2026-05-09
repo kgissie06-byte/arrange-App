@@ -1,4 +1,4 @@
-import { clearSession } from '../../lib/auth'
+import { clearSession } from '../../lib/auth.js'
 
 export default function handler(req, res) {
   if (req.method !== 'POST') {

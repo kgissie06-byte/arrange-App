@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
-import { issueSession } from '../../lib/auth'
+import { issueSession } from '../../lib/auth.js'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
