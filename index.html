@@ -541,6 +541,20 @@ body.touch-device *:focus-visible {
         <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-sub-rank"></div></div>
       </div>
     </div>
+    <!-- 城用フィルターパネル（通常と城が異なる場合のみ表示） -->
+    <div class="reinf-search-filters" id="rs-castle-filters" style="display:none;margin-top:.625rem">
+      <div style="margin-bottom:10px">
+        <div class="filter-group-title" id="rs-castle-main-label">城 大将</div>
+        <div class="fil-sec" style="margin-bottom:6px"><div class="fil-label">レアリティ</div><div class="fil-btns" id="rs-castle-main-rar"></div></div>
+        <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-castle-main-rank"></div></div>
+      </div>
+      <hr class="div" style="margin:.75rem 0">
+      <div id="rs-castle-sub-section">
+        <div class="filter-group-title" id="rs-castle-sub-label">城 副将</div>
+        <div class="fil-sec" style="margin-bottom:6px"><div class="fil-label">レアリティ</div><div class="fil-btns" id="rs-castle-sub-rar"></div></div>
+        <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-castle-sub-rank"></div></div>
+      </div>
+    </div>
     <div class="fil-sec" style="margin-bottom:.75rem">
       <div class="fil-label">所属で絞り込み</div>
       <div class="fil-btns" id="rs-role"></div>
@@ -1116,19 +1130,39 @@ function openPairEditModal(rowId,type){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
   const mainKey=type==='normal'?'normalMain':'castleMain';
   const subKey=type==='normal'?'normalSub':'castleSub';
+  const otherMainKey=type==='normal'?'castleMain':'normalMain';
+  const otherSubKey=type==='normal'?'castleSub':'normalSub';
   const label=type==='normal'?'通常':'城';
+  const otherLabel=type==='normal'?'城':'通常';
   const curMain=row[mainKey]||'';const curSub=row[subKey]||'';
+  const otherMain=row[otherMainKey]||'';const otherSub=row[otherSubKey]||'';
+  const hasSyncSrc=!!(otherMain||otherSub);
+  const syncBtn=hasSyncSrc
+    ?`<button class="btn" onclick="syncPairFromOther(${rowId},'${type}')">← ${otherLabel}から同期</button>`
+    :'';
+  const opts=sortByYomi(S.chars).map(c=>`<option value="${c.name}"${c.name===curMain?' selected':''}>${c.name}</option>`).join('');
+  const optsS=sortByYomi(S.chars).map(c=>`<option value="${c.name}"${c.name===curSub?' selected':''}>${c.name}</option>`).join('');
   openModal(`pair-edit`,`<h3>${label}ペアを変更</h3>
     <div class="field"><label>大将</label>
-      <select id="pe-main">${sortByYomi(S.chars).map(c=>`<option value="${c.name}"${c.name===curMain?' selected':''}>${c.name}</option>`).join('')}</select>
+      <select id="pe-main"><option value=""></option>${opts}</select>
     </div>
     <div class="field"><label>副将</label>
-      <select id="pe-sub"><option value=""${!curSub?' selected':''}>なし</option>${sortByYomi(S.chars).map(c=>`<option value="${c.name}"${c.name===curSub?' selected':''}>${c.name}</option>`).join('')}</select>
+      <select id="pe-sub"><option value=""${!curSub?' selected':''}>なし</option>${optsS}</select>
     </div>
     <div class="modal-acts">
+      ${syncBtn}
       <button class="btn" onclick="closeModal()">キャンセル</button>
       <button class="btn pri" onclick="savePairEdit(${rowId},'${type}')">保存</button>
     </div>`);
+}
+function syncPairFromOther(rowId,type){
+  const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
+  const otherMain=type==='normal'?(row.castleMain||''):(row.normalMain||'');
+  const otherSub =type==='normal'?(row.castleSub ||''):(row.normalSub ||'');
+  const mainSel=document.getElementById('pe-main');
+  const subSel=document.getElementById('pe-sub');
+  if(mainSel) mainSel.value=otherMain;
+  if(subSel)  subSel.value=otherSub;
 }
 async function savePairEdit(rowId,type){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
@@ -1159,12 +1193,35 @@ async function savePairEdit(rowId,type){
 /* ===== 援軍専用検索 ===== */
 function openReinfSearch(rowId){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
-  RS={rowId,mainRar:[],mainRank:[],subRar:[],subRank:[],roleFilter:[]};
-  const mainLabel=row.normalMain||'大将';
-  const subLabel=row.normalSub||'副将';
+  RS={rowId,mainRar:[],mainRank:[],subRar:[],subRank:[],castleMainRar:[],castleMainRank:[],castleSubRar:[],castleSubRank:[],roleFilter:[]};
+  // 通常と城の両方が埋まっていて内容が異なる場合は2パネル
+  const dualMode=!!(row.normalMain&&row.castleMain&&(row.normalMain!==row.castleMain||row.normalSub!==row.castleSub));
+  RS.dualMode=dualMode;
+  const normalPanel=document.querySelector('.reinf-search-filters');
+  const castlePanel=document.getElementById('rs-castle-filters');
+  if(dualMode){
+    // 通常パネルのラベルを「通常 大将/副将」に
+    document.getElementById('rs-main-label').textContent=(row.normalMain||'大将')+' 【通常】';
+    document.getElementById('rs-sub-label').textContent=(row.normalSub||'副将')+' 【通常 副将】';
+    // 城パネル設定
+    document.getElementById('rs-castle-main-label').textContent=(row.castleMain||'大将')+' 【城】';
+    document.getElementById('rs-castle-sub-label').textContent=(row.castleSub||'副将')+' 【城 副将】';
+    document.getElementById('rs-castle-sub-section').style.display=row.castleSub?'block':'none';
+    const castleMainCd=S.chars.find(c=>c.name===row.castleMain);
+    const castleSubCd=S.chars.find(c=>c.name===row.castleSub);
+    renderRSFilterBtns('rs-castle-main-rar',castleMainCd?castleMainCd.rars:ALL_RARITIES,RS.castleMainRar,'castle-main-rar');
+    renderRSFilterBtns('rs-castle-main-rank',castleMainCd?castleMainCd.ranks:ALL_RANKS,RS.castleMainRank,'castle-main-rank');
+    if(row.castleSub){
+      renderRSFilterBtns('rs-castle-sub-rar',castleSubCd?castleSubCd.rars:ALL_RARITIES,RS.castleSubRar,'castle-sub-rar');
+      renderRSFilterBtns('rs-castle-sub-rank',castleSubCd?castleSubCd.ranks:ALL_RANKS,RS.castleSubRank,'castle-sub-rank');
+    }
+    castlePanel.style.display='block';
+  } else {
+    document.getElementById('rs-main-label').textContent=(row.normalMain||'大将')+' のフィルター';
+    document.getElementById('rs-sub-label').textContent=(row.normalSub||'副将')+' のフィルター';
+    castlePanel.style.display='none';
+  }
   document.getElementById('reinf-search-title').textContent='メンバー検索';
-  document.getElementById('rs-main-label').textContent=mainLabel+' のフィルター';
-  document.getElementById('rs-sub-label').textContent=subLabel+' のフィルター';
   const subSec=document.getElementById('rs-sub-section');
   subSec.style.display=row.normalSub?'block':'none';
   const mainCd=S.chars.find(c=>c.name===row.normalMain);
@@ -1193,10 +1250,12 @@ function toggleRSFilter(key,val){
   if(key==='main-rar')arr=RS.mainRar;
   else if(key==='main-rank')arr=RS.mainRank;
   else if(key==='sub-rar')arr=RS.subRar;
-  else arr=RS.subRank;
-  const isRar=key.endsWith('rar');
-  if(isRar){const i=arr.indexOf(val);if(i>=0)arr.splice(i,1);else arr.push(val);}
-  else{const i=arr.indexOf(val);if(i>=0)arr.splice(i,1);else arr.push(val);}
+  else if(key==='sub-rank')arr=RS.subRank;
+  else if(key==='castle-main-rar')arr=RS.castleMainRar;
+  else if(key==='castle-main-rank')arr=RS.castleMainRank;
+  else if(key==='castle-sub-rar')arr=RS.castleSubRar;
+  else arr=RS.castleSubRank;
+  const i=arr.indexOf(val);if(i>=0)arr.splice(i,1);else arr.push(val);
   const row=S.reinf.find(r=>r.id===RS.rowId);if(!row)return;
   const mainCd=S.chars.find(c=>c.name===row.normalMain);
   const subCd=S.chars.find(c=>c.name===row.normalSub);
@@ -1205,6 +1264,16 @@ function toggleRSFilter(key,val){
   if(row.normalSub){
     renderRSFilterBtns('rs-sub-rar',subCd?subCd.rars:ALL_RARITIES,RS.subRar,'sub-rar');
     renderRSFilterBtns('rs-sub-rank',subCd?subCd.ranks:ALL_RANKS,RS.subRank,'sub-rank');
+  }
+  if(RS.dualMode){
+    const castleMainCd=S.chars.find(c=>c.name===row.castleMain);
+    const castleSubCd=S.chars.find(c=>c.name===row.castleSub);
+    renderRSFilterBtns('rs-castle-main-rar',castleMainCd?castleMainCd.rars:ALL_RARITIES,RS.castleMainRar,'castle-main-rar');
+    renderRSFilterBtns('rs-castle-main-rank',castleMainCd?castleMainCd.ranks:ALL_RANKS,RS.castleMainRank,'castle-main-rank');
+    if(row.castleSub){
+      renderRSFilterBtns('rs-castle-sub-rar',castleSubCd?castleSubCd.rars:ALL_RARITIES,RS.castleSubRar,'castle-sub-rar');
+      renderRSFilterBtns('rs-castle-sub-rank',castleSubCd?castleSubCd.ranks:ALL_RANKS,RS.castleSubRank,'castle-sub-rank');
+    }
   }
   renderRSResults();
 }
@@ -1227,6 +1296,19 @@ function memberPassesRS(m,row){
     if(!rarMatchesFilter(sc.rar, RS.subRar))return false;
     if(RS.subRank.length&&!RS.subRank.every(fr=>sc.ranks&&sc.ranks.includes(fr)))return false;
   }
+  if(RS.dualMode){
+    const castleMainName=row.castleMain;const castleSubName=row.castleSub;
+    if(castleMainName){
+      const mc=m.chars.find(c=>c.name===castleMainName);if(!mc)return false;
+      if(!rarMatchesFilter(mc.rar, RS.castleMainRar))return false;
+      if(RS.castleMainRank.length&&!RS.castleMainRank.every(fr=>mc.ranks&&mc.ranks.includes(fr)))return false;
+    }
+    if(castleSubName){
+      const sc=m.chars.find(c=>c.name===castleSubName);if(!sc)return false;
+      if(!rarMatchesFilter(sc.rar, RS.castleSubRar))return false;
+      if(RS.castleSubRank.length&&!RS.castleSubRank.every(fr=>sc.ranks&&sc.ranks.includes(fr)))return false;
+    }
+  }
   if(RS.roleFilter.length&&!RS.roleFilter.includes(m.role))return false;
   return true;
 }
@@ -1237,6 +1319,8 @@ function renderRSResults(){
   const results=S.members.filter(m=>m.role!=='その他'&&memberPassesRS(m,row));
   const mainCd=S.chars.find(c=>c.name===row.normalMain);
   const subCd=S.chars.find(c=>c.name===row.normalSub);
+  const castleMainCd=RS.dualMode?S.chars.find(c=>c.name===row.castleMain):null;
+  const castleSubCd=RS.dualMode?S.chars.find(c=>c.name===row.castleSub):null;
   results.sort((a,b)=>{
     const ptA=shukuenPt(a,mainCd), ptB=shukuenPt(b,mainCd);
     if(ptB!==ptA) return ptB-ptA;
@@ -1253,6 +1337,13 @@ function renderRSResults(){
     const subC=row.normalSub?m.chars.find(c=>c.name===row.normalSub):null;
     const mainShBadge=mainCd?shukuenBadgeHtml(m,mainCd):'';
     const subShBadge=subCd?shukuenBadgeHtml(m,subCd):'';
+    // 城用
+    const castleMainC=RS.dualMode&&row.castleMain?m.chars.find(c=>c.name===row.castleMain):null;
+    const castleSubC=RS.dualMode&&row.castleSub?m.chars.find(c=>c.name===row.castleSub):null;
+    const castleMainShBadge=castleMainCd?shukuenBadgeHtml(m,castleMainCd):'';
+    const castleSubShBadge=castleSubCd?shukuenBadgeHtml(m,castleSubCd):'';
+    const normalBadges=`${mainC?`<span style="font-size:10px;color:var(--t2)">通常 ${row.normalMain}：</span>${rarBdg(mainC.rar)}${summarizeRanks(mainC.ranks).map(rankBdg).join('')}`:''}${subC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${row.normalSub}：</span>${rarBdg(subC.rar)}${summarizeRanks(subC.ranks).map(rankBdg).join('')}`:''}`;
+    const castleBadges=RS.dualMode?`${castleMainC?`<span style="font-size:10px;color:var(--t2)">城 ${row.castleMain}：</span>${rarBdg(castleMainC.rar)}${summarizeRanks(castleMainC.ranks).map(rankBdg).join('')}`:''}${castleSubC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${row.castleSub}：</span>${rarBdg(castleSubC.rar)}${summarizeRanks(castleSubC.ranks).map(rankBdg).join('')}`:''}` :'';
     return`<div class="reinf-res-card${isAlready?' already':''}">
       <div class="av2" style="background:${a.bg};color:${a.c};flex-shrink:0">${ini(m.name)}</div>
       <div style="flex:1;min-width:0">
@@ -1261,13 +1352,13 @@ function renderRSResults(){
           ${isCurrentRow?`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:#E1F5EE;color:#085041;border:.5px solid #1D9E75;margin-left:4px">この行に設定中</span>`:''}
         </div>
         <div style="font-size:11px;color:var(--t2);margin-top:2px">${m.role}</div>
-        <div class="badges" style="margin-top:4px">
-          ${mainC?`<span style="font-size:10px;color:var(--t2)">${row.normalMain}：</span>${rarBdg(mainC.rar)}${summarizeRanks(mainC.ranks).map(rankBdg).join('')}`:''}
-          ${subC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${row.normalSub}：</span>${rarBdg(subC.rar)}${summarizeRanks(subC.ranks).map(rankBdg).join('')}`:''}
-        </div>
+        ${normalBadges?`<div class="badges" style="margin-top:4px">${normalBadges}</div>`:''}
+        ${RS.dualMode&&castleBadges?`<div class="badges" style="margin-top:3px">${castleBadges}</div>`:''}
         ${mainShBadge||subShBadge?`<div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--border)">
-          ${mainCd&&mainShBadge?`<div style="display:flex;align-items:center;gap:5px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${row.normalMain}</span>${mainShBadge}</div>`:''}
+          ${mainCd&&mainShBadge?`<div style="display:flex;align-items:center;gap:5px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${RS.dualMode?'通常 ':''}${row.normalMain}</span>${mainShBadge}</div>`:''}
           ${subCd&&subShBadge?`<div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${row.normalSub}</span>${subShBadge}</div>`:''}
+          ${RS.dualMode&&castleMainCd&&castleMainShBadge?`<div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">城 ${row.castleMain}</span>${castleMainShBadge}</div>`:''}
+          ${RS.dualMode&&castleSubCd&&castleSubShBadge?`<div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${row.castleSub}</span>${castleSubShBadge}</div>`:''}
         </div>`:''}
       </div>
       ${isCurrentRow
