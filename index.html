@@ -924,9 +924,33 @@ function pickEx(lv){
   E.pendingEx = E.pendingEx===lv ? null : lv;
   renderLvPanel();
 }
+function getRequiredRanks(pendingRanks, allowedRanks){
+  // 入力補助でチェックが付く項目をすべて列挙する
+  // pickRankと同じロジック: 選択中の各ランクのgetRankImplied結果の和集合
+  const required = new Set();
+  pendingRanks.forEach(r => {
+    getRankImplied(r).filter(x => allowedRanks.includes(x)).forEach(x => required.add(x));
+  });
+  return [...required];
+}
+
 async function saveTraining(){
   if(!E.charName){toast('キャラを選んでください');return;}
   if(!E.pendingRar||!E.pendingRanks.length){toast('選択してください');return;}
+
+  // 入力補助ランクバリデーション
+  if(_assistMode && E.pendingRar){
+    const cd = S.chars.find(x=>x.name===E.charName);
+    const allowedRanks = cd ? cd.ranks : ALL_RANKS;
+    const required = getRequiredRanks(E.pendingRanks, allowedRanks);
+    if(required){
+      const missing = required.filter(r => !E.pendingRanks.includes(r));
+      if(missing.length){
+        toast('未チェック: ' + missing.join('・'));
+        return;
+      }
+    }
+  }
   showLoading();
   try{
     await fetch('/api/training', {
