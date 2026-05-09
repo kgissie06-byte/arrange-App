@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireAuth } from '../lib/auth'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -6,6 +7,10 @@ const supabase = createClient(
 )
 
 export default async function handler(req, res) {
+
+  // ログイン済みであれば誰でもOK
+  const auth = await requireAuth(req, res)
+  if (!auth) return
 
   // 取得
   if (req.method === 'GET') {
@@ -18,7 +23,7 @@ export default async function handler(req, res) {
     return res.json(data)
   }
 
-  // 保存（upsert: member_id + char_name の複合キーで上書き）
+  // 保存（upsert）
   if (req.method === 'POST') {
     const { memberId, charName, rar, ranks, ex } = req.body
 
@@ -33,7 +38,7 @@ export default async function handler(req, res) {
         char_name: charName,
         rarity: rar,
         ranks: ranks,
-        ex: ex || null,  // EX追想レベル
+        ex: ex || null,
       }, {
         onConflict: 'member_id,char_name'
       })
@@ -43,7 +48,7 @@ export default async function handler(req, res) {
     return res.json({ ok: true })
   }
 
-  // 削除（未入力に戻す）
+  // 削除
   if (req.method === 'DELETE') {
     const { memberId, charName } = req.body
 

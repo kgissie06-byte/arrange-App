@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireAuth } from '../lib/auth'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -9,6 +10,10 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
+
+  // ログイン済みであれば誰でもOK
+  const auth = await requireAuth(req, res)
+  if (!auth) return
 
   // キャラ一覧
   const { data: charsRaw, error: charsErr } = await supabase
@@ -24,7 +29,7 @@ export default async function handler(req, res) {
     ranks: c.ranks || [],
     shukuens: c.shukuens || (c.shukuen ? [c.shukuen, {enabled:false,members:[]}] : [{enabled:false,members:[]},{enabled:false,members:[]}]),
     img: c.img || null,
-    exSotsui: c.ex_sotsui || false,  // EX追想の有無
+    exSotsui: c.ex_sotsui || false,
   }))
 
   // メンバー一覧
@@ -40,7 +45,6 @@ export default async function handler(req, res) {
     .select('*')
   if (trainingErr) return res.status(500).json({ error: trainingErr })
 
-  // メンバーごとに育成データをマージ
   const members = (membersRaw || []).map(m => ({
     id: m.id,
     name: m.name,
@@ -51,7 +55,7 @@ export default async function handler(req, res) {
         name: t.char_name,
         rar: t.rarity,
         ranks: t.ranks || [],
-        ex: t.ex || null,  // EX追想レベル
+        ex: t.ex || null,
       })),
   }))
 

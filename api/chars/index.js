@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireAuth } from '../../lib/auth'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -6,7 +7,10 @@ const supabase = createClient(
 )
 
 export default async function handler(req, res) {
-  // キャラ追加
+  // キャラ追加は管理者のみ
+  const auth = await requireAuth(req, res, 'admin')
+  if (!auth) return
+
   if (req.method === 'POST') {
     const { name, yomi, rars, ranks, shukuens, img, exSotsui } = req.body
 
@@ -21,7 +25,7 @@ export default async function handler(req, res) {
         ranks: ranks || [],
         shukuens: shukuens || [{enabled:false,members:[]},{enabled:false,members:[]}],
         img: img || null,
-        ex_sotsui: exSotsui || false,  // EX追想の有無
+        ex_sotsui: exSotsui || false,
       })
       .select()
       .single()

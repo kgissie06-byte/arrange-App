@@ -2096,19 +2096,27 @@ async function manualReload(){
   }
 }
 
-function saveSession(role){ sessionStorage.setItem('role', role); }
-function clearSession(){ sessionStorage.removeItem('role'); }
-function getSavedRole(){ return sessionStorage.getItem('role'); }
+// セッション管理はhttpOnly Cookieで行うためsessionStorageは不要
+// roleのみメモリ上に保持してUI制御に使う
 
-(function restoreSession(){
-  const saved = getSavedRole();
-  if(saved){
-    currentRole = saved;
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('main-wrap').style.display = '';
-    applyRole();
-    load();
-  }
+(async function restoreSession(){
+  // ページ読み込み時にAPIを叩いてCookieが有効か確認
+  try {
+    const res = await fetch('/api/init');
+    if(res.ok){
+      // Cookieが有効 → roleはinitレスポンスから取れないため、
+      // セッション確認用エンドポイントで取得
+      const chk = await fetch('/api/auth/session');
+      if(chk.ok){
+        const d = await chk.json();
+        currentRole = d.role;
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-wrap').style.display = '';
+        applyRole();
+        load();
+      }
+    }
+  } catch(e) {}
 })();
 
 async function doLogin(){
@@ -2130,8 +2138,8 @@ async function doLogin(){
       errEl.textContent = data.error || 'パスワードが違います';
       return;
     }
+    // JWTはhttpOnly CookieにセットされるのでJSから触らない
     currentRole = data.role;
-    saveSession(currentRole);
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('main-wrap').style.display = '';
     applyRole();
@@ -2144,9 +2152,10 @@ async function doLogin(){
   }
 }
 
-function doLogout(){
+async function doLogout(){
+  // サーバー側でCookieを破棄
+  await fetch('/api/auth/logout', { method: 'POST' }).catch(()=>{});
   currentRole = null;
-  clearSession();
   document.getElementById('login-pw').value = '';
   document.getElementById('login-error').textContent = '';
   document.getElementById('main-wrap').style.display = 'none';

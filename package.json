@@ -10,9 +10,13 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",
+    "bcryptjs": "^3.0.3",
+    "cookie": "^1.1.1",
     "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "express": "^4.18.2",
-    "formidable": "^3.5.4"
+    "formidable": "^3.5.4",
+    "jose": "^6.2.3"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
+import bcrypt from 'bcryptjs'
+import { issueSession } from '../../lib/auth'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -21,12 +23,19 @@ export default async function handler(req, res) {
 
   if (error) return res.status(500).json({ error: error.message })
 
-  const matched = (data || []).find(row => row.password === password)
+  // bcryptで照合（旧: 平文比較）
+  let matched = null
+  for (const row of (data || [])) {
+    const ok = await bcrypt.compare(password, row.password)
+    if (ok) { matched = row; break }
+  }
 
   if (!matched) {
     return res.status(401).json({ error: 'パスワードが違います' })
   }
 
-  // matched.id は 'admin' または 'user'
+  // JWTをhttpOnly Cookieにセット
+  await issueSession(res, matched.id)
+
   return res.json({ role: matched.id })
 }

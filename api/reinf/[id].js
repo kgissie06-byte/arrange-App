@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireAuth } from '../../lib/auth'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -6,12 +7,16 @@ const supabase = createClient(
 )
 
 export default async function handler(req, res) {
+  // 援軍表操作は管理者のみ
+  const auth = await requireAuth(req, res, 'admin')
+  if (!auth) return
+
   const { id } = req.query
   const rowId = parseInt(id)
 
   if (isNaN(rowId)) return res.status(400).json({ error: 'invalid id' })
 
-  // 援軍行更新（メンバー名・ペア設定）
+  // 援軍行更新
   if (req.method === 'PUT') {
     const { memberName, normalMain, normalSub, castleMain, castleSub } = req.body
 

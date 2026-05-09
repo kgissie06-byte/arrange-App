@@ -1,15 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
+import bcrypt from 'bcryptjs'
+import { requireAuth } from '../../lib/auth'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
+
+  // 管理者のみパスワード変更可能
+  const auth = await requireAuth(req, res, 'admin')
+  if (!auth) return
 
   const { role, password } = req.body
 
@@ -18,7 +23,6 @@ export default async function handler(req, res) {
   }
 
   if (role !== 'user') {
-    // 管理者パスワードの変更はこのAPIでは許可しない
     return res.status(403).json({ error: '変更できるのは利用者パスワードのみです' })
   }
 
@@ -26,10 +30,17 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: '4文字以上のパスワードを設定してください' })
   }
 
+  // bcryptでハッシュ化して保存
+  const hashed = await bcrypt.hash(password, 10)
+
   const { error } = await supabase
     .from('passwords')
-    .update({ password })
-    .eq('id', role)
+    .update({
+      password: hashed,
+      // この時刻より前に発行されたuserセッションを無効化
+      invalidate_before: new Date().toISOString(),
+    })
+    .eq('id', 'user')
 
   if (error) return res.status(500).json({ error: error.message })
 

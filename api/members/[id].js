@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireAuth } from '../../lib/auth'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -6,6 +7,10 @@ const supabase = createClient(
 )
 
 export default async function handler(req, res) {
+  // メンバー管理は管理者のみ
+  const auth = await requireAuth(req, res, 'admin')
+  if (!auth) return
+
   const { id } = req.query
   const memberId = parseInt(id)
 
@@ -27,7 +32,6 @@ export default async function handler(req, res) {
 
   // メンバー削除（関連する育成データも削除）
   if (req.method === 'DELETE') {
-    // 育成データを先に削除
     const { error: trainingErr } = await supabase
       .from('training')
       .delete()
@@ -35,7 +39,6 @@ export default async function handler(req, res) {
 
     if (trainingErr) return res.status(500).json({ error: trainingErr })
 
-    // メンバー削除
     const { error } = await supabase
       .from('members')
       .delete()

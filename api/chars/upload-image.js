@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import formidable from 'formidable'
 import fs from 'fs'
+import { requireAuth } from '../../lib/auth'
 
 export const config = { api: { bodyParser: false } }
 
@@ -16,7 +17,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  // multipart/form-data をパース
+  // 画像アップロードは管理者のみ
+  const auth = await requireAuth(req, res, 'admin')
+  if (!auth) return
+
   const form = formidable({ maxFileSize: 5 * 1024 * 1024 })
   let fields, files
   try {
@@ -29,8 +33,6 @@ export default async function handler(req, res) {
   if (!file) return res.status(400).json({ error: 'No file uploaded' })
 
   const fileBuffer = fs.readFileSync(file.filepath)
-
-  // ファイル名：タイムスタンプ+ランダムでユニークに
   const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
 
   const { error: uploadError } = await supabase.storage
@@ -40,14 +42,12 @@ export default async function handler(req, res) {
       upsert: false,
     })
 
-  // 一時ファイル削除
   fs.unlinkSync(file.filepath)
 
   if (uploadError) {
     return res.status(500).json({ error: uploadError.message })
   }
 
-  // 公開URL取得
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(fileName)
 
   return res.json({ url: data.publicUrl })

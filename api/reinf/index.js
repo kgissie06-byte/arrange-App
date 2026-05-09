@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireAuth } from '../../lib/auth'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -6,9 +7,11 @@ const supabase = createClient(
 )
 
 export default async function handler(req, res) {
-  // 援軍行追加
+  // 援軍表操作は管理者のみ
+  const auth = await requireAuth(req, res, 'admin')
+  if (!auth) return
+
   if (req.method === 'POST') {
-    // 現在の最大sort_orderを取得して末尾に追加
     const { data: existing } = await supabase
       .from('reinf')
       .select('sort_order')
