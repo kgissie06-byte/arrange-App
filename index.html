@@ -1120,10 +1120,10 @@ function openPairEditModal(rowId,type){
   const curMain=row[mainKey]||'';const curSub=row[subKey]||'';
   openModal(`pair-edit`,`<h3>${label}ペアを変更</h3>
     <div class="field"><label>大将</label>
-      <select id="pe-main">${S.chars.map(c=>`<option value="${c.name}"${c.name===curMain?' selected':''}>${c.name}</option>`).join('')}</select>
+      <select id="pe-main">${sortByYomi(S.chars).map(c=>`<option value="${c.name}"${c.name===curMain?' selected':''}>${c.name}</option>`).join('')}</select>
     </div>
     <div class="field"><label>副将</label>
-      <select id="pe-sub"><option value=""${!curSub?' selected':''}>なし</option>${S.chars.map(c=>`<option value="${c.name}"${c.name===curSub?' selected':''}>${c.name}</option>`).join('')}</select>
+      <select id="pe-sub"><option value=""${!curSub?' selected':''}>なし</option>${sortByYomi(S.chars).map(c=>`<option value="${c.name}"${c.name===curSub?' selected':''}>${c.name}</option>`).join('')}</select>
     </div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
