@@ -1327,37 +1327,49 @@ function memberPassesRS(m,row){
   return true;
 }
 
-const RS_RAR_SCORE={'LG3':8,'LG2':7,'LG1':6,'LG':5,'UR':4,'SR':3,'R':2,'N':1};
-const RS_RANK_SCORE={'全技極':15,'裏技極':14,'技極':13,'裏6':12,'裏5':11,'裏4':10,'裏3':9,'裏2':8,'裏1':7,'表6':6,'表5':5,'表4':4,'表3':3,'表2':2,'表1':1};
+const RS_RAR_SCORE={'LG3':7,'LG2':6,'LG1':6,'LG':5,'UR':4,'SR':3,'R':2,'N':1};
+// 裏6〜裏1・表6〜表1の基礎点（技極加算のベース用）
+const RS_RANK_BASE={'裏6':12,'裏5':11,'裏4':10,'裏3':9,'裏2':8,'裏1':7,'表6':6,'表5':5,'表4':4,'表3':3,'表2':2,'表1':1};
 
-function rsCharRarScore(member, charName){
-  if(!charName) return 0;
+// ランクスコア計算（技極加算・裏技極26・全技極27）
+function rsRankScore(ranks){
+  if(!ranks||!ranks.length) return 0;
+  if(ranks.includes('全技極')) return 27;
+  if(ranks.includes('裏技極')) return 26;
+  if(ranks.includes('技極')){
+    // 技極(13) + 持っている裏ランクの最高値
+    const URA=['裏6','裏5','裏4','裏3','裏2','裏1'];
+    const topUra=URA.find(r=>ranks.includes(r));
+    return 13+(topUra?RS_RANK_BASE[topUra]:0);
+  }
+  // 通常ランク：最高点
+  return Math.max(...ranks.map(r=>RS_RANK_BASE[r]||0));
+}
+
+// キャラ単体のレアリティ・ランクスコアを返す
+function rsCharScores(member, charName){
+  if(!charName) return {rar:0,rank:0};
   const c=member.chars.find(x=>x.name===charName);
-  if(!c) return 0;
-  return RS_RAR_SCORE[c.rar]||0;
+  if(!c) return {rar:0,rank:0};
+  return {rar:RS_RAR_SCORE[c.rar]||0, rank:rsRankScore(c.ranks)};
 }
-function rsCharRankScore(member, charName){
-  if(!charName) return 0;
-  const c=member.chars.find(x=>x.name===charName);
-  if(!c||!c.ranks||!c.ranks.length) return 0;
-  return Math.max(...c.ranks.map(r=>RS_RANK_SCORE[r]||0));
+
+// ソートキー配列を生成：[大将rar, 大将rank, 副将rar, 副将rank, 宿縁] × 通常(+城dualMode)
+function rsSortKeys(m, row, mainCd, castleMainCd){
+  const nm=rsCharScores(m,row.normalMain);
+  const ns=rsCharScores(m,row.normalSub);
+  const cm=RS.dualMode?rsCharScores(m,row.castleMain):{rar:0,rank:0};
+  const cs=RS.dualMode?rsCharScores(m,row.castleSub):{rar:0,rank:0};
+  const sh=shukuenPt(m,mainCd)+(RS.dualMode?shukuenPt(m,castleMainCd):0);
+  if(RS.sortMode==='rar'){
+    // レア優先: 大将rar > 大将rank > 副将rar > 副将rank > 宿縁
+    return [nm.rar+cm.rar, nm.rank+cm.rank, ns.rar+cs.rar, ns.rank+cs.rank, sh];
+  } else {
+    // ランク優先: 大将rank > 大将rar > 副将rank > 副将rar > 宿縁
+    return [nm.rank+cm.rank, nm.rar+cm.rar, ns.rank+cs.rank, ns.rar+cs.rar, sh];
+  }
 }
-function rsMemberRarScore(m, row){
-  return Math.max(
-    rsCharRarScore(m,row.normalMain),
-    rsCharRarScore(m,row.normalSub),
-    RS.dualMode?rsCharRarScore(m,row.castleMain):0,
-    RS.dualMode?rsCharRarScore(m,row.castleSub):0
-  );
-}
-function rsMemberRankScore(m, row){
-  return Math.max(
-    rsCharRankScore(m,row.normalMain),
-    rsCharRankScore(m,row.normalSub),
-    RS.dualMode?rsCharRankScore(m,row.castleMain):0,
-    RS.dualMode?rsCharRankScore(m,row.castleSub):0
-  );
-}
+
 function setRSSort(mode){
   RS.sortMode=mode;
   document.getElementById('rs-sort-rar').className='f-btn'+(mode==='rar'?' on':'');
@@ -1377,18 +1389,10 @@ function renderRSResults(){
   const castleMainCd=RS.dualMode?S.chars.find(c=>c.name===row.castleMain):null;
   const castleSubCd=RS.dualMode?S.chars.find(c=>c.name===row.castleSub):null;
   results.sort((a,b)=>{
-    const rarA=rsMemberRarScore(a,row), rarB=rsMemberRarScore(b,row);
-    const rankA=rsMemberRankScore(a,row), rankB=rsMemberRankScore(b,row);
-    const shA=shukuenPt(a,mainCd)+(RS.dualMode?shukuenPt(a,castleMainCd):0);
-    const shB=shukuenPt(b,mainCd)+(RS.dualMode?shukuenPt(b,castleMainCd):0);
-    if(RS.sortMode==='rar'){
-      if(rarB!==rarA) return rarB-rarA;
-      if(rankB!==rankA) return rankB-rankA;
-    } else {
-      if(rankB!==rankA) return rankB-rankA;
-      if(rarB!==rarA) return rarB-rarA;
-    }
-    return shB-shA;
+    const ka=rsSortKeys(a,row,mainCd,castleMainCd);
+    const kb=rsSortKeys(b,row,mainCd,castleMainCd);
+    for(let i=0;i<ka.length;i++){if(kb[i]!==ka[i])return kb[i]-ka[i];}
+    return 0;
   });
   const el=document.getElementById('rs-results');
   document.getElementById('rs-result-count').textContent=results.length+'件';
