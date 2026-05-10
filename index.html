@@ -2186,7 +2186,13 @@ function applyRole(){
 
 /* ========== パスワード変更モーダル ========== */
 function openChangePwModal(){
-  openModal('change-pw', `<h3>利用者パスワード変更</h3>
+  openModal('change-pw', `<h3>パスワード変更</h3>
+    <div class="field"><label>変更対象</label>
+      <select id="cpw-role">
+        <option value="user">利用者</option>
+        <option value="reinf-admin">援軍管理者</option>
+      </select>
+    </div>
     <div class="field"><label>新しいパスワード</label>
       <input type="password" id="cpw-new" placeholder="新パスワード">
     </div>
@@ -2201,6 +2207,7 @@ function openChangePwModal(){
 }
 
 async function saveUserPassword(){
+  const role = document.getElementById('cpw-role').value;
   const nw = (document.getElementById('cpw-new').value || '').trim();
   const cf = (document.getElementById('cpw-confirm').value || '').trim();
   const errEl = document.getElementById('cpw-err');
@@ -2212,12 +2219,13 @@ async function saveUserPassword(){
     const res = await fetch('/api/auth/change-password', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ role: 'user', password: nw })
+      body: JSON.stringify({ role, password: nw })
     });
     const data = await res.json();
     if(!res.ok){ errEl.textContent = data.error || '変更に失敗しました'; return; }
     closeModal();
-    toast('利用者パスワードを変更しました');
+    const label = role === 'reinf-admin' ? '援軍管理者' : '利用者';
+    toast(`${label}パスワードを変更しました`);
   } catch(e) {
     errEl.textContent = 'エラーが発生しました';
   } finally {
