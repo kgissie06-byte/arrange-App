@@ -94,6 +94,14 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .pick-btns{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px}
 .p-btn{padding:4px 9px;font-size:11px;border:1px solid var(--bm);border-radius:7px;background:var(--bg);cursor:pointer;color:var(--t);font-family:inherit;transition:all .15s}
 .p-btn:hover{background:var(--acc-bg)}
+.p-btn.on-rar-LG2{background:#FAEEDA;color:#633806;border-color:#BA7517;font-weight:500}
+.p-btn.on-rar-LG1{background:#FFF0D0;color:#7A4A10;border-color:#D48A20;font-weight:500}
+.p-btn.on-rar-LG {background:#FFF0D0;color:#854F0B;border-color:#EF9F27;font-weight:500}
+.p-btn.on-rar-UR {background:#EEEDFE;color:#3C3489;border-color:#7F77DD;font-weight:500}
+.p-btn.on-rar-SR {background:#E6F1FB;color:#0C447C;border-color:#378ADD;font-weight:500}
+.p-btn.on-rank-top{background:#EEEDFE;color:#3C3489;border-color:#AFA9EC;font-weight:500}
+.p-btn.on-rank    {background:#EDE5D8;color:#634B38;border-color:#B4A494;font-weight:500}
+.p-btn.on-ex      {background:#FDF6E0;color:#7A5E10;border-color:#C89B20;font-weight:500}
 .save-bar{display:flex;justify-content:flex-end;margin-top:1rem;gap:7px}
 
 /* ② 育成検索 */
@@ -245,8 +253,8 @@ body.touch-device .m-card:hover,
 body.touch-device .m-card:active,
 body.touch-device .cc:hover,
 body.touch-device .cc:active,
-body.touch-device .p-btn:hover,
-body.touch-device .p-btn:active,
+body.touch-device .p-btn:not([class*="on-"]):hover,
+body.touch-device .p-btn:not([class*="on-"]):active,
 body.touch-device .f-btn:hover,
 body.touch-device .f-btn:active,
 body.touch-device .name-cell:hover,
@@ -821,12 +829,12 @@ function renderLvPanel(){
   document.getElementById('panel-title').textContent=cn+' の育成状況';
   const aR=cd?cd.rars:ALL_RARITIES,aK=cd?cd.ranks:ALL_RANKS;
   document.getElementById('rar-btns').innerHTML=aR.map(r=>{const s=RAR_S[r]||{};const on=E.pendingRar===r;
-    return`<button class="p-btn" onclick="pickRar('${r}')" style="${on?`background:${s.bg};color:${s.c};border-color:${s.bd};font-weight:500`:''}">${r}</button>`;}).join('');
+    return`<button class="p-btn${on?` on-rar-${r}`:''}" onclick="pickRar('${r}')">${r}</button>`;}).join('');
   const hideHighRanks = cd && isUrWithLowerRar(cd) && E.pendingRar && SR_OR_BELOW.includes(E.pendingRar);
   document.getElementById('rank-btns').innerHTML=aK.map(r=>{
     if(hideHighRanks && HIGH_RANKS_BLOCKED.includes(r)) return '';
     const on=E.pendingRanks.includes(r);const top=TOP_RANKS.includes(r);
-    return`<button class="p-btn" onclick="pickRank('${r}')" style="${on?`background:${top?'#EEEDFE':'#EDE5D8'};color:${top?'#3C3489':'#634B38'};border-color:${top?'#AFA9EC':'#B4A494'};font-weight:500`:''}">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
+    return`<button class="p-btn${on?(top?' on-rank-top':' on-rank'):''}" onclick="pickRank('${r}')">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
   document.getElementById('lv-panel').style.display='block';
   const assistBtn = document.getElementById('assist-toggle-btn');
   if(assistBtn){
@@ -843,7 +851,7 @@ function renderLvPanel(){
   if(cd&&cd.exSotsui){
     const EX_LEVELS=['星6','星5','星4','星3','星2','星1'];
     if(exEl) exEl.innerHTML=EX_LEVELS.map(lv=>{const on=E.pendingEx===lv;
-      return`<button class="p-btn" onclick="pickEx('${lv}')" style="${on?`background:#FDF6E0;color:#7A5E10;border-color:#C89B20;font-weight:500`:''}">${lv}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
+      return`<button class="p-btn${on?' on-ex':''}" onclick="pickEx('${lv}')">${lv}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
     if(exEl) exEl.style.display='';
     if(exLabel) exLabel.style.display='';
   } else {
@@ -1505,11 +1513,11 @@ function toggleCharAssist(){
 
 function renderCharMgmtRarBtns(elId,sel,fn){
   document.getElementById(elId).innerHTML=ALL_RARITIES.map(r=>{const on=sel.includes(r);const s=RAR_S[r]||{};
-    return`<button class="p-btn" onclick="${fn}('${r}')" style="${on?`background:${s.bg};color:${s.c};border-color:${s.bd};font-weight:500`:''}">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
+    return`<button class="p-btn${on?` on-rar-${r}`:''}" onclick="${fn}('${r}')">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
 }
 function renderCharMgmtRankBtns(elId,sel,fn){
   document.getElementById(elId).innerHTML=ALL_RANKS.map(r=>{const on=sel.includes(r);const top=TOP_RANKS.includes(r);
-    return`<button class="p-btn" onclick="${fn}('${r}')" style="${on?`background:${top?'#EEEDFE':'#EDE5D8'};color:${top?'#3C3489':'#634B38'};border-color:${top?'#AFA9EC':'#B4A494'};font-weight:500`:''}">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
+    return`<button class="p-btn${on?(top?' on-rank-top':' on-rank'):''}" onclick="${fn}('${r}')">${r}${on?'<span style="margin-left:2px;font-size:9px">✓</span>':''}</button>`;}).join('');
 }
 function toggleCnRar(r){
   if(_charAssistMode){ toggleWithHierarchy(cnSelRar,r,getRarImplied); }
