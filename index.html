@@ -306,7 +306,7 @@ body.touch-device *:focus-visible {
 <div class="top-action-bar">
   <span id="role-badge-wrap"></span>
   <button class="logout-btn" id="reload-btn" onclick="manualReload()">更新</button>
-  <button class="logout-btn admin-only" onclick="openChangePwModal()">🔑 パスワード変更</button>
+  <button class="logout-btn admin-only" onclick="openChangePwModal()">パスワード変更</button>
   <button class="logout-btn" onclick="doLogout()">ログアウト</button>
 </div>
 <div class="top-bar">
@@ -2093,7 +2093,7 @@ async function manualReload(){
   } catch(e) {
     toast('更新に失敗しました');
   } finally {
-    if(btn){ btn.disabled = false; btn.textContent = '🔄 更新'; }
+    if(btn){ btn.disabled = false; btn.textContent = '更新'; }
   }
 }
 
