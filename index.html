@@ -219,6 +219,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .role-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500}
 .role-badge.admin{background:#EEEDFE;color:#3C3489;border:.5px solid #AFA9EC}
 .role-badge.user{background:var(--acc-bg);color:var(--acc);border:.5px solid var(--bm)}
+.role-badge.reinf-admin{background:#E8F5E9;color:#2E7D32;border:.5px solid #A5D6A7}
 /* ===== 縦画面固定（スマホのみ）===== */
 @media screen and (orientation: landscape) and (max-height: 600px) {
   body::before{
@@ -312,7 +313,7 @@ body.touch-device *:focus-visible {
   <div class="tabs">
     <button class="tab active" onclick="switchTab('input',this)">① 育成入力</button>
     <button class="tab" onclick="switchTab('search',this)">② 育成検索</button>
-    <button class="tab admin-only" onclick="switchTab('reinf',this)">③ 援軍表</button>
+    <button class="tab reinf-admin-only" onclick="switchTab('reinf',this)">③ 援軍表</button>
     <button class="tab admin-only" onclick="switchTab('chars',this)">④ キャラ管理</button>
   </div>
 </div>
@@ -722,7 +723,7 @@ function renderAll(){
 /* ========== ① 育成入力 ========== */
 function renderMembers(){
   const el=document.getElementById('member-list');
-  const visible = currentRole === 'user'
+  const visible = currentRole === 'user' || currentRole === 'reinf-admin'
     ? S.members.filter(m => m.role !== 'その他')
     : S.members;
   if(!visible.length){el.innerHTML='<div class="empty">メンバーがいません</div>';return;}
@@ -2159,11 +2160,28 @@ async function doLogout(){
 }
 
 function applyRole(){
-  const isAdmin = currentRole === 'admin';
-  document.querySelectorAll('.admin-only').forEach(el => { el.style.display = isAdmin ? '' : 'none'; });
-  document.querySelectorAll('.input-admin-only').forEach(el => { el.style.display = isAdmin ? '' : 'none'; });
+  const isAdmin      = currentRole === 'admin';
+  const isReinfAdmin = currentRole === 'reinf-admin';
+  const isUser       = currentRole === 'user';
+
+  // 管理者のみ表示
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = isAdmin ? '' : 'none';
+  });
+  // 育成入力の追加・編集ボタン（管理者のみ）
+  document.querySelectorAll('.input-admin-only').forEach(el => {
+    el.style.display = isAdmin ? '' : 'none';
+  });
+  // 援軍表タブ（管理者 or 援軍管理者）
+  document.querySelectorAll('.reinf-admin-only').forEach(el => {
+    el.style.display = (isAdmin || isReinfAdmin) ? '' : 'none';
+  });
+
+  // ロールバッジ
+  const badgeClass = isAdmin ? 'admin' : isReinfAdmin ? 'reinf-admin' : 'user';
+  const badgeLabel = isAdmin ? '管理者' : isReinfAdmin ? '援軍管理者' : '利用者';
   document.getElementById('role-badge-wrap').innerHTML =
-    `<span class="role-badge ${isAdmin?'admin':'user'}">${isAdmin?'管理者':'利用者'}</span>`;
+    `<span class="role-badge ${badgeClass}">${badgeLabel}</span>`;
 }
 
 /* ========== パスワード変更モーダル ========== */

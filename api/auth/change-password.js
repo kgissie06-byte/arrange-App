@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
-import { requireAuth } from '../../lib/auth.js'
+import { requireAuth } from '../../lib/auth'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -22,8 +22,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'role and password are required' })
   }
 
-  if (role !== 'user') {
-    return res.status(403).json({ error: '変更できるのは利用者パスワードのみです' })
+  if (!['user', 'reinf-admin'].includes(role)) {
+    return res.status(403).json({ error: '変更できるのは利用者・援軍管理者パスワードのみです' })
   }
 
   if (password.length < 4) {
@@ -37,10 +37,9 @@ export default async function handler(req, res) {
     .from('passwords')
     .update({
       password: hashed,
-      // この時刻より前に発行されたuserセッションを無効化
       invalidate_before: new Date().toISOString(),
     })
-    .eq('id', 'user')
+    .eq('id', role)
 
   if (error) return res.status(500).json({ error: error.message })
 
