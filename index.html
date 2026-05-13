@@ -478,7 +478,17 @@ body.touch-device *:focus-visible {
   </div>
   <div id="char-update-form" style="display:none">
     <div class="field"><label>更新するキャラを選択</label>
-      <select id="cu-sel" onchange="loadCharForUpdate()"><option value="">-- 選択 --</option></select>
+      <div class="combo-wrap" id="cu-sel-wrap">
+        <input type="text" class="combo-input" id="cu-sel-display" placeholder="-- キャラを選択 --" readonly onclick="toggleCuSelCombo()" autocomplete="off">
+        <span class="combo-arrow">▾</span>
+        <div class="combo-dropdown" id="cu-sel-dropdown">
+          <div class="combo-search-box">
+            <input type="text" id="cu-sel-search" placeholder="キャラ名・読み仮名で絞り込み" oninput="filterCuSelCombo()" autocomplete="off">
+          </div>
+          <div class="combo-list" id="cu-sel-list"></div>
+        </div>
+      </div>
+      <input type="hidden" id="cu-sel" value="">
     </div>
     <div id="cu-detail" style="display:none">
       <div class="field"><label>キャラ名</label><input type="text" id="cu-name"></div>
@@ -1964,10 +1974,52 @@ async function addChar(){
 function sortByYomi(arr){ return [...arr].sort((a,b)=>(a.yomi||a.name).localeCompare(b.yomi||b.name,'ja')); }
 
 function renderCharUpdateSel(){
-  const sel=document.getElementById('cu-sel');if(!sel)return;
-  sel.innerHTML='<option value="">-- 選択 --</option>'+sortByYomi(S.chars).map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  const hidden=document.getElementById('cu-sel');if(!hidden)return;
+  hidden.value='';
+  const disp=document.getElementById('cu-sel-display');if(disp)disp.value='';
   const d=document.getElementById('cu-detail');if(d)d.style.display='none';
+  renderCuSelList('');
 }
+
+function renderCuSelList(q){
+  const list=document.getElementById('cu-sel-list');if(!list)return;
+  const chars=sortByYomi(S.chars).filter(c=>!q||(c.name.includes(q)||(c.yomi||'').includes(q)));
+  if(!chars.length){
+    list.innerHTML='<div class="combo-option combo-empty">該当なし</div>';return;
+  }
+  const cur=document.getElementById('cu-sel').value;
+  list.innerHTML=chars.map(c=>`<div class="combo-option${c.name===cur?' selected':''}" data-name="${esc(c.name)}" data-yomi="${esc(c.yomi||'')}" onclick="pickCuSel('${esc(c.name)}')">${c.name}</div>`).join('');
+}
+
+function toggleCuSelCombo(){
+  const dd=document.getElementById('cu-sel-dropdown');if(!dd)return;
+  const open=dd.classList.toggle('open');
+  if(open){
+    const si=document.getElementById('cu-sel-search');if(si){si.value='';si.focus();}
+    renderCuSelList('');
+  }
+}
+
+function filterCuSelCombo(){
+  const q=(document.getElementById('cu-sel-search')?.value||'').trim();
+  renderCuSelList(q);
+}
+
+function pickCuSel(name){
+  document.getElementById('cu-sel').value=name;
+  const disp=document.getElementById('cu-sel-display');if(disp)disp.value=name;
+  const dd=document.getElementById('cu-sel-dropdown');if(dd)dd.classList.remove('open');
+  loadCharForUpdate();
+}
+
+// コンボ外クリックで閉じる
+document.addEventListener('click',function(e){
+  const wrap=document.getElementById('cu-sel-wrap');
+  if(wrap&&!wrap.contains(e.target)){
+    const dd=document.getElementById('cu-sel-dropdown');if(dd)dd.classList.remove('open');
+  }
+});
+
 function loadCharForUpdate(){
   const name=document.getElementById('cu-sel').value;
   const cd=S.chars.find(c=>c.name===name);
@@ -2090,14 +2142,9 @@ function jumpToCharUpdate(charName){
   const updateTab = document.querySelector('#page-chars .sub-tab:nth-child(2)');
   if(updateTab) switchCharMode('update', updateTab);
 
-  // セレクトに値をセットしてイベントを発火
-  const sel = document.getElementById('cu-sel');
-  if(!sel) return;
-  sel.value = charName;
-  loadCharForUpdate();
-
   // 画面上部へスクロール
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  pickCuSel(charName);
+   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function switchCharMode(mode,el){
