@@ -182,6 +182,23 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .add-to-table-btn:hover:not(:disabled){background:var(--acc-bg)}
 .add-to-table-btn:disabled{opacity:.4;cursor:default}
 .already-tag{font-size:10px;padding:1px 7px;border-radius:10px;background:var(--acc-bg);color:var(--acc);border:.5px solid var(--bm);margin-left:auto;flex-shrink:0}
+
+/* ===== コンボボックス（検索付きドロップダウン） ===== */
+.combo-wrap{position:relative;width:100%}
+.combo-input{width:100%;padding:7px 32px 7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;box-sizing:border-box;cursor:pointer}
+.combo-input:focus{outline:none;border-color:var(--tab);box-shadow:0 0 0 2px rgba(60,52,137,.12)}
+.combo-arrow{position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--t3);font-size:12px}
+.combo-dropdown{position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--card);border:1px solid var(--bm);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.14);z-index:600;overflow:hidden;display:none}
+.combo-dropdown.open{display:block}
+.combo-search-box{padding:8px 10px;border-bottom:1px solid var(--border)}
+.combo-search-box input{width:100%;padding:5px 9px;font-size:14px;border:1px solid var(--bm);border-radius:7px;background:var(--bg);color:var(--t);font-family:inherit;box-sizing:border-box}
+.combo-search-box input:focus{outline:none;border-color:var(--tab)}
+.combo-list{max-height:200px;overflow-y:auto}
+.combo-option{padding:8px 12px;font-size:13px;cursor:pointer;color:var(--t);transition:background .1s}
+.combo-option:hover,.combo-option.focused{background:var(--acc-lt)}
+.combo-option.selected{background:var(--acc-bg);font-weight:500;color:var(--acc)}
+.combo-option.combo-empty{color:var(--t3);cursor:default;font-size:12px;text-align:center}
+.combo-option.combo-empty:hover{background:transparent}
 .empty{color:var(--t3);text-align:center;padding:1.5rem;font-size:12px}
 hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .toast-fixed{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--toast-bg);color:var(--toast-c);border-radius:20px;padding:8px 18px;font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
@@ -1169,6 +1186,108 @@ async function deleteReinfRow(id){
   }
 }
 
+/* ========== コンボボックス（検索付きドロップダウン） ========== */
+function buildComboOptions(chars, selected) {
+  return [
+    { value: '', label: '（なし）' },
+    ...sortByYomi(chars).map(c => ({ value: c.name, label: c.name, yomi: c.yomi || '' }))
+  ];
+}
+
+function comboHtml(id, chars, selected, placeholder) {
+  const label = selected ? selected : placeholder || '選択してください';
+  return `<div class="combo-wrap" id="combo-wrap-${id}">
+    <div class="combo-input" id="combo-display-${id}" onclick="toggleCombo('${id}')">${label}</div>
+    <span class="combo-arrow">▼</span>
+    <div class="combo-dropdown" id="combo-dropdown-${id}">
+      <div class="combo-search-box">
+        <input type="text" placeholder="名前・読みで絞り込み..." oninput="filterCombo('${id}',this.value)" autocomplete="off" id="combo-search-${id}">
+      </div>
+      <div class="combo-list" id="combo-list-${id}">
+        ${renderComboOptions(id, chars, selected, '')}
+      </div>
+    </div>
+    <input type="hidden" id="${id}" value="${selected||''}">
+  </div>`;
+}
+
+function renderComboOptions(id, chars, selected, q) {
+  const opts = buildComboOptions(chars, selected);
+  const filtered = q
+    ? opts.filter(o => !o.value || o.label.includes(q) || o.yomi.includes(q))
+    : opts;
+  if (!filtered.length) return '<div class="combo-option combo-empty">該当なし</div>';
+  return filtered.map(o =>
+    `<div class="combo-option${o.value === selected ? ' selected' : ''}" data-value="${o.value}" onclick="selectComboOption('${id}','${esc(o.value)}','${esc(o.label)}')">${o.label}</div>`
+  ).join('');
+}
+
+const _comboState = {};
+
+function toggleCombo(id) {
+  const dd = document.getElementById(`combo-dropdown-${id}`);
+  if (!dd) return;
+  const isOpen = dd.classList.contains('open');
+  // 他を全部閉じる
+  document.querySelectorAll('.combo-dropdown.open').forEach(el => {
+    el.classList.remove('open');
+  });
+  if (!isOpen) {
+    dd.classList.add('open');
+    const si = document.getElementById(`combo-search-${id}`);
+    if (si) { si.value = ''; si.focus(); }
+    // 選択肢を全再描画
+    const chars = _comboState[id] ? _comboState[id].chars : [];
+    const sel = document.getElementById(id) ? document.getElementById(id).value : '';
+    const list = document.getElementById(`combo-list-${id}`);
+    if (list) list.innerHTML = renderComboOptions(id, chars, sel, '');
+    // selectedにスクロール
+    setTimeout(() => {
+      const selEl = list && list.querySelector('.combo-option.selected');
+      if (selEl) selEl.scrollIntoView({ block: 'nearest' });
+    }, 30);
+  }
+  // クリック外で閉じる
+  setTimeout(() => {
+    document.addEventListener('click', function closeCombo(e) {
+      const wrap = document.getElementById(`combo-wrap-${id}`);
+      if (wrap && !wrap.contains(e.target)) {
+        const ddEl = document.getElementById(`combo-dropdown-${id}`);
+        if (ddEl) ddEl.classList.remove('open');
+      }
+      document.removeEventListener('click', closeCombo);
+    });
+  }, 0);
+}
+
+function filterCombo(id, q) {
+  const chars = _comboState[id] ? _comboState[id].chars : [];
+  const sel = document.getElementById(id) ? document.getElementById(id).value : '';
+  const list = document.getElementById(`combo-list-${id}`);
+  if (list) list.innerHTML = renderComboOptions(id, chars, sel, q);
+}
+
+function selectComboOption(id, value, label) {
+  const hidden = document.getElementById(id);
+  if (hidden) hidden.value = value;
+  const display = document.getElementById(`combo-display-${id}`);
+  if (display) display.textContent = value ? label : '（なし）';
+  const dd = document.getElementById(`combo-dropdown-${id}`);
+  if (dd) dd.classList.remove('open');
+  // リスト再描画でselectedを更新
+  const chars = _comboState[id] ? _comboState[id].chars : [];
+  const list = document.getElementById(`combo-list-${id}`);
+  if (list) list.innerHTML = renderComboOptions(id, chars, value, '');
+}
+
+function initCombo(id, chars, selected) {
+  _comboState[id] = { chars };
+  const display = document.getElementById(`combo-display-${id}`);
+  if (display) display.textContent = selected || '（なし）';
+  const hidden = document.getElementById(id);
+  if (hidden) hidden.value = selected || '';
+}
+
 function openPairEditModal(rowId,type){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
   const mainKey=type==='normal'?'normalMain':'castleMain';
@@ -1183,29 +1302,27 @@ function openPairEditModal(rowId,type){
   const syncBtn=hasSyncSrc
     ?`<button class="btn" onclick="syncPairFromOther(${rowId},'${type}')">← ${otherLabel}から同期</button>`
     :'';
-  const opts=sortByYomi(S.chars).map(c=>`<option value="${c.name}"${c.name===curMain?' selected':''}>${c.name}</option>`).join('');
-  const optsS=sortByYomi(S.chars).map(c=>`<option value="${c.name}"${c.name===curSub?' selected':''}>${c.name}</option>`).join('');
   openModal(`pair-edit`,`<h3>${label}ペアを変更</h3>
     <div class="field"><label>大将</label>
-      <select id="pe-main"><option value=""></option>${opts}</select>
+      ${comboHtml('pe-main', S.chars, curMain, '（なし）')}
     </div>
     <div class="field"><label>副将</label>
-      <select id="pe-sub"><option value=""${!curSub?' selected':''}>なし</option>${optsS}</select>
+      ${comboHtml('pe-sub', S.chars, curSub, '（なし）')}
     </div>
     <div class="modal-acts">
       ${syncBtn}
       <button class="btn" onclick="closeModal()">キャンセル</button>
       <button class="btn pri" onclick="savePairEdit(${rowId},'${type}')">保存</button>
     </div>`);
+  initCombo('pe-main', S.chars, curMain);
+  initCombo('pe-sub', S.chars, curSub);
 }
 function syncPairFromOther(rowId,type){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
   const otherMain=type==='normal'?(row.castleMain||''):(row.normalMain||'');
   const otherSub =type==='normal'?(row.castleSub ||''):(row.normalSub ||'');
-  const mainSel=document.getElementById('pe-main');
-  const subSel=document.getElementById('pe-sub');
-  if(mainSel) mainSel.value=otherMain;
-  if(subSel)  subSel.value=otherSub;
+  selectComboOption('pe-main', otherMain, otherMain||'（なし）');
+  selectComboOption('pe-sub', otherSub, otherSub||'（なし）');
 }
 async function savePairEdit(rowId,type){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
