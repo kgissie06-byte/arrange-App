@@ -1447,7 +1447,7 @@ function openReinfSearch(rowId){
     renderRSFilterBtns('rs-sub-rank',subCd?subCd.ranks:ALL_RANKS,RS.subRank,'sub-rank');
   }
   const allRoles=[...new Set(S.members.map(m=>m.role))].filter(r=>r!=='その他');
-  document.getElementById('rs-role').innerHTML=allRoles.map(r=>`<button class="f-btn" onclick="toggleRSRole('${esc(r)}')">${r}</button>`).join('');
+  document.getElementById('rs-role').innerHTML=allRoles.filter(r=>r!=='その他').map(r=>`<button class="f-btn" onclick="toggleRSRole('${esc(r)}')">${r}</button>`).join('');
   document.getElementById('reinf-search-overlay').style.display='flex';
   renderRSResults();
 }
@@ -1492,7 +1492,7 @@ function toggleRSFilter(key,val){
   renderRSResults();
 }
 function toggleRSRole(val){const i=RS.roleFilter.indexOf(val);if(i>=0)RS.roleFilter.splice(i,1);else RS.roleFilter.push(val);
-  const allRoles=[...new Set(S.members.map(m=>m.role))];
+  const allRoles=[...new Set(S.members.map(m=>m.role))].filter(r=>r!=='その他');
   document.getElementById('rs-role').innerHTML=allRoles.map(r=>{const on=RS.roleFilter.includes(r);
     return`<button class="f-btn${on?' on':''}" onclick="toggleRSRole('${esc(r)}')">${r}</button>`;}).join('');
   renderRSResults();
