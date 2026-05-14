@@ -314,6 +314,13 @@ body.touch-device .combo-option:active {
   color: inherit !important;
   opacity: 1 !important;
 }
+body.touch-device .f-btn.on:hover,
+body.touch-device .f-btn.on:active {
+  background: var(--acc-bg) !important;
+  border-color: var(--bm) !important;
+  color: var(--acc) !important;
+  opacity: 1 !important;
+}
 </style>
 
 <!-- ローディングオーバーレイ -->
@@ -1088,9 +1095,9 @@ function goBack(){
 function renderFilters(){
   const allRoles=[...new Set(S.members.map(m=>m.role))].filter(r=>r!=='その他');
   document.getElementById('fil-rar').innerHTML=ALL_RARITIES.map(r=>{const on=S.filRar.includes(r);const s=RAR_S[r]||{};
-    return`<button class="f-btn${on?' on':''}" onclick="toggleFil('rar','${r}')" style="${on?`background:${s.bg};color:${s.c};border-color:${s.bd}`:''}"> ${r}</button>`;}).join('');
+    return`<button class="f-btn${on?' on':''}" onclick="toggleFil('rar','${r}')"> ${r}</button>`;}).join('');
   document.getElementById('fil-rank').innerHTML=ALL_RANKS.map(r=>{const on=S.filRank.includes(r);const top=TOP_RANKS.includes(r);
-    return`<button class="f-btn${on?' on':''}" onclick="toggleFil('rank','${r}')" style="${on?(top?'background:#EEEDFE;color:#3C3489;border-color:#AFA9EC':'background:#EDE5D8;color:#634B38;border-color:#B4A494'):''}"> ${r}</button>`;}).join('');
+    return`<button class="f-btn${on?' on':''}" onclick="toggleFil('rank','${r}')"> ${r}</button>`;}).join('');
   document.getElementById('fil-role').innerHTML=allRoles.map(r=>{const on=S.filRole.includes(r);
     return`<button class="f-btn${on?' on':''}" onclick="toggleFil('role','${r}')"> ${r}</button>`;}).join('');
 }
@@ -1373,8 +1380,8 @@ function openReinfSearch(rowId){
   // ソートボタン表示を同期
   const onStyle='background:#EDE5D8;color:#634B38;border-color:#B4A494';
   const rarBtn=document.getElementById('rs-sort-rar');const rankBtn=document.getElementById('rs-sort-rank');
-  if(rarBtn){rarBtn.className='f-btn'+(prevSortMode==='rar'?' on':'');rarBtn.style.cssText=(prevSortMode==='rar'?onStyle+';':'')+'white-space:nowrap';}
-  if(rankBtn){rankBtn.className='f-btn'+(prevSortMode==='rank'?' on':'');rankBtn.style.cssText=(prevSortMode==='rank'?onStyle+';':'')+'white-space:nowrap';}
+  if(rarBtn){rarBtn.className='f-btn'+(prevSortMode==='rar'?' on':'');rarBtn.style.cssText='white-space:nowrap';}
+  if(rankBtn){rankBtn.className='f-btn'+(prevSortMode==='rank'?' on':'');rankBtn.style.cssText='white-space:nowrap';}
   const dualMode=!!(row.normalMain&&row.castleMain&&(row.normalMain!==row.castleMain||row.normalSub!==row.castleSub));
   RS.dualMode=dualMode;
   const normalPanel=document.querySelector('.reinf-search-filters');
@@ -1422,7 +1429,7 @@ function renderRSFilterBtns(elId,options,selArr,key){
   const isRar=key.endsWith('rar');
   document.getElementById(elId).innerHTML=options.map(r=>{const on=selArr.includes(r);const s=isRar?(RAR_S[r]||{}):null;const top=!isRar&&TOP_RANKS.includes(r);
     let style='';if(on){style=isRar&&s?`background:${s.bg};color:${s.c};border-color:${s.bd}`:top?'background:#EEEDFE;color:#3C3489;border-color:#AFA9EC':'background:#EDE5D8;color:#634B38;border-color:#B4A494';}
-    return`<button class="f-btn${on?' on':''}" onclick="toggleRSFilter('${key}','${esc(r)}')" style="${style}">${r}</button>`;}).join('');
+    return`<button class="f-btn${on?' on':''}" onclick="toggleRSFilter('${key}','${esc(r)}')">${r}</button>`;}).join('');
 }
 
 function toggleRSFilter(key,val){
@@ -1460,7 +1467,7 @@ function toggleRSFilter(key,val){
 function toggleRSRole(val){const i=RS.roleFilter.indexOf(val);if(i>=0)RS.roleFilter.splice(i,1);else RS.roleFilter.push(val);
   const allRoles=[...new Set(S.members.map(m=>m.role))];
   document.getElementById('rs-role').innerHTML=allRoles.map(r=>{const on=RS.roleFilter.includes(r);
-    return`<button class="f-btn${on?' on':''}" onclick="toggleRSRole('${esc(r)}')" style="${on?'background:#EDE5D8;color:#634B38;border-color:#B4A494':''}">${r}</button>`;}).join('');
+    return`<button class="f-btn${on?' on':''}" onclick="toggleRSRole('${esc(r)}')">${r}</button>`;}).join('');
   renderRSResults();
 }
 
@@ -1541,8 +1548,8 @@ function setRSSort(mode){
   document.getElementById('rs-sort-rar').className='f-btn'+(mode==='rar'?' on':'');
   document.getElementById('rs-sort-rank').className='f-btn'+(mode==='rank'?' on':'');
   const onStyle='background:#EDE5D8;color:#634B38;border-color:#B4A494';
-  document.getElementById('rs-sort-rar').style.cssText=(mode==='rar'?onStyle+';':'')+'white-space:nowrap';
-  document.getElementById('rs-sort-rank').style.cssText=(mode==='rank'?onStyle+';':'')+'white-space:nowrap';
+  document.getElementById('rs-sort-rar').style.cssText='white-space:nowrap';
+  document.getElementById('rs-sort-rank').style.cssText='white-space:nowrap';
   renderRSResults();
 }
 
