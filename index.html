@@ -263,7 +263,6 @@ body{overscroll-behavior:none}
 body.touch-device .tab:hover:not(.active),
 body.touch-device .tab:active:not(.active),
 body.touch-device .btn:hover,
-body.touch-device .btn.pri:hover,
 body.touch-device .btn:active,
 body.touch-device .back-btn:hover,
 body.touch-device .back-btn:active,
@@ -319,6 +318,13 @@ body.touch-device .f-btn.on:active {
   background: var(--acc-bg) !important;
   border-color: var(--bm) !important;
   color: var(--acc) !important;
+  opacity: 1 !important;
+}
+body.touch-device .btn.pri:hover,
+body.touch-device .btn.pri:active {
+  background: var(--acc) !important;
+  border-color: var(--acc) !important;
+  color: #FFF8F0 !important;
   opacity: 1 !important;
 }
 </style>
