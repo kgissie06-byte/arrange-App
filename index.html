@@ -260,48 +260,32 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 body{overscroll-behavior:none}
 
 /* ===== タッチデバイス専用 ===== */
-body.touch-device .tab:hover:not(.active),
+body.touch-device *:hover {
+  background: unset !important;
+  border-color: unset !important;
+  color: unset !important;
+  opacity: 1 !important;
+}
 body.touch-device .tab:active:not(.active),
-body.touch-device .btn:hover,
-body.touch-device .btn.pri:hover,
 body.touch-device .btn:active,
-body.touch-device .back-btn:hover,
 body.touch-device .back-btn:active,
-body.touch-device .m-card:hover,
 body.touch-device .m-card:active,
-body.touch-device .cc:hover,
 body.touch-device .cc:active,
-body.touch-device .p-btn:not([class*="on-"]):hover,
 body.touch-device .p-btn:not([class*="on-"]):active,
-body.touch-device .f-btn:hover,
 body.touch-device .f-btn:active,
-body.touch-device .name-cell:hover,
 body.touch-device .name-cell:active,
-body.touch-device .pair-cell-inner:hover,
 body.touch-device .pair-cell-inner:active,
-body.touch-device .del-btn:hover,
 body.touch-device .del-btn:active,
-body.touch-device .add-row-btn:hover,
 body.touch-device .add-row-btn:active,
-body.touch-device .sub-tab:hover,
 body.touch-device .sub-tab:active,
-body.touch-device .logout-btn:hover,
 body.touch-device .logout-btn:active,
-body.touch-device .shukuen-add-btn:hover,
 body.touch-device .shukuen-add-btn:active,
-body.touch-device .shukuen-remove-btn:hover,
 body.touch-device .shukuen-remove-btn:active,
-body.touch-device .add-to-table-btn:hover:not(:disabled),
 body.touch-device .add-to-table-btn:active,
-body.touch-device .login-box button:hover,
 body.touch-device .login-box button:active,
-body.touch-device .shukuen-toggle button:hover,
 body.touch-device .shukuen-toggle button:active,
-body.touch-device .c-card:hover,
 body.touch-device .c-card:active,
-body.touch-device #page-search .btn.pri:hover,
 body.touch-device #page-search .btn.pri:active,
-body.touch-device #page-reinf .sec-head .btn:hover,
 body.touch-device #page-reinf .sec-head .btn:active {
   background: var(--card) !important;
   border-color: var(--border) !important;
