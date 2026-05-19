@@ -451,6 +451,11 @@ body.touch-device .sub-tab.active:active {
     <h2>援軍表</h2>
     <button class="btn" onclick="addReinfRow()">+ 行追加</button>
   </div>
+  <!-- ▼ テーブル切り替えタブ -->
+  <div class="sub-tabs" style="margin-bottom:.875rem">
+    <button class="sub-tab active" id="reinf-tab-ransaki" onclick="switchReinfTable('ransaki',this)">乱咲</button>
+    <button class="sub-tab" id="reinf-tab-tsubomi" onclick="switchReinfTable('tsubomi',this)">蕾</button>
+  </div>
   <div class="reinf-wrap">
     <table class="reinf-table" id="reinf-table"></table>
   </div>
@@ -738,6 +743,7 @@ let S={
   nextId:5, nextReinfId:1,
   filRar:[],filRank:[],filRole:[],
 };
+let _activeReinfTable = 'ransaki';
 let E={memberId:null,charName:null,pendingRar:null,pendingRanks:[],pendingEx:null};
 let cnSelRar=[],cnSelRank=[],cuSelRar=[],cuSelRank=[];
 let cnExSotsui=false, cuExSotsui=false;
@@ -1167,7 +1173,7 @@ async function addReinfRow(){
     const res = await fetch('/api/reinf', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({})
+      body: JSON.stringify({ tableType: _activeReinfTable })
     });
     if (!res.ok) throw new Error('行追加失敗');
     await load();
@@ -1187,7 +1193,8 @@ function pairLabel(main,sub){
 
 function renderReinfTable(){
   const tbl=document.getElementById('reinf-table');
-  if(!S.reinf.length){
+  const rows = S.reinf.filter(r => (r.tableType || 'ransaki') === _activeReinfTable);  // ← 追加
+  if(!rows.length){
     tbl.innerHTML=`<thead><tr><th class="rt-name">name</th><th class="rt-pair">通常</th><th class="rt-pair">城</th><th class="rt-del"></th></tr></thead><tbody><tr><td colspan="4" style="text-align:center;color:var(--t3);padding:1.5rem;font-size:12px">「+ 行追加」で行を追加してください</td></tr></tbody>`;
     return;
   }
@@ -1197,7 +1204,7 @@ function renderReinfTable(){
     <th class="rt-pair">城</th>
     <th class="rt-del"></th>
   </tr></thead><tbody>`;
-  S.reinf.forEach(row=>{
+  rows.forEach(row=>{
     const hasMember=!!row.memberName;
     html+=`<tr>
       <td class="rt-name">
@@ -1220,6 +1227,13 @@ function renderReinfTable(){
   });
   html+='</tbody>';
   tbl.innerHTML=html;
+}
+
+function switchReinfTable(type, btn){
+  _activeReinfTable = type;
+  document.querySelectorAll('#page-reinf .sub-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderReinfTable();
 }
 
 async function deleteReinfRow(id){

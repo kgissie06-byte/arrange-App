@@ -12,28 +12,32 @@ export default async function handler(req, res) {
   if (!auth) return
 
   if (req.method === 'POST') {
-    const { data: existing } = await supabase
-      .from('reinf')
-      .select('sort_order')
-      .order('sort_order', { ascending: false })
-      .limit(1)
+  const { tableType } = req.body   // ← 追加
 
-    const nextOrder = existing && existing.length > 0
-      ? (existing[0].sort_order + 1)
-      : 0
+  const { data: existing } = await supabase
+    .from('reinf')
+    .select('sort_order')
+    .eq('table_type', tableType || 'ransaki')   // ← 追加: 対象テーブルの最大order
+    .order('sort_order', { ascending: false })
+    .limit(1)
 
-    const { data, error } = await supabase
-      .from('reinf')
-      .insert({
-        member_name: null,
-        normal_main: null,
-        normal_sub: null,
-        castle_main: null,
-        castle_sub: null,
-        sort_order: nextOrder,
-      })
-      .select()
-      .single()
+  const nextOrder = existing && existing.length > 0
+    ? (existing[0].sort_order + 1)
+    : 0
+
+  const { data, error } = await supabase
+    .from('reinf')
+    .insert({
+      member_name: null,
+      normal_main: null,
+      normal_sub: null,
+      castle_main: null,
+      castle_sub: null,
+      sort_order: nextOrder,
+      table_type: tableType || 'ransaki',   // ← 追加
+    })
+    .select()
+    .single()
 
     if (error) return res.status(500).json({ error })
 

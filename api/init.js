@@ -67,14 +67,15 @@ export default async function handler(req, res) {
   if (reinfErr) return res.status(500).json({ error: reinfErr })
 
   const reinf = (reinfRaw || []).map(r => ({
-    id: r.id,
-    memberName: r.member_name || null,
-    normalMain: r.normal_main || null,
-    normalSub: r.normal_sub || null,
-    castleMain: r.castle_main || null,
-    castleSub: r.castle_sub || null,
-    sortOrder: r.sort_order || 0,
-  }))
+  id: r.id,
+  memberName: r.member_name || null,
+  normalMain: r.normal_main || null,
+  normalSub: r.normal_sub || null,
+  castleMain: r.castle_main || null,
+  castleSub: r.castle_sub || null,
+  sortOrder: r.sort_order || 0,
+  tableType: r.table_type || 'ransaki',  // ← 追加
+}))
 
   return res.json({
     members,
