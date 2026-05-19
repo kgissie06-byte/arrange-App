@@ -637,10 +637,6 @@ body.touch-device .sub-tab.active:active {
       </div>
     </div>
     <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:.75rem">
-      <div class="fil-sec" style="flex:1;min-width:0">
-        <div class="fil-label">所属で絞り込み</div>
-        <div class="fil-btns" id="rs-role"></div>
-      </div>
       <div class="fil-sec" style="flex-shrink:0">
         <div class="fil-label">ソート優先度</div>
         <div style="display:flex;gap:4px">
@@ -1417,7 +1413,7 @@ async function savePairEdit(rowId,type){
 function openReinfSearch(rowId){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
   const prevSortMode=RS.sortMode||'rar';
-  RS={rowId,mainRar:[],mainRank:[],subRar:[],subRank:[],castleMainRar:[],castleMainRank:[],castleSubRar:[],castleSubRank:[],roleFilter:[],sortMode:prevSortMode,dualMode:false};
+  RS={rowId,mainRar:[],mainRank:[],subRar:[],subRank:[],castleMainRar:[],castleMainRank:[],castleSubRar:[],castleSubRank:[],roleFilter:[_activeReinfTable==='ransaki'?'乱咲':'蕾'],sortMode:prevSortMode,dualMode:false};
   // ソートボタン表示を同期
   const onStyle='background:#EDE5D8;color:#634B38;border-color:#B4A494';
   const rarBtn=document.getElementById('rs-sort-rar');const rankBtn=document.getElementById('rs-sort-rank');
@@ -1460,8 +1456,6 @@ function openReinfSearch(rowId){
     renderRSFilterBtns('rs-sub-rar',subCd?subCd.rars:ALL_RARITIES,RS.subRar,'sub-rar');
     renderRSFilterBtns('rs-sub-rank',subCd?subCd.ranks:ALL_RANKS,RS.subRank,'sub-rank');
   }
-  const allRoles=[...new Set(S.members.map(m=>m.role))].filter(r=>r!=='その他');
-  document.getElementById('rs-role').innerHTML=allRoles.filter(r=>r!=='その他').map(r=>`<button class="f-btn" onclick="toggleRSRole('${esc(r)}')">${r}</button>`).join('');
   document.getElementById('reinf-search-overlay').style.display='flex';
   renderRSResults();
 }
@@ -1503,12 +1497,6 @@ function toggleRSFilter(key,val){
       renderRSFilterBtns('rs-castle-sub-rank',castleSubCd?castleSubCd.ranks:ALL_RANKS,RS.castleSubRank,'castle-sub-rank');
     }
   }
-  renderRSResults();
-}
-function toggleRSRole(val){const i=RS.roleFilter.indexOf(val);if(i>=0)RS.roleFilter.splice(i,1);else RS.roleFilter.push(val);
-  const allRoles=[...new Set(S.members.map(m=>m.role))].filter(r=>r!=='その他');
-  document.getElementById('rs-role').innerHTML=allRoles.map(r=>{const on=RS.roleFilter.includes(r);
-    return`<button class="f-btn${on?' on':''}" onclick="toggleRSRole('${esc(r)}')">${r}</button>`;}).join('');
   renderRSResults();
 }
 
