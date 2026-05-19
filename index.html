@@ -396,6 +396,11 @@ body.touch-device .sub-tab.active:active {
         <button class="btn input-admin-only" onclick="openMemberModal('edit')">編集</button>
       </div>
     </div>
+    <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap">
+      <button class="f-btn on" id="mf-all"    onclick="setMemberFilter('all')">すべて</button>
+      <button class="f-btn"   id="mf-ransaki" onclick="setMemberFilter('ransaki')">乱咲</button>
+      <button class="f-btn"   id="mf-tsubomi" onclick="setMemberFilter('tsubomi')">蕾</button>
+    </div>
     <div class="grid-members" id="member-list"></div>
   </div>
   <div id="v-chars" style="display:none">
@@ -798,11 +803,22 @@ function renderAll(){
 }
 
 /* ========== ① 育成入力 ========== */
+let _memberFilter = 'all'; // 'all' | 'ransaki' | 'tsubomi'
+function setMemberFilter(f){
+  _memberFilter = f;
+  ['all','ransaki','tsubomi'].forEach(k=>{
+    const btn=document.getElementById('mf-'+k);
+    if(btn) btn.classList.toggle('on', k===f);
+  });
+  renderMembers();
+}
 function renderMembers(){
   const el=document.getElementById('member-list');
-  const visible = currentRole === 'user' || currentRole === 'reinf-admin'
+  let visible = currentRole === 'user' || currentRole === 'reinf-admin'
     ? S.members.filter(m => m.role !== 'その他')
     : S.members;
+  if(_memberFilter === 'ransaki') visible = visible.filter(m => m.role === '乱咲');
+  if(_memberFilter === 'tsubomi') visible = visible.filter(m => m.role === '蕾');
   if(!visible.length){el.innerHTML='<div class="empty">メンバーがいません</div>';return;}
   el.innerHTML=visible.map((m,i)=>{const a=av(S.members.indexOf(m));return`<div class="m-card" onclick="selectMember(${m.id})">
     <div class="avatar" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
