@@ -429,8 +429,8 @@ body.touch-device .sub-tab.active:active {
     <button class="tab active" onclick="switchTab('input',this)">① 育成入力</button>
     <button class="tab" onclick="switchTab('search',this)">② 育成検索</button>
     <button class="tab reinf-admin-only" onclick="switchTab('reinf',this)">③ 援軍表</button>
-    <button class="tab admin-only" onclick="switchTab('chars',this)">④ キャラ管理</button>
-    <button class="tab reinf-admin-only" onclick="switchTab('survey',this)">⑤ アンケート</button>
+    <button class="tab" onclick="switchTab('survey',this)">④ アンケート</button>
+    <button class="tab admin-only" onclick="switchTab('chars',this)">⑤ キャラ管理</button>
   </div>
 </div>
 
@@ -514,6 +514,32 @@ body.touch-device .sub-tab.active:active {
   </div>
   <div class="reinf-wrap">
     <table class="reinf-table" id="reinf-table"></table>
+  </div>
+</div>
+
+<!-- ⑤ アンケート -->
+<div id="page-survey" class="page">
+  <div id="sv-list-view">
+    <div class="sec-head">
+      <h2>アンケート</h2>
+      <button class="btn pri reinf-admin-only" onclick="openCreateSurvey()">＋ 新規作成</button>
+    </div>
+    <div id="sv-list"></div>
+  </div>
+  <div id="sv-detail-view" style="display:none">
+    <div class="sec-head">
+      <h2 id="sv-detail-title">アンケート詳細</h2>
+      <button class="back-btn" onclick="closeSurveyDetail()">← 戻る</button>
+    </div>
+    <div id="sv-detail-meta" style="font-size:11px;color:var(--t2);margin-bottom:12px"></div>
+    <div id="sv-detail-status-bar" style="margin-bottom:12px"></div>
+    <div id="sv-pairs-list" style="margin-bottom:12px"></div>
+    <div id="sv-add-pair-area">
+      <button class="add-row-btn" onclick="openAddPairModal()">＋ ペアを追加</button>
+    </div>
+    <div id="sv-apply-area" style="margin-top:14px;display:none">
+      <button class="btn pri" onclick="applySurveyToReinf()">援軍表に反映する</button>
+    </div>
   </div>
 </div>
 
@@ -651,32 +677,6 @@ body.touch-device .sub-tab.active:active {
   <div class="grid-charlist" id="char-list-display"></div>
 </div>
 </div>
-</div>
-
-<!-- ⑤ アンケート -->
-<div id="page-survey" class="page">
-  <div id="sv-list-view">
-    <div class="sec-head">
-      <h2>アンケート</h2>
-      <button class="btn pri" onclick="openCreateSurvey()">＋ 新規作成</button>
-    </div>
-    <div id="sv-list"></div>
-  </div>
-  <div id="sv-detail-view" style="display:none">
-    <div class="sec-head">
-      <h2 id="sv-detail-title">アンケート詳細</h2>
-      <button class="back-btn" onclick="closeSurveyDetail()">← 戻る</button>
-    </div>
-    <div id="sv-detail-meta" style="font-size:11px;color:var(--t2);margin-bottom:12px"></div>
-    <div id="sv-detail-status-bar" style="margin-bottom:12px"></div>
-    <div id="sv-pairs-list" style="margin-bottom:12px"></div>
-    <div id="sv-add-pair-area">
-      <button class="add-row-btn" onclick="openAddPairModal()">＋ ペアを追加</button>
-    </div>
-    <div id="sv-apply-area" style="margin-top:14px;display:none">
-      <button class="btn pri" onclick="applySurveyToReinf()">援軍表に反映する</button>
-    </div>
-  </div>
 </div>
 
 <!-- モーダルコンテナ -->
