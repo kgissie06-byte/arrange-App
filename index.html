@@ -216,6 +216,29 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .toast-fixed{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--toast-bg);color:var(--toast-c);border-radius:20px;padding:8px 18px;font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
 .toast-fixed.show{opacity:1}
+
+/* ===== アンケート ===== */
+.sv-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,background .15s}
+.sv-card:hover{border-color:var(--bm);background:var(--acc-lt)}
+.sv-card-title{font-size:13px;font-weight:600;color:var(--t);margin-bottom:4px}
+.sv-card-meta{font-size:11px;color:var(--t2);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sv-status{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500}
+.sv-status.open{background:#E1F5EE;color:#085041;border:.5px solid #1D9E75}
+.sv-status.closed{background:var(--acc-bg);color:var(--acc);border:.5px solid var(--bm)}
+.sv-pair-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:7px;display:flex;align-items:center;gap:10px;transition:background .15s}
+.sv-pair-item.top{border-color:#C89B20;background:#FDF6E0}
+.sv-pair-vote{min-width:36px;text-align:center}
+.sv-pair-vote-num{font-size:18px;font-weight:700;color:var(--tab);line-height:1}
+.sv-pair-vote-label{font-size:9px;color:var(--t3)}
+.sv-pair-names{flex:1;font-size:13px;font-weight:500}
+.sv-pair-sub{font-size:11px;color:var(--t2)}
+.sv-vote-btn{padding:5px 13px;font-size:12px;border:1px solid var(--tab);border-radius:8px;background:var(--card);cursor:pointer;color:var(--tab);font-family:inherit;font-weight:500;transition:all .15s;white-space:nowrap}
+.sv-vote-btn:hover{background:#EEEDFE}
+.sv-vote-btn.voted{background:var(--tab);color:#fff}
+.sv-pair-rank{font-size:10px;font-weight:700;width:22px;text-align:center;color:var(--t3)}
+.sv-pair-rank.rank1{color:#C89B20}
+.sv-pair-rank.rank2{color:#A09890}
+.sv-pair-rank.rank3{color:#B08060}
 /* ===== 宿縁 ===== */
 .shukuen-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:5px}
 .shukuen-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
@@ -354,6 +377,20 @@ body.touch-device .login-box button:active {
   color: #FFF8F0 !important;
   opacity: 1 !important;
 }
+body.touch-device .sv-card:hover,
+body.touch-device .sv-card:active,
+body.touch-device .sv-vote-btn:hover,
+body.touch-device .sv-vote-btn:active {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+  color: inherit !important;
+  opacity: 1 !important;
+}
+body.touch-device .sv-vote-btn.voted:hover,
+body.touch-device .sv-vote-btn.voted:active {
+  background: var(--tab) !important;
+  color: #fff !important;
+}
 body.touch-device .sub-tab.active:hover,
 body.touch-device .sub-tab.active:active {
   background: var(--acc) !important;
@@ -393,6 +430,7 @@ body.touch-device .sub-tab.active:active {
     <button class="tab" onclick="switchTab('search',this)">② 育成検索</button>
     <button class="tab reinf-admin-only" onclick="switchTab('reinf',this)">③ 援軍表</button>
     <button class="tab admin-only" onclick="switchTab('chars',this)">④ キャラ管理</button>
+    <button class="tab reinf-admin-only" onclick="switchTab('survey',this)">⑤ アンケート</button>
   </div>
 </div>
 
@@ -615,7 +653,34 @@ body.touch-device .sub-tab.active:active {
 </div>
 </div>
 
+<!-- ⑤ アンケート -->
+<div id="page-survey" class="page">
+  <div id="sv-list-view">
+    <div class="sec-head">
+      <h2>アンケート</h2>
+      <button class="btn pri" onclick="openCreateSurvey()">＋ 新規作成</button>
+    </div>
+    <div id="sv-list"></div>
+  </div>
+  <div id="sv-detail-view" style="display:none">
+    <div class="sec-head">
+      <h2 id="sv-detail-title">アンケート詳細</h2>
+      <button class="back-btn" onclick="closeSurveyDetail()">← 戻る</button>
+    </div>
+    <div id="sv-detail-meta" style="font-size:11px;color:var(--t2);margin-bottom:12px"></div>
+    <div id="sv-detail-status-bar" style="margin-bottom:12px"></div>
+    <div id="sv-pairs-list" style="margin-bottom:12px"></div>
+    <div id="sv-add-pair-area">
+      <button class="add-row-btn" onclick="openAddPairModal()">＋ ペアを追加</button>
+    </div>
+    <div id="sv-apply-area" style="margin-top:14px;display:none">
+      <button class="btn pri" onclick="applySurveyToReinf()">援軍表に反映する</button>
+    </div>
+  </div>
+</div>
+
 <!-- モーダルコンテナ -->
+
 <div class="overlay" id="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modal-box"><div id="modal-content"></div></div>
 </div>
@@ -1234,7 +1299,7 @@ function renderReinfTable(){
     html+=`<tr>
       <td class="rt-name">
         <div class="name-cell${hasMember?' filled':''}" onclick="openReinfSearch(${row.id})">
-          ${hasMember?row.memberName:'クリックして検索...'}
+          ${hasMember?row.memberName:'盟員選択'}
         </div>
       </td>
       <td class="rt-pair">
@@ -2316,6 +2381,7 @@ function switchTab(tab,el){
   if(tab==='search'){renderFilters();renderSearch();}
   if(tab==='reinf')renderReinfTable();
   if(tab==='chars'){initCharNewForm();renderCharListDisplay();}
+  if(tab==='survey')initSurveyPage();
 }
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
@@ -2340,7 +2406,344 @@ async function manualReload(){
   }
 }
 
-// セッション管理はhttpOnly Cookieで行うためsessionStorageは不要
+/* ========== ⑤ アンケート ========== */
+// surveys はメモリ上で管理（永続化はAPIに委ねる想定、今回はlocalStorageで代替）
+// 構造: { id, title, tableType, deadline, pairs:[{id,main,sub,votes,voters:[]}], createdAt }
+
+let _surveys = [];
+let _activeSurveyId = null;
+// 自分の投票を記録するためセッション中はメモリで保持（ログインユーザーはrole単位）
+// 「既にアンケートが終了済みかどうか」を判定する定期チェック
+let _surveyTimer = null;
+
+function loadSurveys(){
+  try {
+    const raw = localStorage.getItem('surveys_v1');
+    _surveys = raw ? JSON.parse(raw) : [];
+  } catch(e){ _surveys = []; }
+}
+function saveSurveys(){
+  try { localStorage.setItem('surveys_v1', JSON.stringify(_surveys)); } catch(e){}
+}
+function genSurveyId(){
+  return 'sv_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+}
+
+function renderSurveyList(){
+  loadSurveys();
+  const el = document.getElementById('sv-list');
+  if(!_surveys.length){
+    el.innerHTML = '<div class="empty">アンケートがありません<br><span style="font-size:11px">「＋ 新規作成」で作成してください</span></div>';
+    return;
+  }
+  const now = Date.now();
+  // 終了済みを下に
+  const sorted = [..._surveys].sort((a,b) => {
+    const aOpen = new Date(a.deadline).getTime() > now;
+    const bOpen = new Date(b.deadline).getTime() > now;
+    if(aOpen !== bOpen) return aOpen ? -1 : 1;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+  el.innerHTML = sorted.map(sv => {
+    const isOpen = new Date(sv.deadline).getTime() > now;
+    const topPair = getTopPair(sv);
+    const totalVotes = sv.pairs.reduce((s,p) => s + (p.votes||0), 0);
+    const tableLabel = sv.tableType === 'ransaki' ? '乱咲' : '蕾';
+    const deadlineStr = formatDateTime(sv.deadline);
+    return `<div class="sv-card" onclick="openSurveyDetail('${sv.id}')">
+      <div class="sv-card-title">${sv.title}</div>
+      <div class="sv-card-meta">
+        <span class="sv-status ${isOpen?'open':'closed'}">${isOpen?'受付中':'終了'}</span>
+        <span>【${tableLabel}】</span>
+        <span>終了: ${deadlineStr}</span>
+        <span>票数: ${totalVotes}票</span>
+        ${topPair ? `<span style="color:var(--acc);font-weight:500">1位: ${topPair.main}${topPair.sub?' - '+topPair.sub:''}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getTopPair(sv){
+  if(!sv.pairs.length) return null;
+  return [...sv.pairs].sort((a,b)=>(b.votes||0)-(a.votes||0))[0];
+}
+
+function formatDateTime(iso){
+  if(!iso) return '未設定';
+  const d = new Date(iso);
+  return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function openCreateSurvey(){
+  const now = new Date();
+  now.setDate(now.getDate() + 7);
+  const defaultDeadline = now.toISOString().slice(0,16);
+  openModal('create-survey', `<h3>アンケート作成</h3>
+    <div class="field"><label>タイトル</label><input type="text" id="sv-title-in" placeholder="例: 第3回援軍アンケート" style="font-size:16px"></div>
+    <div class="field"><label>所属</label>
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <button id="sv-tbl-ransaki" class="sub-tab active" onclick="setSvTable('ransaki')">乱咲</button>
+        <button id="sv-tbl-tsubomi" class="sub-tab" onclick="setSvTable('tsubomi')">蕾</button>
+      </div>
+    </div>
+    <div class="field"><label>終了日時</label><input type="datetime-local" id="sv-deadline-in" value="${defaultDeadline}" style="font-size:16px"></div>
+    <div style="font-size:11px;color:var(--danger);min-height:14px" id="sv-create-err"></div>
+    <div class="modal-acts">
+      <button class="btn" onclick="closeModal()">キャンセル</button>
+      <button class="btn pri" onclick="doCreateSurvey()">作成</button>
+    </div>`);
+  window._svCreateTable = 'ransaki';
+}
+
+function setSvTable(t){
+  window._svCreateTable = t;
+  document.getElementById('sv-tbl-ransaki').classList.toggle('active', t==='ransaki');
+  document.getElementById('sv-tbl-tsubomi').classList.toggle('active', t==='tsubomi');
+}
+
+function doCreateSurvey(){
+  const title = (document.getElementById('sv-title-in').value||'').trim();
+  const deadline = document.getElementById('sv-deadline-in').value;
+  const tableType = window._svCreateTable || 'ransaki';
+  const errEl = document.getElementById('sv-create-err');
+  if(!title){ errEl.textContent = 'タイトルを入力してください'; return; }
+  if(!deadline){ errEl.textContent = '終了日時を設定してください'; return; }
+  if(new Date(deadline).getTime() <= Date.now()){ errEl.textContent = '終了日時は未来の日時を設定してください'; return; }
+  loadSurveys();
+  const sv = { id: genSurveyId(), title, tableType, deadline, pairs: [], createdAt: new Date().toISOString() };
+  _surveys.push(sv);
+  saveSurveys();
+  closeModal();
+  renderSurveyList();
+  toast('アンケートを作成しました');
+}
+
+function openSurveyDetail(svId){
+  loadSurveys();
+  const sv = _surveys.find(s => s.id === svId);
+  if(!sv) return;
+  _activeSurveyId = svId;
+  document.getElementById('sv-list-view').style.display = 'none';
+  document.getElementById('sv-detail-view').style.display = 'block';
+  renderSurveyDetail();
+}
+
+function closeSurveyDetail(){
+  _activeSurveyId = null;
+  document.getElementById('sv-list-view').style.display = 'block';
+  document.getElementById('sv-detail-view').style.display = 'none';
+  renderSurveyList();
+}
+
+function renderSurveyDetail(){
+  loadSurveys();
+  const sv = _surveys.find(s => s.id === _activeSurveyId);
+  if(!sv) return;
+  const now = Date.now();
+  const isOpen = new Date(sv.deadline).getTime() > now;
+  const tableLabel = sv.tableType === 'ransaki' ? '乱咲' : '蕾';
+
+  document.getElementById('sv-detail-title').textContent = sv.title;
+  document.getElementById('sv-detail-meta').innerHTML =
+    `<span class="sv-status ${isOpen?'open':'closed'}">${isOpen?'受付中':'終了'}</span>
+     <span style="margin-left:8px">【${tableLabel}】</span>
+     <span style="margin-left:8px">終了: ${formatDateTime(sv.deadline)}</span>`;
+
+  // ステータスバー
+  const statusBar = document.getElementById('sv-detail-status-bar');
+  if(!isOpen){
+    statusBar.innerHTML = `<div style="background:#EEEDFE;color:#3C3489;border:1px solid #AFA9EC;border-radius:8px;padding:8px 12px;font-size:12px">
+      ⏹ このアンケートは終了しました。結果を援軍表に反映できます。</div>`;
+  } else {
+    statusBar.innerHTML = '';
+  }
+
+  // ペア一覧
+  const sorted = [...sv.pairs].sort((a,b) => (b.votes||0) - (a.votes||0));
+  const pairsList = document.getElementById('sv-pairs-list');
+  const myVoteId = sv._myVote || null;
+  if(!sorted.length){
+    pairsList.innerHTML = '<div class="empty" style="padding:.75rem">まだペアがありません</div>';
+  } else {
+    pairsList.innerHTML = sorted.map((p, idx) => {
+      const rank = idx + 1;
+      const rankClass = rank === 1 ? 'rank1' : rank === 2 ? 'rank2' : rank === 3 ? 'rank3' : '';
+      const isVoted = myVoteId === p.id;
+      const isTop = idx === 0 && (p.votes||0) > 0;
+      return `<div class="sv-pair-item${isTop?' top':''}">
+        <div class="sv-pair-rank ${rankClass}">${rank}位</div>
+        <div class="sv-pair-vote">
+          <div class="sv-pair-vote-num">${p.votes||0}</div>
+          <div class="sv-pair-vote-label">票</div>
+        </div>
+        <div class="sv-pair-names">
+          <div>大将：${p.main || '（なし）'}</div>
+          <div class="sv-pair-sub">副将：${p.sub || '（なし）'}</div>
+        </div>
+        ${isOpen
+          ? `<button class="sv-vote-btn${isVoted?' voted':''}" onclick="toggleVote('${sv.id}','${p.id}')">${isVoted ? '✓ 投票済' : '投票'}</button>`
+          : `<span style="font-size:11px;color:var(--t3)">終了</span>`
+        }
+      </div>`;
+    }).join('');
+  }
+
+  // ペア追加ボタン（終了時は非表示）
+  document.getElementById('sv-add-pair-area').style.display = isOpen ? 'block' : 'none';
+
+  // 反映ボタン（終了時のみ・管理者系のみ）
+  const applyArea = document.getElementById('sv-apply-area');
+  const canApply = !isOpen && (currentRole === 'admin' || currentRole === 'reinf-admin');
+  applyArea.style.display = canApply ? 'block' : 'none';
+}
+
+function toggleVote(svId, pairId){
+  loadSurveys();
+  const sv = _surveys.find(s => s.id === svId);
+  if(!sv) return;
+  const isOpen = new Date(sv.deadline).getTime() > Date.now();
+  if(!isOpen){ toast('このアンケートは終了しています'); return; }
+  const pair = sv.pairs.find(p => p.id === pairId);
+  if(!pair) return;
+
+  if(sv._myVote === pairId){
+    // 投票取消
+    pair.votes = Math.max(0, (pair.votes||0) - 1);
+    sv._myVote = null;
+  } else {
+    // 既存投票を取消してから新規投票
+    if(sv._myVote){
+      const oldPair = sv.pairs.find(p => p.id === sv._myVote);
+      if(oldPair) oldPair.votes = Math.max(0, (oldPair.votes||0) - 1);
+    }
+    pair.votes = (pair.votes||0) + 1;
+    sv._myVote = pairId;
+  }
+  saveSurveys();
+  renderSurveyDetail();
+}
+
+function openAddPairModal(){
+  openModal('add-pair', `<h3>ペアを追加</h3>
+    <div class="field"><label>大将</label>
+      ${comboHtml('ap-main', S.chars, '', '（なし）')}
+    </div>
+    <div class="field"><label>副将</label>
+      ${comboHtml('ap-sub', S.chars, '', '（なし）')}
+    </div>
+    <div style="font-size:11px;color:var(--danger);min-height:14px" id="ap-err"></div>
+    <div class="modal-acts">
+      <button class="btn" onclick="closeModal()">キャンセル</button>
+      <button class="btn pri" onclick="doAddPair()">追加</button>
+    </div>`);
+  initCombo('ap-main', S.chars, '');
+  initCombo('ap-sub', S.chars, '');
+}
+
+function doAddPair(){
+  const main = document.getElementById('ap-main')?.value || '';
+  const sub = document.getElementById('ap-sub')?.value || '';
+  const errEl = document.getElementById('ap-err');
+  if(!main && !sub){ errEl.textContent = '大将か副将を選択してください'; return; }
+  loadSurveys();
+  const sv = _surveys.find(s => s.id === _activeSurveyId);
+  if(!sv){ closeModal(); return; }
+  // 重複チェック
+  const dup = sv.pairs.find(p => p.main === (main||null) && p.sub === (sub||null));
+  if(dup){ errEl.textContent = '同じペアが既に登録されています'; return; }
+  sv.pairs.push({ id: 'p_'+Date.now(), main: main||null, sub: sub||null, votes: 0 });
+  saveSurveys();
+  closeModal();
+  renderSurveyDetail();
+  toast('ペアを追加しました');
+}
+
+function applySurveyToReinf(){
+  loadSurveys();
+  const sv = _surveys.find(s => s.id === _activeSurveyId);
+  if(!sv) return;
+  const isOpen = new Date(sv.deadline).getTime() > Date.now();
+  if(isOpen){ toast('まだ終了していません'); return; }
+  if(!sv.pairs.length){ toast('ペアがありません'); return; }
+
+  // 最多得票ペアを取得
+  const topPair = [...sv.pairs].sort((a,b) => (b.votes||0) - (a.votes||0))[0];
+  if(!topPair){ toast('ペアがありません'); return; }
+
+  const tableType = sv.tableType;
+  const rows = S.reinf.filter(r => (r.tableType || 'ransaki') === tableType);
+
+  // 空き行を探す、なければ最初の行を使う（既存書き換え）
+  let targetRow = rows.find(r => !r.normalMain && !r.normalSub);
+  if(!targetRow) targetRow = rows[0];
+
+  if(!targetRow){
+    toast('援軍表に行がありません。先に行を追加してください');
+    return;
+  }
+
+  openModal('apply-confirm', `<h3>援軍表に反映</h3>
+    <div style="font-size:12px;margin-bottom:12px">
+      以下のペアを【${tableType==='ransaki'?'乱咲':'蕾'}】援軍表の<br>
+      <strong>${targetRow.memberName ? targetRow.memberName + ' の行' : '空き行'}</strong>に反映します。<br><br>
+      大将：<strong>${topPair.main||'（なし）'}</strong><br>
+      副将：<strong>${topPair.sub||'（なし）'}</strong><br><br>
+      ${targetRow.normalMain||targetRow.normalSub ? `<span style="color:var(--danger)">※ 既存の設定（${pairLabel(targetRow.normalMain,targetRow.normalSub).replace(/<[^>]+>/g,'')}) を上書きします</span>` : ''}
+    </div>
+    <div class="modal-acts">
+      <button class="btn" onclick="closeModal()">キャンセル</button>
+      <button class="btn pri" onclick="doApplySurvey('${sv.id}','${targetRow.id}','${topPair.main||''}','${topPair.sub||''}')">反映する</button>
+    </div>`);
+}
+
+async function doApplySurvey(svId, rowId, main, sub){
+  closeModal();
+  const rowIdNum = parseInt(rowId, 10);
+  const row = S.reinf.find(r => r.id === rowIdNum);
+  if(!row){ toast('行が見つかりません'); return; }
+  row.normalMain = main || null;
+  row.normalSub = sub || null;
+  showLoading();
+  try {
+    await fetch(`/api/reinf/${rowIdNum}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        memberName: row.memberName,
+        normalMain: row.normalMain,
+        normalSub: row.normalSub,
+        castleMain: row.castleMain,
+        castleSub: row.castleSub,
+      })
+    });
+    toast('援軍表に反映しました');
+  } catch(e){
+    toast('反映に失敗しました');
+  } finally {
+    hideLoading();
+  }
+  // 援軍表も再描画
+  renderReinfTable();
+}
+
+// アンケートページ表示時の初期化
+function initSurveyPage(){
+  loadSurveys();
+  // 終了チェック：開いているアンケートのうち期限切れになったものを自動判定
+  checkSurveyDeadlines();
+  // 詳細が開いていれば再描画
+  if(_activeSurveyId){
+    renderSurveyDetail();
+  } else {
+    renderSurveyList();
+  }
+}
+
+function checkSurveyDeadlines(){
+  // 特に何もしない（表示時に都度 Date.now() で判定するため）
+}
+
+
 // roleのみメモリ上に保持してUI制御に使う
 
 (async function restoreSession(){
