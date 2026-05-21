@@ -1420,7 +1420,6 @@ async function savePairEdit(rowId,type){
   const newSub=document.getElementById('pe-sub').value||null;
   row[mainKey]=newMain;
   row[subKey]=newSub;
-  showLoading();
   try {
     await fetch(`/api/reinf/${rowId}`, {
       method: 'PUT',
@@ -1433,15 +1432,10 @@ async function savePairEdit(rowId,type){
         castleSub: row.castleSub,
       })
     });
-    await load();
-    toast('保存しました');
   } catch(err) {
     console.error(err);
-    toast('保存に失敗しました');
-  } finally {
-    hideLoading();
   }
-  closeModal();
+  renderReinfTable();closeModal();
 }
 
 /* ===== 援軍専用検索 ===== */
@@ -1677,7 +1671,6 @@ function renderRSResults(){
 async function setReinfMember(rowId,name){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
   row.memberName=name||null;
-  showLoading();
   try {
     await fetch(`/api/reinf/${rowId}`, {
       method: 'PUT',
@@ -1690,14 +1683,11 @@ async function setReinfMember(rowId,name){
         castleSub: row.castleSub,
       })
     });
-    await load();
-    if(name)toast(name+'を追加しました');else toast('解除しました');
   } catch(err) {
     console.error(err);
-    toast('保存に失敗しました');
-  } finally {
-    hideLoading();
   }
+  renderReinfTable();
+  if(name)toast(name+'を追加しました');else toast('解除しました');
   renderRSResults();
 }
 
