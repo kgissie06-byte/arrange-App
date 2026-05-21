@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { requireAuth } from '../../lib/auth.js'
+import { requireReinfAuth } from '../../lib/auth.js'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -7,8 +7,7 @@ const supabase = createClient(
 )
 
 export default async function handler(req, res) {
-  // 援軍表操作は管理者のみ
-  const auth = await requireAuth(req, res, 'admin')
+  const auth = await requireReinfAuth(req, res)
   if (!auth) return
 
   if (req.method === 'POST') {
