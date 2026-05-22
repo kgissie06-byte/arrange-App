@@ -103,7 +103,7 @@ async function getSurveys(res, auth) {
     })
   })
 
-  const sessionKey = auth.jti || null
+  const sessionKey = auth.jti || `${auth.role}_${auth.iat}`
   const myVoteMap = {}
   if (sessionKey) {
     const { data: myVotesRaw } = await supabase
@@ -144,7 +144,7 @@ async function getSurvey(res, surveyId, auth) {
     })
   }
 
-  const sessionKey = auth.jti || null
+  const sessionKey = auth.jti || `${auth.role}_${auth.iat}`
   let myVotePairId = null
   if (sessionKey) {
     const { data: myVote } = await supabase
@@ -232,7 +232,7 @@ async function handleVote(req, res, auth) {
   const { surveyId, pairId } = req.body
   if (!surveyId) return res.status(400).json({ error: 'surveyId is required' })
 
-  const sessionKey = auth.jti
+  const sessionKey = auth.jti || `${auth.role}_${auth.iat}`
   if (!sessionKey) return res.status(400).json({ error: 'セッションキーが取得できません' })
 
   const { data: sv } = await supabase
