@@ -529,7 +529,10 @@ body.touch-device .sub-tab.active:active {
   <div id="sv-detail-view" style="display:none">
     <div class="sec-head">
       <h2 id="sv-detail-title">アンケート詳細</h2>
-      <button class="back-btn" onclick="closeSurveyDetail()">← 戻る</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn danger reinf-admin-only" id="sv-delete-btn" onclick="deleteSurvey()">削除</button>
+        <button class="back-btn" onclick="closeSurveyDetail()">← 戻る</button>
+      </div>
     </div>
     <div id="sv-detail-meta" style="font-size:11px;color:var(--t2);margin-bottom:12px"></div>
     <div id="sv-detail-status-bar" style="margin-bottom:12px"></div>
@@ -2700,6 +2703,33 @@ async function doAddPair(){
 }
 
 /* ---------- 援軍表への反映 ---------- */
+/* ---------- アンケート削除 ---------- */
+function deleteSurvey(){
+  openModal('sv-delete-confirm', `<h3>アンケートを削除</h3>
+    <div style="font-size:12px;margin-bottom:14px">このアンケートを削除します。<br>投票データも全て削除されます。元に戻せません。</div>
+    <div class="modal-acts">
+      <button class="btn" onclick="closeModal()">キャンセル</button>
+      <button class="btn danger" onclick="doDeleteSurvey()">削除する</button>
+    </div>`);
+}
+
+async function doDeleteSurvey(){
+  closeModal();
+  showLoading();
+  try {
+    const res = await fetch(`/api/surveys?id=${_activeSurveyId}`, { method: 'DELETE' });
+    if(!res.ok) throw new Error('delete failed');
+    _surveys = _surveys.filter(s => s.id !== _activeSurveyId);
+    toast('アンケートを削除しました');
+    closeSurveyDetail();
+  } catch(e){
+    toast('削除に失敗しました');
+  } finally {
+    hideLoading();
+  }
+}
+
+/* ---------- 援軍表への反映 ---------- */
 function applySurveyToReinf(){
   const sv = _surveys.find(s => s.id === _activeSurveyId);
   if(!sv) return;
@@ -2707,64 +2737,77 @@ function applySurveyToReinf(){
   if(isOpen){ toast('まだ終了していません'); return; }
   if(!sv.pairs||!sv.pairs.length){ toast('ペアがありません'); return; }
 
-  const topPair = [...sv.pairs].sort((a,b) => (b.votes||0) - (a.votes||0))[0];
-  if(!topPair) return;
-
+  const sortedPairs = [...sv.pairs].sort((a,b) => (b.votes||0) - (a.votes||0));
   const tableType = sv.tableType;
-  const rows = S.reinf.filter(r => (r.tableType||'ransaki') === tableType);
-  let targetRow = rows.find(r => !r.normalMain && !r.normalSub);
-  if(!targetRow) targetRow = rows[0];
+  const tableLabel = tableType === 'ransaki' ? '乱咲' : '蕾';
+  const existingRows = S.reinf.filter(r => (r.tableType||'ransaki') === tableType);
 
-  if(!targetRow){
-    toast('援軍表に行がありません。先に行を追加してください');
-    return;
-  }
-
-  const hasExisting = !!(targetRow.normalMain||targetRow.normalSub);
-  const existingLabel = hasExisting ? pairLabel(targetRow.normalMain,targetRow.normalSub).replace(/<[^>]+>/g,'') : '';
+  const pairsPreview = sortedPairs.map((p,i) =>
+    `<div style="padding:3px 0;border-bottom:1px solid var(--border)">
+      ${i+1}行目：${p.main||'（なし）'} - ${p.sub||'（なし）'}
+      <span style="color:var(--t3);font-size:10px;margin-left:4px">${p.votes||0}票</span>
+    </div>`
+  ).join('');
 
   openModal('apply-confirm', `<h3>援軍表に反映</h3>
     <div style="font-size:12px;margin-bottom:12px">
-      以下のペアを【${tableType==='ransaki'?'乱咲':'蕾'}】援軍表の<br>
-      <strong>${targetRow.memberName ? targetRow.memberName+' の行' : '空き行'}</strong>に反映します。<br><br>
-      大将：<strong>${topPair.main||'（なし）'}</strong><br>
-      副将：<strong>${topPair.sub||'（なし）'}</strong><br><br>
-      ${hasExisting ? `<span style="color:var(--danger)">※ 既存の設定（${existingLabel}）を上書きします</span>` : ''}
+      【${tableLabel}】援軍表の<strong>全行を削除</strong>し、以下の${sortedPairs.length}行を新規作成します。<br><br>
+      <div style="margin:8px 0;max-height:200px;overflow-y:auto">${pairsPreview}</div>
+      ${existingRows.length > 0 ? `<span style="color:var(--danger)">※ 既存の${existingRows.length}行が全て削除されます</span>` : ''}
     </div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
-      <button class="btn pri" onclick="doApplySurvey(${targetRow.id},'${topPair.main||''}','${topPair.sub||''}')">反映する</button>
+      <button class="btn pri" onclick="doApplySurvey('${tableType}')">反映する</button>
     </div>`);
 }
 
-async function doApplySurvey(rowId, main, sub){
+async function doApplySurvey(tableType){
   closeModal();
-  const row = S.reinf.find(r => r.id === rowId);
-  if(!row){ toast('行が見つかりません'); return; }
-  row.normalMain = main || null;
-  row.normalSub = sub || null;
+  const sv = _surveys.find(s => s.id === _activeSurveyId);
+  if(!sv) return;
+
+  const sortedPairs = [...sv.pairs].sort((a,b) => (b.votes||0) - (a.votes||0));
+
   showLoading();
   try {
-    const res = await fetch(`/api/reinf?id=${rowId}`, {
-      method: 'PUT',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        memberName: row.memberName,
-        normalMain: row.normalMain,
-        normalSub: row.normalSub,
-        castleMain: row.castleMain,
-        castleSub: row.castleSub,
-      }),
-    });
-    if(!res.ok) throw new Error('put failed');
+    // 1. 対象テーブルの全行を削除
+    const targetRows = S.reinf.filter(r => (r.tableType||'ransaki') === tableType);
+    await Promise.all(targetRows.map(r =>
+      fetch(`/api/reinf?id=${r.id}`, { method: 'DELETE' })
+    ));
+
+    // 2. 得票数順に1行ずつ新規追加
+    for(const pair of sortedPairs){
+      const addRes = await fetch('/api/reinf', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ tableType }),
+      });
+      if(!addRes.ok) throw new Error('add row failed');
+      const newRow = await addRes.json();
+
+      await fetch(`/api/reinf?id=${newRow.id}`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          memberName: null,
+          normalMain: pair.main || null,
+          normalSub: pair.sub || null,
+          castleMain: pair.main || null,
+          castleSub: pair.sub || null,
+        }),
+      });
+    }
+
     toast('援軍表に反映しました');
+    await load();
   } catch(e){
     toast('反映に失敗しました');
   } finally {
     hideLoading();
   }
-  renderReinfTable();
 }
+
 
 
 // roleのみメモリ上に保持してUI制御に使う
