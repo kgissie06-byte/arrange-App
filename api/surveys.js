@@ -14,7 +14,8 @@ const supabase = createClient(
  * GET    /api/surveys?id=XX        → 単件取得（全ユーザー）
  * POST   /api/surveys?id=XX        → ペア追加（全ユーザー、受付中のみ）
  * DELETE /api/surveys?id=XX        → 削除（援軍管理者・管理者）
- * POST   /api/surveys?action=vote  → 投票・取消（全ユーザー）
+ * POST   /api/surveys?action=vote  → 投票・取消（全ユーザー、複数ペア可）
+ * GET    /api/surveys?action=voters&id=XX → 投票者一覧取得（全ユーザー）
  */
 export default async function handler(req, res) {
   const { id, action } = req.query
@@ -28,6 +29,15 @@ export default async function handler(req, res) {
     return await handleVote(req, res, auth)
   }
 
+  // ----- 投票者一覧 -----
+  if (action === 'voters') {
+    if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+    if (!surveyId || isNaN(surveyId)) return res.status(400).json({ error: 'invalid id' })
+    return await getVoters(res, surveyId)
+  }
+
   // ----- 単件操作 -----
   if (surveyId) {
     if (isNaN(surveyId)) return res.status(400).json({ error: 'invalid id' })
@@ -35,7 +45,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const auth = await requireAuth(req, res)
       if (!auth) return
-      return await getSurvey(res, surveyId, auth)
+      return await getSurvey(res, surveyId, auth, req)
     }
     if (req.method === 'POST') {
       const auth = await requireAuth(req, res)
@@ -54,7 +64,7 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const auth = await requireAuth(req, res)
     if (!auth) return
-    return await getSurveys(res, auth)
+    return await getSurveys(res, auth, req)
   }
   if (req.method === 'POST') {
     const auth = await requireReinfAuth(req, res)
@@ -66,7 +76,7 @@ export default async function handler(req, res) {
 }
 
 /* ===== 一覧取得 ===== */
-async function getSurveys(res, auth) {
+async function getSurveys(res, auth, req) {
   const { data: surveysRaw, error } = await supabase
     .from('surveys')
     .select('*')
@@ -84,9 +94,10 @@ async function getSurveys(res, auth) {
 
   const { data: votesRaw } = await supabase
     .from('survey_votes')
-    .select('pair_id, survey_id')
+    .select('pair_id, survey_id, member_id')
     .in('survey_id', surveyIds)
 
+  // ペアごとの得票数
   const voteCountMap = {}
   ;(votesRaw || []).forEach(v => {
     voteCountMap[v.pair_id] = (voteCountMap[v.pair_id] || 0) + 1
@@ -103,15 +114,19 @@ async function getSurveys(res, auth) {
     })
   })
 
-  const sessionKey = auth.jti || `${auth.role}_${auth.iat}`
+  // 自分の投票済みペアID一覧（クエリパラメータのmemberIdで管理）
+  const memberId = req.query.memberId ? parseInt(req.query.memberId) : null
   const myVoteMap = {}
-  if (sessionKey) {
+  if (memberId) {
     const { data: myVotesRaw } = await supabase
       .from('survey_votes')
       .select('pair_id, survey_id')
       .in('survey_id', surveyIds)
-      .eq('session_key', sessionKey)
-    ;(myVotesRaw || []).forEach(v => { myVoteMap[v.survey_id] = v.pair_id })
+      .eq('member_id', memberId)
+    ;(myVotesRaw || []).forEach(v => {
+      if (!myVoteMap[v.survey_id]) myVoteMap[v.survey_id] = []
+      myVoteMap[v.survey_id].push(v.pair_id)
+    })
   }
 
   return res.json((surveysRaw || []).map(s => ({
@@ -121,12 +136,12 @@ async function getSurveys(res, auth) {
     deadline: s.deadline,
     createdAt: s.created_at,
     pairs: pairsMap[s.id] || [],
-    myVotePairId: myVoteMap[s.id] || null,
+    myVotePairIds: myVoteMap[s.id] || [],
   })))
 }
 
 /* ===== 単件取得 ===== */
-async function getSurvey(res, surveyId, auth) {
+async function getSurvey(res, surveyId, auth, req) {
   const { data: sv, error } = await supabase
     .from('surveys').select('*').eq('id', surveyId).single()
   if (error || !sv) return res.status(404).json({ error: 'not found' })
@@ -144,13 +159,14 @@ async function getSurvey(res, surveyId, auth) {
     })
   }
 
-  const sessionKey = auth.jti || `${auth.role}_${auth.iat}`
-  let myVotePairId = null
-  if (sessionKey) {
-    const { data: myVote } = await supabase
+  // 自分の投票済みペアID一覧
+  const memberId = req.query.memberId ? parseInt(req.query.memberId) : null
+  let myVotePairIds = []
+  if (memberId) {
+    const { data: myVotes } = await supabase
       .from('survey_votes').select('pair_id')
-      .eq('survey_id', surveyId).eq('session_key', sessionKey).maybeSingle()
-    myVotePairId = myVote?.pair_id || null
+      .eq('survey_id', surveyId).eq('member_id', memberId)
+    myVotePairIds = (myVotes || []).map(v => v.pair_id)
   }
 
   return res.json({
@@ -165,8 +181,45 @@ async function getSurvey(res, surveyId, auth) {
       sub: p.sub_char || null,
       votes: voteCountMap[p.id] || 0,
     })),
-    myVotePairId,
+    myVotePairIds,
   })
+}
+
+/* ===== 投票者一覧取得 ===== */
+async function getVoters(res, surveyId) {
+  const { data: pairsRaw } = await supabase
+    .from('survey_pairs').select('id, main_char, sub_char').eq('survey_id', surveyId)
+
+  const pairIds = (pairsRaw || []).map(p => p.id)
+  if (!pairIds.length) return res.json([])
+
+  const { data: votesRaw, error } = await supabase
+    .from('survey_votes')
+    .select('pair_id, member_id, member_name')
+    .in('pair_id', pairIds)
+  if (error) return res.status(500).json({ error: error.message })
+
+  // pairId → pair情報 のマップ
+  const pairMap = {}
+  ;(pairsRaw || []).forEach(p => {
+    pairMap[p.id] = { main: p.main_char || null, sub: p.sub_char || null }
+  })
+
+  // memberId → 投票ペア一覧
+  const memberVoteMap = {}
+  ;(votesRaw || []).forEach(v => {
+    const key = v.member_id
+    if (!memberVoteMap[key]) {
+      memberVoteMap[key] = { memberId: v.member_id, memberName: v.member_name || '?', pairIds: [] }
+    }
+    memberVoteMap[key].pairIds.push(v.pair_id)
+  })
+
+  return res.json(Object.values(memberVoteMap).map(m => ({
+    memberId: m.memberId,
+    memberName: m.memberName,
+    votes: m.pairIds.map(pid => pairMap[pid]).filter(Boolean),
+  })))
 }
 
 /* ===== 作成 ===== */
@@ -185,7 +238,7 @@ async function createSurvey(req, res) {
 
   return res.status(201).json({
     id: data.id, title: data.title, tableType: data.table_type,
-    deadline: data.deadline, createdAt: data.created_at, pairs: [], myVotePairId: null,
+    deadline: data.deadline, createdAt: data.created_at, pairs: [], myVotePairIds: [],
   })
 }
 
@@ -227,13 +280,15 @@ async function deleteSurvey(res, surveyId) {
   return res.json({ ok: true })
 }
 
-/* ===== 投票・取消 ===== */
+/* ===== 投票・取消（複数ペア対応） ===== */
 async function handleVote(req, res, auth) {
-  const { surveyId, pairId } = req.body
+  const { surveyId, pairId, memberId: bodyMemberId, memberName: bodyMemberName } = req.body
   if (!surveyId) return res.status(400).json({ error: 'surveyId is required' })
+  if (!pairId) return res.status(400).json({ error: 'pairId is required' })
 
-  const sessionKey = auth.jti || `${auth.role}_${auth.iat}`
-  if (!sessionKey) return res.status(400).json({ error: 'セッションキーが取得できません' })
+  const memberId = bodyMemberId || null
+  const memberName = bodyMemberName || null
+  if (!memberId) return res.status(400).json({ error: 'メンバーIDが必要です。メンバーを選択してください' })
 
   const { data: sv } = await supabase
     .from('surveys').select('deadline').eq('id', surveyId).single()
@@ -242,22 +297,27 @@ async function handleVote(req, res, auth) {
     return res.status(400).json({ error: 'このアンケートは終了しています' })
   }
 
+  // 既にこのペアに投票済みか確認
   const { data: existing } = await supabase
-    .from('survey_votes').select('id, pair_id')
-    .eq('survey_id', surveyId).eq('session_key', sessionKey).maybeSingle()
+    .from('survey_votes').select('id')
+    .eq('survey_id', surveyId)
+    .eq('member_id', memberId)
+    .eq('pair_id', pairId)
+    .maybeSingle()
 
-  // 同じペアへの再投票 or pairId=null → 取消
-  if (!pairId || (existing && existing.pair_id === pairId)) {
-    if (existing) await supabase.from('survey_votes').delete().eq('id', existing.id)
-    return res.json({ ok: true, myVotePairId: null })
+  if (existing) {
+    // 同じペアへの再投票 → 取消
+    await supabase.from('survey_votes').delete().eq('id', existing.id)
+    return res.json({ ok: true, action: 'removed', pairId })
+  } else {
+    // 新規投票
+    const { error } = await supabase.from('survey_votes').insert({
+      pair_id: pairId,
+      survey_id: surveyId,
+      member_id: memberId,
+      member_name: memberName || null,
+    })
+    if (error) return res.status(500).json({ error: error.message })
+    return res.json({ ok: true, action: 'added', pairId })
   }
-
-  // 別ペアへ投票（upsert）
-  const { error } = await supabase.from('survey_votes').upsert(
-    { pair_id: pairId, survey_id: surveyId, session_key: sessionKey },
-    { onConflict: 'survey_id,session_key' }
-  )
-  if (error) return res.status(500).json({ error: error.message })
-
-  return res.json({ ok: true, myVotePairId: pairId })
 }
