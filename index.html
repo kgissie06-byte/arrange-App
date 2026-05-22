@@ -1331,7 +1331,7 @@ function switchReinfTable(type, btn){
 async function deleteReinfRow(id){
   showLoading();
   try {
-    await fetch(`/api/reinf/${id}`, { method: 'DELETE' });
+    await fetch(`/api/reinf?id=${id}`, { method: 'DELETE' });
     await load();
   } catch(err) {
     console.error(err);
@@ -1488,7 +1488,7 @@ async function savePairEdit(rowId,type){
   row[mainKey]=newMain;
   row[subKey]=newSub;
   try {
-    await fetch(`/api/reinf/${rowId}`, {
+    await fetch(`/api/reinf?id=${rowId}`, {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -1739,7 +1739,7 @@ async function setReinfMember(rowId,name){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
   row.memberName=name||null;
   try {
-    await fetch(`/api/reinf/${rowId}`, {
+    await fetch(`/api/reinf?id=${rowId}`, {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -2745,7 +2745,7 @@ async function doApplySurvey(rowId, main, sub){
   row.normalSub = sub || null;
   showLoading();
   try {
-    const res = await fetch(`/api/reinf/${rowId}`, {
+    const res = await fetch(`/api/reinf?id=${rowId}`, {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
