@@ -1549,6 +1549,7 @@ async function savePairEdit(rowId,type){
   const newSub=document.getElementById('pe-sub').value||null;
   row[mainKey]=newMain;
   row[subKey]=newSub;
+  showLoading();
   try {
     await fetch(`/api/reinf?id=${rowId}`, {
       method: 'PUT',
@@ -2497,7 +2498,7 @@ let currentMemberId = null;
 
 async function manualReload(){
   const btn = document.getElementById('reload-btn');
-  if(btn){ btn.disabled = true; btn.textContent = '更新中...'; }
+  if(btn){ btn.disabled = true; btn.textContent = '更新中'; }
   try {
     await load();
     toast('最新データに更新しました');
