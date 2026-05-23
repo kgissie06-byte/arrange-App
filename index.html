@@ -3009,8 +3009,10 @@ async function doApplySurvey(tableType){
       applyRole();
       load();
     } else {
+      await populateLoginIdList();
     }
   } catch(e) {
+    await populateLoginIdList();
   }
 })();
 
@@ -3058,6 +3060,19 @@ async function doLogout(){
   document.getElementById('login-screen').style.display = 'flex';
   document.querySelectorAll('.tab').forEach((t,i) => { t.classList.toggle('active', i===0); });
   document.querySelectorAll('.page').forEach((p,i) => { p.classList.toggle('active', i===0); });
+}
+
+async function populateLoginIdList(){
+  try {
+    const res = await fetch('/api/init?public=1');
+    if(res.ok){
+      const d = await res.json();
+      const el = document.getElementById('login-id-list');
+      if(!el) return;
+      const sorted = [...(d.members||[])].sort((a,b)=>a.name.localeCompare(b.name,'ja'));
+      el.innerHTML = sorted.map(m => `ID: ${m.id}　${m.name}`).join('<br>');
+    }
+  } catch(e) {}
 }
 
 function applyRole(){
