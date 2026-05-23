@@ -218,6 +218,7 @@ async function getVoters(res, surveyId) {
   return res.json(Object.values(memberVoteMap).map(m => ({
     memberId: m.memberId,
     memberName: m.memberName,
+    pairIds: m.pairIds,
     votes: m.pairIds.map(pid => pairMap[pid]).filter(Boolean),
   })))
 }
