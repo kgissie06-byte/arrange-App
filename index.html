@@ -455,7 +455,7 @@ body.touch-device .sub-tab.active:active {
     <button class="tab active" onclick="switchTab('input',this)">① 育成入力</button>
     <button class="tab" onclick="switchTab('search',this)">② 育成検索</button>
     <button class="tab" onclick="switchTab('survey',this)">③ アンケート</button>
-    <button class="tab reinf-admin-only" onclick="switchTab('reinf',this)">④ 援軍表</button>
+    <button class="tab" onclick="switchTab('reinf',this)">④ 援軍表</button>
     <button class="tab admin-only" onclick="switchTab('chars',this)">⑤ キャラ管理</button>
   </div>
 </div>
@@ -532,7 +532,7 @@ body.touch-device .sub-tab.active:active {
 <div id="page-reinf" class="page">
   <div class="sec-head">
     <h2>援軍表</h2>
-    <button class="btn" onclick="addReinfRow()">+ 行追加</button>
+    <button class="btn reinf-edit-only" onclick="addReinfRow()">+ 行追加</button>
   </div>
   <!-- ▼ テーブル切り替えタブ -->
   <div class="sub-tabs" style="margin-bottom:.875rem">
@@ -1352,24 +1352,31 @@ function renderReinfTable(){
     <th class="rt-del"></th>
   </tr></thead><tbody>`;
   rows.forEach(row=>{
+    const canEdit = currentRole === 'admin' || currentRole === 'reinf-admin';
     const hasMember=!!row.memberName;
     html+=`<tr>
       <td class="rt-name">
-        <div class="name-cell${hasMember?' filled':''}" onclick="openReinfSearch(${row.id})">
+        <div class="name-cell${hasMember?' filled':''}"
+            ${canEdit ? `onclick="openReinfSearch(${row.id})"` : ''}
+            style="${canEdit ? '' : 'cursor:default;pointer-events:none'}">
           ${hasMember?row.memberName:'盟員選択'}
         </div>
       </td>
       <td class="rt-pair">
-        <div class="pair-cell-inner" onclick="openPairEditModal(${row.id},'normal')">
+        <div class="pair-cell-inner"
+            ${canEdit ? `onclick="openPairEditModal(${row.id},'normal')"` : ''}
+            style="${canEdit ? '' : 'cursor:default;pointer-events:none'}">
           ${pairLabel(row.normalMain,row.normalSub)}
         </div>
       </td>
       <td class="rt-pair">
-        <div class="pair-cell-inner" onclick="openPairEditModal(${row.id},'castle')">
+        <div class="pair-cell-inner"
+            ${canEdit ? `onclick="openPairEditModal(${row.id},'castle')"` : ''}
+            style="${canEdit ? '' : 'cursor:default;pointer-events:none'}">
           ${pairLabel(row.castleMain,row.castleSub)}
         </div>
       </td>
-      <td class="rt-del"><div class="del-btn" onclick="deleteReinfRow(${row.id})" title="この行を削除">✕</div></td>
+      <td class="rt-del">${canEdit ? `<div class="del-btn" onclick="deleteReinfRow(${row.id})" title="この行を削除">✕</div>` : ''}</td>
     </tr>`;
   });
   html+='</tbody>';
@@ -2586,7 +2593,7 @@ function openCreateSurvey(){
   now.setDate(now.getDate() + 7);
   const defaultDeadline = new Date(now.getTime() - now.getTimezoneOffset()*60000).toISOString().slice(0,16);
   openModal('create-survey', `<h3>アンケート作成</h3>
-    <div class="field"><label>タイトル</label><input type="text" id="sv-title-in" placeholder="例: 第3回援軍アンケート" style="font-size:16px"></div>
+    <div class="field"><label>タイトル</label><input type="text" id="sv-title-in" placeholder="例: 趙国編アンケート(乱咲)" style="font-size:16px"></div>
     <div class="field"><label>所属</label>
       <div style="display:flex;gap:6px;margin-top:4px">
         <button id="sv-tbl-ransaki" class="sub-tab active" onclick="setSvTable('ransaki')">乱咲</button>
@@ -3080,6 +3087,11 @@ function applyRole(){
   });
   // 援軍表タブ（管理者 or 援軍管理者）
   document.querySelectorAll('.reinf-admin-only').forEach(el => {
+    el.style.display = (isAdmin || isReinfAdmin) ? '' : 'none';
+  });
+
+  // 援軍表の編集操作（管理者 or 援軍管理者のみ）
+  document.querySelectorAll('.reinf-edit-only').forEach(el => {
     el.style.display = (isAdmin || isReinfAdmin) ? '' : 'none';
   });
 
