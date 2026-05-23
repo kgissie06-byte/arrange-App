@@ -217,6 +217,10 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .toast-fixed{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--toast-bg);color:var(--toast-c);border-radius:20px;padding:8px 18px;font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
 .toast-fixed.show{opacity:1}
 
+/* ===== トップへ戻るボタン ===== */
+#scroll-top-btn{position:fixed;bottom:24px;right:16px;width:40px;height:40px;border-radius:50%;background:var(--acc);color:#FFF8F0;border:none;cursor:pointer;font-size:18px;line-height:40px;text-align:center;z-index:150;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:0 2px 8px rgba(0,0,0,.22)}
+#scroll-top-btn.show{opacity:1;pointer-events:auto}
+
 /* ===== アンケート ===== */
 .sv-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,background .15s}
 .sv-card:hover{border-color:var(--bm);background:var(--acc-lt)}
@@ -458,6 +462,7 @@ body.touch-device .sub-tab.active:active {
 
 <div class="content">
 <div class="toast-fixed" id="toast"></div>
+<button id="scroll-top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="トップへ戻る">↑</button>
 
 <!-- ① 育成入力 -->
 <div id="page-input" class="page active">
@@ -779,6 +784,14 @@ document.addEventListener('touchend', () => {
     }
   }, 100);
 }, { passive: true });
+
+// トップへ戻るボタン
+(function(){
+  const btn=document.getElementById('scroll-top-btn');
+  window.addEventListener('scroll',function(){
+    btn.classList.toggle('show', window.scrollY > 200);
+  },{passive:true});
+})();
 
 const ALL_RARITIES=['LG3','LG2','LG1','LG','UR','SR','R','N'];
 const ALL_RANKS=['全技極','裏技極','技極','表1','表2','表3','表4','表5','表6','裏1','裏2','裏3','裏4','裏5','裏6'];
