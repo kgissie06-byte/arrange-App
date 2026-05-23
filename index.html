@@ -2965,36 +2965,6 @@ async function fetchAndRenderList(){
   renderSurveyList();
 }
 
-function renderSurveyList(){
-  const el = document.getElementById('sv-list');
-  if(!_surveys.length){
-    el.innerHTML = '<div class="empty">アンケートがありません<br><span style="font-size:11px">「＋ 新規作成」で作成してください</span></div>';
-    return;
-  }
-  const now = Date.now();
-  const sorted = [..._surveys].sort((a,b) => {
-    const aOpen = new Date(a.deadline).getTime() > now;
-    const bOpen = new Date(b.deadline).getTime() > now;
-    if(aOpen !== bOpen) return aOpen ? -1 : 1;
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
-  el.innerHTML = sorted.map(sv => {
-    const isOpen = new Date(sv.deadline).getTime() > now;
-    const topPair = getTopPair(sv);
-    const totalVotes = (sv.pairs||[]).reduce((s,p) => s + (p.votes||0), 0);
-    const tableLabel = sv.tableType === 'ransaki' ? '乱咲' : '蕾';
-    return `<div class="sv-card" onclick="openSurveyDetail(${sv.id})">
-      <div class="sv-card-title">${sv.title}</div>
-      <div class="sv-card-meta">
-        <span class="sv-status ${isOpen?'open':'closed'}">${isOpen?'受付中':'終了'}</span>
-        <span>【${tableLabel}】</span>
-        <span>終了: ${formatDateTime(sv.deadline)}</span>
-        <span>票数: ${totalVotes}票</span>
-        ${topPair ? `<span style="color:var(--acc);font-weight:500">1位: ${topPair.main||'?'}${topPair.sub?' - '+topPair.sub:''}</span>` : ''}
-      </div>
-    </div>`;
-  }).join('');
-}
 
 /* ---------- アンケート作成 ---------- */
 function openCreateSurvey(){
