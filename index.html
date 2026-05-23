@@ -932,7 +932,7 @@ function renderMembers(){
   const loginMember = currentMemberId ? S.members.find(m => m.id === currentMemberId) : null;
   if(loginMember && visible.find(m => m.id === loginMember.id)){
     const a = av(S.members.indexOf(loginMember));
-    html += `<div style="grid-column:1/-1;margin-bottom:4px;font-size:11px;color:var(--t2);font-weight:500">あなたのカード</div>`;
+    html += `<div style="grid-column:1/-1;margin-bottom:4px;font-size:11px;color:var(--t2);font-weight:500">ログイン中のアカウント</div>`;
     html += `<div class="m-card" style="border-color:var(--tab);background:#f4f4ff" onclick="selectMember(${loginMember.id})">
       <div class="avatar" style="background:${a.bg};color:${a.c}">${ini(loginMember.name)}</div>
       <div class="m-name">${loginMember.name}</div><div class="m-sub">${loginMember.role}</div>
@@ -2128,6 +2128,8 @@ function resetImgArea(prefix){
 async function addChar(){
   const name=document.getElementById('cn-name').value;
   const yomi=document.getElementById('cn-yomi').value.trim();
+  const sortedRars=ALL_RARITIES.filter(r=>cnSelRar.includes(r));
+  const sortedRanks=ALL_RANKS.filter(r=>cnSelRank.includes(r));
   showLoading();
   try {
     await fetch('/api/chars',{
@@ -2136,8 +2138,8 @@ async function addChar(){
       body:JSON.stringify({
         name,
         yomi,
-        rars:cnSelRar,
-        ranks:cnSelRank,
+        rars:sortedRars,
+        ranks:sortedRanks,
         shukuens:cnShukuens,
         exSotsui:cnExSotsui,
         img: _cnImg || null
@@ -2237,8 +2239,8 @@ async function updateChar(){
   try {
     const body = {
       name, yomi,
-      rars:cuSelRar,
-      ranks:cuSelRank,
+      rars:sortedRars,
+      ranks:sortedRanks,
       shukuens:cuShukuens,
       exSotsui:cuExSotsui,
     };
