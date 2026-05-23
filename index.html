@@ -434,11 +434,14 @@ body.touch-device .sub-tab.active:active {
 <div id="login-screen">
   <div class="login-box">
     <h1>育成管理</h1>
-    <p>メンバーを選択してパスワードを入力してください</p>
-    <select id="login-member" style="width:100%;padding:10px 12px;font-size:15px;border:1px solid var(--bm);border-radius:10px;background:var(--bg);color:var(--t);font-family:inherit;margin-bottom:10px">
-      <option value="">-- メンバーを選択 --</option>
-    </select>
+    <p>IDとパスワードを入力してください</p>
+    <input type="number" id="login-id" placeholder="メンバーID" style="width:100%;padding:10px 12px;font-size:16px;border:1px solid var(--bm);border-radius:10px;background:var(--bg);color:var(--t);font-family:inherit;text-align:center;margin-bottom:10px">
     <input type="password" id="login-pw" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()">
+    <details style="margin-top:10px;text-align:left">
+      <summary style="font-size:11px;color:var(--t2);cursor:pointer">IDを確認する</summary>
+      <div id="login-id-list" style="margin-top:6px;font-size:11px;color:var(--t2);line-height:1.8"></div>
+    </details>
+
     <button onclick="doLogin()">ログイン</button>
     <div class="login-error" id="login-error"></div>
   </div>
@@ -926,9 +929,8 @@ function setMemberFilter(f){
 }
 function renderMembers(){
   const el=document.getElementById('member-list');
-  let visible = currentRole === 'user' || currentRole === 'reinf-admin'
-    ? S.members.filter(m => m.role !== 'その他')
-    : S.members;
+  // 全ロールで「その他」は非表示（編集モーダルでは別途全件表示）
+  let visible = S.members.filter(m => m.role !== 'その他');
   if(_memberFilter === 'ransaki') visible = visible.filter(m => m.role === '乱咲');
   if(_memberFilter === 'tsubomi') visible = visible.filter(m => m.role === '蕾');
   if(!visible.length){el.innerHTML='<div class="empty">メンバーがいません</div>';return;}
@@ -2621,38 +2623,6 @@ async function doCreateSurvey(){
   }
 }
 
-/* ---------- メンバー選択 ---------- */
-function openSvMemberSelect(onSelect){
-  const members = [...S.members].sort((a,b)=>a.name.localeCompare(b.name,'ja'));
-  const gridHtml = members.map(m => {
-    const colors = ['#D4C5F9','#C5E1F9','#C5F9D8','#F9E4C5','#F9C5C5','#F9F1C5'];
-    const bg = colors[m.id % colors.length];
-    return `<div onclick="selectSvMember(${m.id},'${esc(m.name)}')"
-      style="background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer">
-      <div style="width:36px;height:36px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin:0 auto 5px">${m.name.slice(0,2)}</div>
-      <div style="font-size:11px;font-weight:500;word-break:break-all">${m.name}</div>
-    </div>`;
-  }).join('');
-  openModal('sv-member-sel', `<h3>メンバーを選択</h3>
-    <div style="font-size:11px;color:var(--t2);margin-bottom:10px">あなたはどのメンバーですか？次回から省略されます。</div>
-    <div class="sv-member-sel-grid">${gridHtml}</div>
-    <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button></div>`);
-  window._svMemberSelectCallback = onSelect;
-}
-function selectSvMember(id, name){
-  const m = { id, name };
-  setSvMember(m);
-  closeModal();
-  if(window._svMemberSelectCallback) window._svMemberSelectCallback(m);
-  window._svMemberSelectCallback = null;
-}
-function changeSvMember(){
-  openSvMemberSelect(() => {
-    _pendingVotes = new Set();
-    fetchAndRenderDetail(_activeSurveyId);
-  });
-}
-
 /* ---------- アンケート詳細 ---------- */
 async function openSurveyDetail(svId){
   _activeSurveyId = svId;
@@ -2712,7 +2682,6 @@ function renderSurveyDetail(sv){
     bannerHtml = `<div class="sv-member-banner">
       <span style="font-size:12px">投票者：</span>
       <span class="sv-member-banner-name">${esc(member.name)}</span>
-      <button class="sv-member-change-btn" onclick="changeSvMember()">変更</button>
     </div>`;
   }
   if(!isOpen){
@@ -2822,10 +2791,7 @@ function renderVotersList(voters){
 /* ---------- 仮選択（LINEスタイル） ---------- */
 function togglePendingVote(svId, pairId){
   const member = getSvMember();
-  if(!member){
-    openSvMemberSelect(() => togglePendingVote(svId, pairId));
-    return;
-  }
+  if(!member){ toast('ログインしていません'); return; }
   if(_pendingVotes.has(pairId)) _pendingVotes.delete(pairId);
   else _pendingVotes.add(pairId);
 
@@ -2836,7 +2802,7 @@ function togglePendingVote(svId, pairId){
 /* ---------- 投票確定 ---------- */
 async function confirmVotes(){
   const member = getSvMember();
-  if(!member){ openSvMemberSelect(() => confirmVotes()); return; }
+  if(!member){ toast('ログインしていません'); return; }
   const sv = _surveys.find(s => s.id === _activeSurveyId);
   if(!sv) return;
 
@@ -3038,38 +3004,22 @@ async function doApplySurvey(tableType){
       const d = await res.json();
       currentRole = d.role;
       currentMemberId = d.memberId || null;
-      populateLoginMemberSelect(d.members || []);
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('main-wrap').style.display = '';
       applyRole();
       load();
     } else {
-      // 未ログイン時: セレクトにメッセージを出してからloadで一覧を取得
-      await populateLoginMemberSelectFromPublic();
     }
   } catch(e) {
-    await populateLoginMemberSelectFromPublic();
   }
 })();
 
-async function populateLoginMemberSelectFromPublic(){
-  // /api/init は認証エラーでも members を返すよう変更して使い回す
-  try {
-    const res = await fetch('/api/init?public=1');
-    if(res.ok){
-      const d = await res.json();
-      populateLoginMemberSelect(d.members || []);
-    }
-  } catch(e) {}
-}
-
 async function doLogin(){
-  const memberEl = document.getElementById('login-member');
-  const memberId = memberEl ? parseInt(memberEl.value) : null;
-   const pw = (document.getElementById('login-pw').value || '').trim();
-   const errEl = document.getElementById('login-error');
-   const btn = document.querySelector('#login-screen button');
-  if(!memberId){ errEl.textContent = 'メンバーを選択してください'; return; }
+  const memberId = parseInt(document.getElementById('login-id').value);
+  const pw = (document.getElementById('login-pw').value || '').trim();
+  const errEl = document.getElementById('login-error');
+  const btn = document.querySelector('#login-screen button');
+  if(!memberId){ errEl.textContent = 'IDを入力してください'; return; }
   if(!pw){ errEl.textContent = 'パスワードを入力してください'; return; }
   btn.disabled = true; btn.textContent = '確認中...'; errEl.textContent = '';
   try {
@@ -3101,22 +3051,13 @@ async function doLogout(){
   await fetch('/api/auth/logout', { method: 'POST' }).catch(()=>{});
   currentRole = null;
   currentMemberId = null;
+  const idEl = document.getElementById('login-id'); if(idEl) idEl.value = '';
   document.getElementById('login-pw').value = '';
   document.getElementById('login-error').textContent = '';
-  const ms = document.getElementById('login-member'); if(ms) ms.value = '';
   document.getElementById('main-wrap').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.querySelectorAll('.tab').forEach((t,i) => { t.classList.toggle('active', i===0); });
   document.querySelectorAll('.page').forEach((p,i) => { p.classList.toggle('active', i===0); });
-}
-
-function populateLoginMemberSelect(members){
-  const sel = document.getElementById('login-member');
-  if(!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">-- メンバーを選択 --</option>'
-    + members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-  if(cur) sel.value = cur;
 }
 
 function applyRole(){

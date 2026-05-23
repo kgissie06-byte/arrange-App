@@ -24,12 +24,12 @@ export default async function handler(req, res) {
     .single()
 
   if (error || !row) {
-    return res.status(401).json({ error: 'パスワードが違います' })
+    return res.status(401).json({ error: 'IDまたはパスワードが違います' })
   }
 
   const ok = await bcrypt.compare(password, row.password)
   if (!ok) {
-    return res.status(401).json({ error: 'パスワードが違います' })
+    return res.status(401).json({ error: 'IDまたはパスワードが違います' })
   }
 
   await issueSession(res, row.role, row.member_id)
