@@ -32,6 +32,17 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'IDまたはパスワードが違います' })
   }
 
+  // その他メンバーはログイン不可
+  const { data: member } = await supabase
+    .from('members')
+    .select('role')
+    .eq('id', row.member_id)
+    .single()
+
+  if (member?.role === 'その他') {
+    return res.status(403).json({ error: 'ログインできません' })
+  }
+
   await issueSession(res, row.role, row.member_id)
   return res.json({ role: row.role, memberId: row.member_id })
 }
