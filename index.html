@@ -2235,6 +2235,8 @@ async function updateChar(){
   const oldName=document.getElementById('cu-sel').value;
   const name=document.getElementById('cu-name').value;
   const yomi=document.getElementById('cu-yomi').value.trim();
+  const sortedRars=ALL_RARITIES.filter(r=>cuSelRar.includes(r));
+  const sortedRanks=ALL_RANKS.filter(r=>cuSelRank.includes(r));
   showLoading();
   try {
     const body = {
