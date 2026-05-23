@@ -7,14 +7,6 @@ const supabase = createClient(
 )
 
 export default async function handler(req, res) {
-  // 未ログイン時のメンバー一覧取得（ログイン画面のセレクト用）
-  if (req.query.public === '1') {
-    const { data: membersRaw } = await supabase
-      .from('members')
-      .select('id, name')
-      .order('name')
-    return res.json({ members: membersRaw || [] })
-  }
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }

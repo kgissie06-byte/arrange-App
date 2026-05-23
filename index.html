@@ -437,11 +437,6 @@ body.touch-device .sub-tab.active:active {
     <p>IDとパスワードを入力してください</p>
     <input type="number" id="login-id" placeholder="メンバーID" style="width:100%;padding:10px 12px;font-size:16px;border:1px solid var(--bm);border-radius:10px;background:var(--bg);color:var(--t);font-family:inherit;text-align:center;margin-bottom:10px">
     <input type="password" id="login-pw" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()">
-    <details style="margin-top:10px;text-align:left">
-      <summary style="font-size:11px;color:var(--t2);cursor:pointer">IDを確認する</summary>
-      <div id="login-id-list" style="margin-top:6px;font-size:11px;color:var(--t2);line-height:1.8"></div>
-    </details>
-
     <button onclick="doLogin()">ログイン</button>
     <div class="login-error" id="login-error"></div>
   </div>
@@ -3008,11 +3003,8 @@ async function doApplySurvey(tableType){
       document.getElementById('main-wrap').style.display = '';
       applyRole();
       load();
-    } else {
-      await populateLoginIdList();
     }
   } catch(e) {
-    await populateLoginIdList();
   }
 })();
 
@@ -3060,19 +3052,6 @@ async function doLogout(){
   document.getElementById('login-screen').style.display = 'flex';
   document.querySelectorAll('.tab').forEach((t,i) => { t.classList.toggle('active', i===0); });
   document.querySelectorAll('.page').forEach((p,i) => { p.classList.toggle('active', i===0); });
-}
-
-async function populateLoginIdList(){
-  try {
-    const res = await fetch('/api/init?public=1');
-    if(res.ok){
-      const d = await res.json();
-      const el = document.getElementById('login-id-list');
-      if(!el) return;
-      const sorted = [...(d.members||[])].sort((a,b)=>a.name.localeCompare(b.name,'ja'));
-      el.innerHTML = sorted.map(m => `ID: ${m.id}　${m.name}`).join('<br>');
-    }
-  } catch(e) {}
 }
 
 function applyRole(){
