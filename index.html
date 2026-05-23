@@ -2718,14 +2718,63 @@ function renderSurveyDetail(sv){
     }).join('');
   }
 
-  // 投票確定ボタン（受付中のみ）
+  // 投票確定ボタン（受付中 かつ 仮選択が確定済みと異なるときだけ表示）
   const confirmArea = document.getElementById('sv-vote-confirm-area');
-  confirmArea.style.display = isOpen ? 'block' : 'none';
+  if(isOpen){
+    const hasChange = [..._pendingVotes].some(id => !_confirmedVotes.has(id)) ||
+                      [..._confirmedVotes].some(id => !_pendingVotes.has(id));
+    confirmArea.style.display = hasChange ? 'block' : 'none';
+  } else {
+    confirmArea.style.display = 'none';
+  }
 
   document.getElementById('sv-add-pair-area').style.display = isOpen ? 'block' : 'none';
 
   const applyArea = document.getElementById('sv-apply-area');
   applyArea.style.display = (!isOpen && (currentRole==='admin'||currentRole==='reinf-admin')) ? 'block' : 'none';
+
+  // 投票者一覧（終了後のみ非同期で表示）
+  const existingSection = document.getElementById('sv-voters-section');
+  if(existingSection) existingSection.remove();
+  if(!isOpen){
+    fetchAndRenderVoters(sv.id);
+  }
+}
+
+/* ---------- 投票者一覧の取得・描画（終了後のみ呼ばれる） ---------- */
+async function fetchAndRenderVoters(svId){
+  try {
+    const res = await fetch(`/api/surveys?action=voters&id=${svId}`);
+    if(!res.ok) return;
+    const voters = await res.json();
+    renderVotersList(voters);
+  } catch(e){ /* silent */ }
+}
+
+function renderVotersList(voters){
+  let section = document.getElementById('sv-voters-section');
+  const detailView = document.getElementById('sv-detail-view');
+  if(!section){
+    section = document.createElement('div');
+    section.id = 'sv-voters-section';
+    section.className = 'sv-voters-section';
+    detailView.appendChild(section);
+  }
+  if(!voters || !voters.length){
+    section.innerHTML = `<div class="sv-voters-title">📋 投票者一覧</div>
+      <div class="empty" style="font-size:12px;padding:.5rem 0">まだ投票がありません</div>`;
+    return;
+  }
+  const rows = voters.map(v => {
+    const pairs = (v.votes||[]).map(p =>
+      `<span class="sv-voter-pair-tag">${p.main||'（なし）'}${p.sub?' - '+p.sub:''}</span>`
+    ).join('');
+    return `<div class="sv-voter-row">
+      <div class="sv-voter-name">${esc(v.memberName)}</div>
+      <div class="sv-voter-pairs">${pairs || '<span style="font-size:11px;color:var(--t3)">未投票</span>'}</div>
+    </div>`;
+  }).join('');
+  section.innerHTML = `<div class="sv-voters-title">📋 投票者一覧 <span style="font-weight:400;color:var(--t3)">(${voters.length}名)</span></div>${rows}`;
 }
 
 /* ---------- 仮選択（LINEスタイル） ---------- */
@@ -2938,462 +2987,6 @@ async function doApplySurvey(tableType){
   } catch(e){ toast('反映に失敗しました'); }
   finally { hideLoading(); }
 }
-
-
-/* ---------- アンケート一覧 ---------- */
-async function initSurveyPage(){
-  if(_activeSurveyId){
-    await fetchAndRenderDetail(_activeSurveyId);
-  } else {
-    await fetchAndRenderList();
-  }
-}
-
-async function fetchAndRenderList(){
-  const el = document.getElementById('sv-list');
-  el.innerHTML = '<div class="empty">読み込み中...</div>';
-  try {
-    const member = getSvMember();
-    const qs = member ? `?memberId=${member.id}` : '';
-    const res = await fetch(`/api/surveys${qs}`);
-    if(!res.ok) throw new Error('fetch failed');
-    _surveys = await res.json();
-  } catch(e){
-    el.innerHTML = '<div class="empty">読み込みに失敗しました</div>';
-    return;
-  }
-  renderSurveyList();
-}
-
-
-/* ---------- アンケート作成 ---------- */
-function openCreateSurvey(){
-  const now = new Date();
-  now.setDate(now.getDate() + 7);
-  const defaultDeadline = new Date(now.getTime() - now.getTimezoneOffset()*60000).toISOString().slice(0,16);
-  openModal('create-survey', `<h3>アンケート作成</h3>
-    <div class="field"><label>タイトル</label><input type="text" id="sv-title-in" placeholder="例: 第3回援軍アンケート" style="font-size:16px"></div>
-    <div class="field"><label>所属</label>
-      <div style="display:flex;gap:6px;margin-top:4px">
-        <button id="sv-tbl-ransaki" class="sub-tab active" onclick="setSvTable('ransaki')">乱咲</button>
-        <button id="sv-tbl-tsubomi" class="sub-tab" onclick="setSvTable('tsubomi')">蕾</button>
-      </div>
-    </div>
-    <div class="field"><label>終了日時</label><input type="datetime-local" id="sv-deadline-in" value="${defaultDeadline}" style="font-size:16px"></div>
-    <div style="font-size:11px;color:var(--danger);min-height:14px" id="sv-create-err"></div>
-    <div class="modal-acts">
-      <button class="btn" onclick="closeModal()">キャンセル</button>
-      <button class="btn pri" id="sv-create-btn" onclick="doCreateSurvey()">作成</button>
-    </div>`);
-  window._svCreateTable = 'ransaki';
-}
-
-function setSvTable(t){
-  window._svCreateTable = t;
-  document.getElementById('sv-tbl-ransaki').classList.toggle('active', t==='ransaki');
-  document.getElementById('sv-tbl-tsubomi').classList.toggle('active', t==='tsubomi');
-}
-
-async function doCreateSurvey(){
-  const title = (document.getElementById('sv-title-in').value||'').trim();
-  const deadlineLocal = document.getElementById('sv-deadline-in').value;
-  const tableType = window._svCreateTable || 'ransaki';
-  const errEl = document.getElementById('sv-create-err');
-  const btn = document.getElementById('sv-create-btn');
-  if(!title){ errEl.textContent = 'タイトルを入力してください'; return; }
-  if(!deadlineLocal){ errEl.textContent = '終了日時を設定してください'; return; }
-  const deadline = new Date(deadlineLocal).toISOString();
-  if(new Date(deadline).getTime() <= Date.now()){ errEl.textContent = '終了日時は未来の日時を設定してください'; return; }
-  btn.disabled = true; btn.textContent = '作成中...';
-  try {
-    const res = await fetch('/api/surveys', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ title, tableType, deadline }),
-    });
-    const data = await res.json();
-    if(!res.ok){ errEl.textContent = data.error || '作成に失敗しました'; btn.disabled=false; btn.textContent='作成'; return; }
-    closeModal();
-    toast('アンケートを作成しました');
-    await fetchAndRenderList();
-  } catch(e){
-    errEl.textContent = 'エラーが発生しました'; btn.disabled=false; btn.textContent='作成';
-  }
-}
-
-/* ---------- メンバー選択 ---------- */
-function openSvMemberSelect(onSelect){
-  // 現在のメンバーリストからグリッドを構築
-  const members = [...S.members].sort((a,b)=>a.name.localeCompare(b.name,'ja'));
-  const gridHtml = members.map(m => {
-    const initials = m.name.slice(0,2);
-    const colors = ['#D4C5F9','#C5E1F9','#C5F9D8','#F9E4C5','#F9C5C5','#F9F1C5'];
-    const bg = colors[m.id % colors.length];
-    return `<div onclick="selectSvMember(${m.id},'${esc(m.name)}')"
-      style="background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:border-color .15s"
-      onmouseover="this.style.borderColor='var(--tab)'" onmouseout="this.style.borderColor='var(--border)'">
-      <div style="width:36px;height:36px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin:0 auto 5px">${initials}</div>
-      <div style="font-size:11px;font-weight:500;word-break:break-all">${m.name}</div>
-    </div>`;
-  }).join('');
-  openModal('sv-member-sel', `<h3>メンバーを選択</h3>
-    <div style="font-size:11px;color:var(--t2);margin-bottom:10px">あなたはどのメンバーですか？次回から省略されます。</div>
-    <div class="sv-member-sel-grid">${gridHtml}</div>
-    <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button></div>`);
-  window._svMemberSelectCallback = onSelect;
-}
-
-function selectSvMember(id, name){
-  const m = { id, name };
-  setSvMember(m);
-  closeModal();
-  if(window._svMemberSelectCallback) window._svMemberSelectCallback(m);
-  window._svMemberSelectCallback = null;
-}
-
-/* ---------- アンケート詳細 ---------- */
-async function openSurveyDetail(svId){
-  _activeSurveyId = svId;
-  document.getElementById('sv-list-view').style.display = 'none';
-  document.getElementById('sv-detail-view').style.display = 'block';
-  document.getElementById('sv-detail-title').textContent = '読み込み中...';
-  document.getElementById('sv-pairs-list').innerHTML = '<div class="empty">読み込み中...</div>';
-
-  // メンバー未選択なら先に選択を促す
-  const member = getSvMember();
-  if(!member){
-    openSvMemberSelect(() => fetchAndRenderDetail(svId));
-  } else {
-    await fetchAndRenderDetail(svId);
-  }
-}
-
-async function fetchAndRenderDetail(svId){
-  try {
-    const member = getSvMember();
-    const qs = member ? `&memberId=${member.id}` : '';
-    const res = await fetch(`/api/surveys?id=${svId}${qs}`);
-    if(!res.ok) throw new Error('not found');
-    const sv = await res.json();
-    const idx = _surveys.findIndex(s => s.id === sv.id);
-    if(idx >= 0) _surveys[idx] = sv; else _surveys.push(sv);
-    renderSurveyDetail(sv);
-    // 投票者一覧も非同期で読み込む
-    fetchAndRenderVoters(svId);
-  } catch(e){
-    document.getElementById('sv-pairs-list').innerHTML = '<div class="empty">読み込みに失敗しました</div>';
-  }
-}
-
-async function fetchAndRenderVoters(svId){
-  try {
-    const res = await fetch(`/api/surveys?action=voters&id=${svId}`);
-    if(!res.ok) return;
-    const voters = await res.json();
-    renderVotersList(voters);
-  } catch(e){ /* silent */ }
-}
-
-function closeSurveyDetail(){
-  _activeSurveyId = null;
-  document.getElementById('sv-list-view').style.display = 'block';
-  document.getElementById('sv-detail-view').style.display = 'none';
-  // 投票者一覧セクションをリセット
-  const section = document.getElementById('sv-voters-section');
-  if(section) section.remove();
-  renderSurveyList();
-}
-
-function renderSurveyDetail(sv){
-  if(!sv) return;
-  const now = Date.now();
-  const isOpen = new Date(sv.deadline).getTime() > now;
-  const tableLabel = sv.tableType === 'ransaki' ? '乱咲' : '蕾';
-  const member = getSvMember();
-
-  document.getElementById('sv-detail-title').textContent = sv.title;
-  document.getElementById('sv-detail-meta').innerHTML =
-    `<span class="sv-status ${isOpen?'open':'closed'}">${isOpen?'受付中':'終了'}</span>
-     <span style="margin-left:8px">【${tableLabel}】</span>
-     <span style="margin-left:8px">終了: ${formatDateTime(sv.deadline)}</span>`;
-
-  // メンバーバナー
-  const statusBar = document.getElementById('sv-detail-status-bar');
-  let bannerHtml = '';
-  if(member){
-    bannerHtml = `<div class="sv-member-banner">
-      <span style="font-size:12px">投票者：</span>
-      <span class="sv-member-banner-name">${esc(member.name)}</span>
-      <button class="sv-member-change-btn" onclick="changeSvMember()">変更</button>
-    </div>`;
-  }
-  if(!isOpen){
-    bannerHtml += `<div style="background:#EEEDFE;color:#3C3489;border:1px solid #AFA9EC;border-radius:8px;padding:8px 12px;font-size:12px">
-      ⏹ このアンケートは終了しました。${(currentRole==='admin'||currentRole==='reinf-admin')?'結果を援軍表に反映できます。':''}</div>`;
-  }
-  statusBar.innerHTML = bannerHtml;
-
-  // myVotePairIds（複数）
-  const myVoteIds = new Set(sv.myVotePairIds || []);
-
-  const sorted = [...(sv.pairs||[])].sort((a,b) => (b.votes||0) - (a.votes||0));
-  const pairsList = document.getElementById('sv-pairs-list');
-  if(!sorted.length){
-    pairsList.innerHTML = '<div class="empty" style="padding:.75rem">まだペアがありません</div>';
-  } else {
-    pairsList.innerHTML = sorted.map((p, idx) => {
-      const rank = idx + 1;
-      const rankClass = rank===1?'rank1':rank===2?'rank2':rank===3?'rank3':'';
-      const isVoted = myVoteIds.has(p.id);
-      const isTop = idx === 0 && (p.votes||0) > 0;
-      return `<div class="sv-pair-item${isTop?' top':''}">
-        <div class="sv-pair-rank ${rankClass}">${rank}位</div>
-        <div class="sv-pair-vote">
-          <div class="sv-pair-vote-num">${p.votes||0}</div>
-          <div class="sv-pair-vote-label">票</div>
-        </div>
-        <div class="sv-pair-names">
-          <div>大将：${p.main||'（なし）'}</div>
-          <div class="sv-pair-sub">副将：${p.sub||'（なし）'}</div>
-        </div>
-        ${isOpen
-          ? `<button class="sv-vote-btn${isVoted?' voted':''}" onclick="toggleVote(${sv.id},${p.id})">${isVoted?'✓ 投票済':'投票'}</button>`
-          : `<span style="font-size:11px;color:var(--t3)">終了</span>`
-        }
-      </div>`;
-    }).join('');
-  }
-
-  document.getElementById('sv-add-pair-area').style.display = isOpen ? 'block' : 'none';
-
-  const applyArea = document.getElementById('sv-apply-area');
-  const canApply = !isOpen && (currentRole==='admin'||currentRole==='reinf-admin');
-  applyArea.style.display = canApply ? 'block' : 'none';
-}
-
-function renderVotersList(voters){
-  // voters セクションを探して描画（なければ追加）
-  let section = document.getElementById('sv-voters-section');
-  const detailView = document.getElementById('sv-detail-view');
-  if(!section){
-    section = document.createElement('div');
-    section.id = 'sv-voters-section';
-    section.className = 'sv-voters-section';
-    detailView.appendChild(section);
-  }
-  if(!voters || !voters.length){
-    section.innerHTML = `<div class="sv-voters-title">📋 投票者一覧</div>
-      <div class="empty" style="font-size:12px;padding:.5rem 0">まだ投票がありません</div>`;
-    return;
-  }
-  const rows = voters.map(v => {
-    const pairs = (v.votes||[]).map(p =>
-      `<span class="sv-voter-pair-tag">${p.main||'（なし）'}${p.sub?' - '+p.sub:''}</span>`
-    ).join('');
-    return `<div class="sv-voter-row">
-      <div class="sv-voter-name">${esc(v.memberName)}</div>
-      <div class="sv-voter-pairs">${pairs || '<span style="font-size:11px;color:var(--t3)">未投票</span>'}</div>
-    </div>`;
-  }).join('');
-  section.innerHTML = `<div class="sv-voters-title">📋 投票者一覧 <span style="font-weight:400;color:var(--t3)">(${voters.length}名)</span></div>${rows}`;
-}
-
-/* ---------- メンバー変更 ---------- */
-function changeSvMember(){
-  openSvMemberSelect(m => {
-    // メンバー変更後は詳細を再描画（myVotePairIds はサーバーから再取得）
-    fetchAndRenderDetail(_activeSurveyId);
-  });
-}
-
-/* ---------- 投票（複数ペア対応） ---------- */
-async function toggleVote(svId, pairId){
-  const sv = _surveys.find(s => s.id === svId);
-  if(!sv) return;
-  const isOpen = new Date(sv.deadline).getTime() > Date.now();
-  if(!isOpen){ toast('このアンケートは終了しています'); return; }
-
-  // メンバー未選択なら先に選択
-  const member = getSvMember();
-  if(!member){
-    openSvMemberSelect(() => toggleVote(svId, pairId));
-    return;
-  }
-
-  const myVoteIds = sv.myVotePairIds || [];
-  const isVoted = myVoteIds.includes(pairId);
-
-  // 楽観的UI更新
-  const pair = sv.pairs.find(p=>p.id===pairId);
-  if(isVoted){
-    if(pair) pair.votes = Math.max(0,(pair.votes||0)-1);
-    sv.myVotePairIds = myVoteIds.filter(id=>id!==pairId);
-  } else {
-    if(pair) pair.votes = (pair.votes||0)+1;
-    sv.myVotePairIds = [...myVoteIds, pairId];
-  }
-  renderSurveyDetail(sv);
-
-  try {
-    const res = await fetch(`/api/surveys?action=vote`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ surveyId: svId, pairId, memberId: member.id, memberName: member.name }),
-    });
-    if(!res.ok) throw new Error('vote failed');
-    // 投票者一覧を更新
-    fetchAndRenderVoters(svId);
-  } catch(e){
-    toast('投票に失敗しました');
-    await fetchAndRenderDetail(svId);
-  }
-}
-
-/* ---------- ペア追加 ---------- */
-function openAddPairModal(){
-  openModal('add-pair', `<h3>ペアを追加</h3>
-    <div class="field"><label>大将</label>
-      ${comboHtml('ap-main', S.chars, '', '（なし）')}
-    </div>
-    <div class="field"><label>副将</label>
-      ${comboHtml('ap-sub', S.chars, '', '（なし）')}
-    </div>
-    <div style="font-size:11px;color:var(--danger);min-height:14px" id="ap-err"></div>
-    <div class="modal-acts">
-      <button class="btn" onclick="closeModal()">キャンセル</button>
-      <button class="btn pri" id="ap-add-btn" onclick="doAddPair()">追加</button>
-    </div>`);
-  initCombo('ap-main', S.chars, '');
-  initCombo('ap-sub', S.chars, '');
-}
-
-async function doAddPair(){
-  const main = document.getElementById('ap-main')?.value || '';
-  const sub = document.getElementById('ap-sub')?.value || '';
-  const errEl = document.getElementById('ap-err');
-  const btn = document.getElementById('ap-add-btn');
-  if(!main && !sub){ errEl.textContent = '大将か副将を選択してください'; return; }
-  btn.disabled = true; btn.textContent = '追加中...';
-  try {
-    const res = await fetch(`/api/surveys?id=${_activeSurveyId}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ main: main||null, sub: sub||null }),
-    });
-    const data = await res.json();
-    if(!res.ok){ errEl.textContent = data.error||'追加に失敗しました'; btn.disabled=false; btn.textContent='追加'; return; }
-    closeModal();
-    toast('ペアを追加しました');
-    await fetchAndRenderDetail(_activeSurveyId);
-  } catch(e){
-    errEl.textContent = 'エラーが発生しました'; btn.disabled=false; btn.textContent='追加';
-  }
-}
-
-/* ---------- アンケート削除 ---------- */
-function deleteSurvey(){
-  openModal('sv-delete-confirm', `<h3>アンケートを削除</h3>
-    <div style="font-size:12px;margin-bottom:14px">このアンケートを削除します。<br>投票データも全て削除されます。元に戻せません。</div>
-    <div class="modal-acts">
-      <button class="btn" onclick="closeModal()">キャンセル</button>
-      <button class="btn danger" onclick="doDeleteSurvey()">削除する</button>
-    </div>`);
-}
-
-async function doDeleteSurvey(){
-  closeModal();
-  showLoading();
-  try {
-    const res = await fetch(`/api/surveys?id=${_activeSurveyId}`, { method: 'DELETE' });
-    if(!res.ok) throw new Error('delete failed');
-    _surveys = _surveys.filter(s => s.id !== _activeSurveyId);
-    toast('アンケートを削除しました');
-    closeSurveyDetail();
-  } catch(e){
-    toast('削除に失敗しました');
-  } finally {
-    hideLoading();
-  }
-}
-
-/* ---------- 援軍表への反映 ---------- */
-function applySurveyToReinf(){
-  const sv = _surveys.find(s => s.id === _activeSurveyId);
-  if(!sv) return;
-  const isOpen = new Date(sv.deadline).getTime() > Date.now();
-  if(isOpen){ toast('まだ終了していません'); return; }
-  if(!sv.pairs||!sv.pairs.length){ toast('ペアがありません'); return; }
-
-  const sortedPairs = [...sv.pairs].sort((a,b) => (b.votes||0) - (a.votes||0));
-  const tableType = sv.tableType;
-  const tableLabel = tableType === 'ransaki' ? '乱咲' : '蕾';
-  const existingRows = S.reinf.filter(r => (r.tableType||'ransaki') === tableType);
-
-  const pairsPreview = sortedPairs.map((p,i) =>
-    `<div style="padding:3px 0;border-bottom:1px solid var(--border)">
-      ${i+1}行目：${p.main||'（なし）'} - ${p.sub||'（なし）'}
-      <span style="color:var(--t3);font-size:10px;margin-left:4px">${p.votes||0}票</span>
-    </div>`
-  ).join('');
-
-  openModal('apply-confirm', `<h3>援軍表に反映</h3>
-    <div style="font-size:12px;margin-bottom:12px">
-      【${tableLabel}】援軍表の<strong>全行を削除</strong>し、以下の${sortedPairs.length}行を新規作成します。<br><br>
-      <div style="margin:8px 0;max-height:200px;overflow-y:auto">${pairsPreview}</div>
-      ${existingRows.length > 0 ? `<span style="color:var(--danger)">※ 既存の${existingRows.length}行が全て削除されます</span>` : ''}
-    </div>
-    <div class="modal-acts">
-      <button class="btn" onclick="closeModal()">キャンセル</button>
-      <button class="btn pri" onclick="doApplySurvey('${tableType}')">反映する</button>
-    </div>`);
-}
-
-async function doApplySurvey(tableType){
-  closeModal();
-  const sv = _surveys.find(s => s.id === _activeSurveyId);
-  if(!sv) return;
-
-  const sortedPairs = [...sv.pairs].sort((a,b) => (b.votes||0) - (a.votes||0));
-
-  showLoading();
-  try {
-    const targetRows = S.reinf.filter(r => (r.tableType||'ransaki') === tableType);
-    await Promise.all(targetRows.map(r =>
-      fetch(`/api/reinf?id=${r.id}`, { method: 'DELETE' })
-    ));
-
-    for(const pair of sortedPairs){
-      const addRes = await fetch('/api/reinf', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ tableType }),
-      });
-      if(!addRes.ok) throw new Error('add row failed');
-      const newRow = await addRes.json();
-
-      await fetch(`/api/reinf?id=${newRow.id}`, {
-        method: 'PUT',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          memberName: null,
-          normalMain: pair.main || null,
-          normalSub: pair.sub || null,
-          castleMain: pair.main || null,
-          castleSub: pair.sub || null,
-        }),
-      });
-    }
-
-    toast('援軍表に反映しました');
-    await load();
-  } catch(e){
-    toast('反映に失敗しました');
-  } finally {
-    hideLoading();
-  }
-}
-
-
 
 // roleのみメモリ上に保持してUI制御に使う
 
