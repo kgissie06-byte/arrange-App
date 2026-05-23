@@ -260,8 +260,6 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .sv-voters-title{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:10px}
 .sv-voter-row{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:5px}
 .sv-voter-name{font-size:12px;font-weight:500;color:var(--t);min-width:64px;flex-shrink:0;padding-top:2px}
-.sv-voter-pairs{display:flex;flex-wrap:wrap;gap:4px;flex:1}
-.sv-voter-pair-tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;background:#EEEDFE;color:#3C3489;border:.5px solid #AFA9EC}
 .sv-member-sel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:7px;max-height:300px;overflow-y:auto;padding:2px}
 /* ===== 宿縁 ===== */
 .shukuen-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:5px}
@@ -2772,12 +2770,8 @@ function renderVotersList(voters){
     return;
   }
   const rows = voters.map(v => {
-    const pairs = (v.votes||[]).map(p =>
-      `<span class="sv-voter-pair-tag">${p.main||'（なし）'}${p.sub?' - '+p.sub:''}</span>`
-    ).join('');
     return `<div class="sv-voter-row">
       <div class="sv-voter-name">${esc(v.memberName)}</div>
-      <div class="sv-voter-pairs">${pairs || '<span style="font-size:11px;color:var(--t3)">未投票</span>'}</div>
     </div>`;
   }).join('');
   section.innerHTML = `<div class="sv-voters-title">📋 投票者一覧 <span style="font-weight:400;color:var(--t3)">(${voters.length}名)</span></div>${rows}`;
