@@ -434,7 +434,10 @@ body.touch-device .sub-tab.active:active {
 <div id="login-screen">
   <div class="login-box">
     <h1>育成管理</h1>
-    <p>パスワードを入力してください</p>
+    <p>メンバーを選択してパスワードを入力してください</p>
+    <select id="login-member" style="width:100%;padding:10px 12px;font-size:15px;border:1px solid var(--bm);border-radius:10px;background:var(--bg);color:var(--t);font-family:inherit;margin-bottom:10px">
+      <option value="">-- メンバーを選択 --</option>
+    </select>
     <input type="password" id="login-pw" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()">
     <button onclick="doLogin()">ログイン</button>
     <div class="login-error" id="login-error"></div>
@@ -445,7 +448,6 @@ body.touch-device .sub-tab.active:active {
 <div class="top-action-bar">
   <span id="role-badge-wrap"></span>
   <button class="logout-btn" id="reload-btn" onclick="manualReload()">更新</button>
-  <button class="logout-btn admin-only" onclick="openChangePwModal()">パスワード変更</button>
   <button class="logout-btn" onclick="doLogout()">ログアウト</button>
 </div>
 <div class="top-bar">
@@ -930,11 +932,26 @@ function renderMembers(){
   if(_memberFilter === 'ransaki') visible = visible.filter(m => m.role === '乱咲');
   if(_memberFilter === 'tsubomi') visible = visible.filter(m => m.role === '蕾');
   if(!visible.length){el.innerHTML='<div class="empty">メンバーがいません</div>';return;}
+  // ログインメンバーのカードを先頭に固定表示
+  let html = '';
+  const loginMember = currentMemberId ? S.members.find(m => m.id === currentMemberId) : null;
+  if(loginMember && visible.find(m => m.id === loginMember.id)){
+    const a = av(S.members.indexOf(loginMember));
+    html += `<div style="grid-column:1/-1;margin-bottom:4px;font-size:11px;color:var(--t2);font-weight:500">あなたのカード</div>`;
+    html += `<div class="m-card" style="border-color:var(--tab);background:#f4f4ff" onclick="selectMember(${loginMember.id})">
+      <div class="avatar" style="background:${a.bg};color:${a.c}">${ini(loginMember.name)}</div>
+      <div class="m-name">${loginMember.name}</div><div class="m-sub">${loginMember.role}</div>
+      <div class="m-sub">${loginMember.chars.length}体育成中</div>
+    </div>
+    <div style="grid-column:1/-1;margin:4px 0 2px;font-size:11px;color:var(--t2);font-weight:500">全メンバー</div>`;
+    visible = visible.filter(m => m.id !== loginMember.id);
+  }
   el.innerHTML=visible.map((m,i)=>{const a=av(S.members.indexOf(m));return`<div class="m-card" onclick="selectMember(${m.id})">
     <div class="avatar" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
     <div class="m-name">${m.name}</div><div class="m-sub">${m.role}</div>
     <div class="m-sub">${m.chars.length}体育成中</div>
   </div>`;}).join('');
+  el.innerHTML = html + el.innerHTML;
 }
 function selectMember(id){
   const m=S.members.find(x=>x.id===id);if(!m)return;
@@ -2335,6 +2352,12 @@ function openMemberModal(mode){
     openModal('member-add',`<h3>メンバー追加</h3>
       <div class="field"><label>名前</label><input type="text" id="mm-name" placeholder=""></div>
       <div class="field"><label>所属</label>${roleSelect('mm-role')}</div>
+      <div class="field"><label>権限</label><select id="mm-member-role">
+        <option value="user">利用者</option>
+        <option value="reinf-admin">援軍管理者</option>
+        <option value="admin">管理者</option>
+      </select></div>
+      <div class="field"><label>パスワード</label><input type="password" id="mm-pw" placeholder="4文字以上"></div>
       <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="addMember()">追加</button></div>`);
   } else {
     if(!S.members.length){toast('メンバーがいません');return;}
@@ -2344,22 +2367,46 @@ function openMemberModal(mode){
       <div id="me-detail" style="display:none">
         <div class="field"><label>名前</label><input type="text" id="me-name"></div>
         <div class="field"><label>所属</label>${roleSelect('me-role')}</div>
+        <div class="field"><label>権限</label><select id="me-member-role">
+          <option value="user">利用者</option>
+          <option value="reinf-admin">援軍管理者</option>
+          <option value="admin">管理者</option>
+        </select></div>
+        <div class="field"><label>パスワード変更</label><input type="password" id="me-pw" placeholder="変更する場合のみ入力"></div>
         <div class="modal-acts"><button class="btn danger" onclick="deleteMember()">削除</button><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="saveMemberEdit()">保存</button></div>
       </div>`);
   }
 }
 function closeModal(){document.getElementById('modal-overlay').style.display='none';}
-function loadMemberEdit(){const id=parseInt(document.getElementById('me-sel').value);const m=S.members.find(x=>x.id===id);if(!m){document.getElementById('me-detail').style.display='none';return;}document.getElementById('me-name').value=m.name;const roleEl=document.getElementById('me-role');roleEl.value=ROLE_OPTIONS.includes(m.role)?m.role:'その他';document.getElementById('me-detail').style.display='block';}
+
+function loadMemberEdit(){
+  const id=parseInt(document.getElementById('me-sel').value);
+  const m=S.members.find(x=>x.id===id);
+  if(!m){document.getElementById('me-detail').style.display='none';return;}
+  document.getElementById('me-name').value=m.name;
+  const roleEl=document.getElementById('me-role');
+  roleEl.value=ROLE_OPTIONS.includes(m.role)?m.role:'その他';
+  // auth_roleの現在の権限をセット（フロントには持っていないのでデフォルトのまま）
+  const mrEl=document.getElementById('me-member-role');
+  if(mrEl) mrEl.value='user';
+  const pwEl=document.getElementById('me-pw');
+  if(pwEl) pwEl.value='';
+  document.getElementById('me-detail').style.display='block';
+}
+
 async function saveMemberEdit(){
   const id=parseInt(document.getElementById('me-sel').value);
   const name=document.getElementById('me-name').value;
   const role=document.getElementById('me-role').value;
+  const memberRole=document.getElementById('me-member-role').value;
+  const password=(document.getElementById('me-pw').value||'').trim();
+  if(password && password.length<4){toast('パスワードは4文字以上にしてください');return;}
   showLoading();
   try {
     await fetch(`/api/members/${id}`,{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name,role})
+      body:JSON.stringify({name,role,memberRole,password:password||undefined})
     });
     await load();
     closeModal();
@@ -2385,13 +2432,16 @@ async function deleteMember(){
 async function addMember(){
   const name=(document.getElementById('mm-name').value||'').trim();
   const role=(document.getElementById('mm-role').value||'').trim();
+  const memberRole=(document.getElementById('mm-member-role').value||'user');
+  const password=(document.getElementById('mm-pw').value||'').trim();
   if(!name)return;
+  if(!password||password.length<4){toast('パスワードは4文字以上にしてください');return;}
   showLoading();
   try {
     const res = await fetch('/api/members', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, role })
+      body: JSON.stringify({ name, role, memberRole, password })
     });
     if(!res.ok){ throw new Error('保存失敗'); }
     await load();
@@ -2424,6 +2474,7 @@ function hideLoading(){document.getElementById('loading-overlay').classList.remo
 
 /* ========== ログイン ========== */
 let currentRole = null;
+let currentMemberId = null;
 
 async function manualReload(){
   const btn = document.getElementById('reload-btn');
@@ -2447,14 +2498,10 @@ let _activeSurveyId = null;  // 詳細表示中のアンケートID
 let _pendingVotes = new Set(); // 仮選択中のペアID（確定前）
 let _confirmedVotes = new Set(); // 確定済みペアID（サーバーと同期済み）
 
-// 選択中メンバー（localStorage に永続化）
-const SV_MEMBER_KEY = 'sv_selected_member';
 function getSvMember(){
-  try { return JSON.parse(localStorage.getItem(SV_MEMBER_KEY)) || null; } catch(e){ return null; }
-}
-function setSvMember(m){
-  if(m) localStorage.setItem(SV_MEMBER_KEY, JSON.stringify(m));
-  else localStorage.removeItem(SV_MEMBER_KEY);
+  if(!currentMemberId) return null;
+  const m = S.members.find(x => x.id === currentMemberId);
+  return m ? { id: m.id, name: m.name } : null;
 }
 
 /* ---------- ユーティリティ ---------- */
@@ -2614,12 +2661,7 @@ async function openSurveyDetail(svId){
   document.getElementById('sv-detail-view').style.display = 'block';
   document.getElementById('sv-detail-title').textContent = '読み込み中...';
   document.getElementById('sv-pairs-list').innerHTML = '<div class="empty">読み込み中...</div>';
-  const member = getSvMember();
-  if(!member){
-    openSvMemberSelect(() => fetchAndRenderDetail(svId));
-  } else {
-    await fetchAndRenderDetail(svId);
-  }
+  await fetchAndRenderDetail(svId);
 }
 
 async function fetchAndRenderDetail(svId){
@@ -2989,42 +3031,60 @@ async function doApplySurvey(tableType){
 }
 
 // roleのみメモリ上に保持してUI制御に使う
-
-(async function restoreSession(){
+ (async function restoreSession(){
   try {
     const res = await fetch('/api/init');
     if(res.ok){
       const d = await res.json();
       currentRole = d.role;
+      currentMemberId = d.memberId || null;
+      populateLoginMemberSelect(d.members || []);
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('main-wrap').style.display = '';
       applyRole();
       load();
+    } else {
+      // 未ログイン時: セレクトにメッセージを出してからloadで一覧を取得
+      await populateLoginMemberSelectFromPublic();
     }
-  } catch(e) {}
+  } catch(e) {
+    await populateLoginMemberSelectFromPublic();
+  }
 })();
 
+async function populateLoginMemberSelectFromPublic(){
+  // /api/init は認証エラーでも members を返すよう変更して使い回す
+  try {
+    const res = await fetch('/api/init?public=1');
+    if(res.ok){
+      const d = await res.json();
+      populateLoginMemberSelect(d.members || []);
+    }
+  } catch(e) {}
+}
+
 async function doLogin(){
-  const pw = (document.getElementById('login-pw').value || '').trim();
-  const errEl = document.getElementById('login-error');
-  const btn = document.querySelector('#login-screen button');
+  const memberEl = document.getElementById('login-member');
+  const memberId = memberEl ? parseInt(memberEl.value) : null;
+   const pw = (document.getElementById('login-pw').value || '').trim();
+   const errEl = document.getElementById('login-error');
+   const btn = document.querySelector('#login-screen button');
+  if(!memberId){ errEl.textContent = 'メンバーを選択してください'; return; }
   if(!pw){ errEl.textContent = 'パスワードを入力してください'; return; }
-  btn.disabled = true;
-  btn.textContent = '確認中...';
-  errEl.textContent = '';
+  btn.disabled = true; btn.textContent = '確認中...'; errEl.textContent = '';
   try {
     const res = await fetch('/api/auth/verify', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ password: pw })
+      body: JSON.stringify({ memberId, password: pw })
     });
     const data = await res.json();
     if(!res.ok || !data.role){
       errEl.textContent = data.error || 'パスワードが違います';
       return;
     }
-    // JWTはhttpOnly CookieにセットされるのでJSから触らない
     currentRole = data.role;
+    currentMemberId = data.memberId;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('main-wrap').style.display = '';
     applyRole();
@@ -3038,15 +3098,25 @@ async function doLogin(){
 }
 
 async function doLogout(){
-  // サーバー側でCookieを破棄
   await fetch('/api/auth/logout', { method: 'POST' }).catch(()=>{});
   currentRole = null;
+  currentMemberId = null;
   document.getElementById('login-pw').value = '';
   document.getElementById('login-error').textContent = '';
+  const ms = document.getElementById('login-member'); if(ms) ms.value = '';
   document.getElementById('main-wrap').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.querySelectorAll('.tab').forEach((t,i) => { t.classList.toggle('active', i===0); });
   document.querySelectorAll('.page').forEach((p,i) => { p.classList.toggle('active', i===0); });
+}
+
+function populateLoginMemberSelect(members){
+  const sel = document.getElementById('login-member');
+  if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- メンバーを選択 --</option>'
+    + members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  if(cur) sel.value = cur;
 }
 
 function applyRole(){
@@ -3074,27 +3144,7 @@ function applyRole(){
     `<span class="role-badge ${badgeClass}">${badgeLabel}</span>`;
 }
 
-/* ========== パスワード変更モーダル ========== */
-function openChangePwModal(){
-  openModal('change-pw', `<h3>パスワード変更</h3>
-    <div class="field"><label>変更対象</label>
-      <select id="cpw-role">
-        <option value="user">利用者</option>
-        <option value="reinf-admin">援軍管理者</option>
-      </select>
-    </div>
-    <div class="field"><label>新しいパスワード</label>
-      <input type="password" id="cpw-new" placeholder="新パスワード">
-    </div>
-    <div class="field"><label>確認（もう一度入力）</label>
-      <input type="password" id="cpw-confirm" placeholder="確認">
-    </div>
-    <div style="font-size:11px;color:var(--danger);min-height:14px;margin-bottom:4px" id="cpw-err"></div>
-    <div class="modal-acts">
-      <button class="btn" onclick="closeModal()">キャンセル</button>
-      <button class="btn pri" onclick="saveUserPassword()">変更</button>
-    </div>`);
-}
+
 
 async function saveUserPassword(){
   const role = document.getElementById('cpw-role').value;

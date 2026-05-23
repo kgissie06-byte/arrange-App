@@ -12,30 +12,26 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { password } = req.body
-  if (!password) {
-    return res.status(400).json({ error: 'password is required' })
+  const { memberId, password } = req.body
+  if (!memberId || !password) {
+    return res.status(400).json({ error: 'memberId and password are required' })
   }
 
-  const { data, error } = await supabase
-    .from('passwords')
-    .select('id, password')
+  const { data: row, error } = await supabase
+    .from('auth_role')
+    .select('member_id, password, role')
+    .eq('member_id', memberId)
+    .single()
 
-  if (error) return res.status(500).json({ error: error.message })
-
-  // bcryptで照合（旧: 平文比較）
-  let matched = null
-  for (const row of (data || [])) {
-    const ok = await bcrypt.compare(password, row.password)
-    if (ok) { matched = row; break }
-  }
-
-  if (!matched) {
+  if (error || !row) {
     return res.status(401).json({ error: 'パスワードが違います' })
   }
 
-  // JWTをhttpOnly Cookieにセット
-  await issueSession(res, matched.id)
+  const ok = await bcrypt.compare(password, row.password)
+  if (!ok) {
+    return res.status(401).json({ error: 'パスワードが違います' })
+  }
 
-  return res.json({ role: matched.id })
+  await issueSession(res, row.role, row.member_id)
+  return res.json({ role: row.role, memberId: row.member_id })
 }
