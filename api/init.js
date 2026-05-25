@@ -49,7 +49,7 @@ export default async function handler(req, res) {
     id: m.id,
     name: m.name,
     role: m.role || '',
-    memberRole: m.member_role || 'user',  // ← 追加
+    memberRole: m.auth_role || 'user',  // ← 追加
     chars: (trainingRaw || [])
       .filter(t => t.member_id === m.id)
       .map(t => ({
