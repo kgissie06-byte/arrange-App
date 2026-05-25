@@ -49,6 +49,7 @@ export default async function handler(req, res) {
     id: m.id,
     name: m.name,
     role: m.role || '',
+    memberRole: m.member_role || 'user',  // ← 追加
     chars: (trainingRaw || [])
       .filter(t => t.member_id === m.id)
       .map(t => ({
@@ -74,7 +75,7 @@ export default async function handler(req, res) {
   castleMain: r.castle_main || null,
   castleSub: r.castle_sub || null,
   sortOrder: r.sort_order || 0,
-  tableType: r.table_type || 'ransaki',  // ← 追加
+  tableType: r.table_type || 'ransaki',
 }))
 
   return res.json({
