@@ -2406,9 +2406,9 @@ function loadMemberEdit(){
   document.getElementById('me-name').value=m.name;
   const roleEl=document.getElementById('me-role');
   roleEl.value=ROLE_OPTIONS.includes(m.role)?m.role:'その他';
-  // auth_roleの現在の権限をセット（フロントには持っていないのでデフォルトのまま）
+  // auth_roleの現在の権限をセット（メンバーデータにあればそれを使う）
   const mrEl=document.getElementById('me-member-role');
-  if(mrEl) mrEl.value='user';
+  if(mrEl) mrEl.value=(m.memberRole||m.auth_role||'user');
   const pwEl=document.getElementById('me-pw');
   if(pwEl) pwEl.value='';
   document.getElementById('me-detail').style.display='block';
