@@ -32,10 +32,10 @@ export default async function handler(req, res) {
     exSotsui: c.ex_sotsui || false,
   }))
 
-  // メンバー一覧
+  // メンバー一覧（auth_roleをJOINして権限も取得）
   const { data: membersRaw, error: membersErr } = await supabase
     .from('members')
-    .select('*')
+    .select('*, auth_role(role)')
     .order('created_at', { ascending: true })
   if (membersErr) return res.status(500).json({ error: membersErr })
 
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
     id: m.id,
     name: m.name,
     role: m.role || '',
-    memberRole: m.auth_role || 'user',  // ← 追加
+    memberRole: m.auth_role?.role || 'user',
     chars: (trainingRaw || [])
       .filter(t => t.member_id === m.id)
       .map(t => ({
@@ -68,15 +68,15 @@ export default async function handler(req, res) {
   if (reinfErr) return res.status(500).json({ error: reinfErr })
 
   const reinf = (reinfRaw || []).map(r => ({
-  id: r.id,
-  memberName: r.member_name || null,
-  normalMain: r.normal_main || null,
-  normalSub: r.normal_sub || null,
-  castleMain: r.castle_main || null,
-  castleSub: r.castle_sub || null,
-  sortOrder: r.sort_order || 0,
-  tableType: r.table_type || 'ransaki',
-}))
+    id: r.id,
+    memberName: r.member_name || null,
+    normalMain: r.normal_main || null,
+    normalSub: r.normal_sub || null,
+    castleMain: r.castle_main || null,
+    castleSub: r.castle_sub || null,
+    sortOrder: r.sort_order || 0,
+    tableType: r.table_type || 'ransaki',
+  }))
 
   return res.json({
     members,
