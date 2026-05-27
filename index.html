@@ -1569,6 +1569,8 @@ async function savePairEdit(rowId,type){
     });
   } catch(err) {
     console.error(err);
+  } finally {
+    hideLoading();
   }
   renderReinfTable();closeModal();
 }
