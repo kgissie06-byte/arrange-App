@@ -2718,10 +2718,12 @@ function renderSurveyDetail(sv){
   // ペア一覧（得票数順）- 同票は同順位
   const sorted = [...(sv.pairs||[])].sort((a,b)=>(b.votes||0)-(a.votes||0));
   // 同票同順位の計算
-  const rankOf = sorted.map((p, idx) => {
-    if(idx === 0) return 1;
-    return (p.votes||0) === (sorted[idx-1].votes||0) ? rankOf[idx-1] : idx+1;
-  });
+  const rankOf = [];
+  for(let idx = 0; idx < sorted.length; idx++){
+    if(idx === 0){ rankOf.push(1); continue; }
+    const sameAsAbove = (sorted[idx].votes||0) === (sorted[idx-1].votes||0);
+    rankOf.push(sameAsAbove ? rankOf[idx-1] : idx+1);
+  }
   const pairsList = document.getElementById('sv-pairs-list');
 
   if(!sorted.length){
