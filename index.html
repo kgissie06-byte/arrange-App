@@ -1171,9 +1171,13 @@ async function saveTraining(){
   if(_assistMode && E.pendingRar){
     const cd = S.chars.find(x=>x.name===E.charName);
     const allowedRanks = cd ? cd.ranks : ALL_RANKS;
-    const required = getRequiredRanks(E.pendingRanks, allowedRanks);
+    // SRなど表6・裏6が非表示の場合はHIGH_RANKS_BLOCKEDを検証対象から除く
+    const blockedByRar = (cd && isUrWithLowerRar(cd) && SR_OR_BELOW.includes(E.pendingRar))
+      ? HIGH_RANKS_BLOCKED : [];
+    const effectiveAllowed = allowedRanks.filter(r => !blockedByRar.includes(r));
+    const required = getRequiredRanks(E.pendingRanks, effectiveAllowed);
     if(required){
-      const missing = required.filter(r => !E.pendingRanks.includes(r));
+      const missing = required.filter(r => !E.pendingRanks.includes(r) && !blockedByRar.includes(r));
       if(missing.length){
         toast('未チェック: ' + missing.join('・'));
         return;
@@ -1323,11 +1327,12 @@ async function addReinfRow(){
       body: JSON.stringify({ tableType: _activeReinfTable })
     });
     if (!res.ok) throw new Error('行追加失敗');
+    // load() 内で showLoading/hideLoading するため、ここでは先に hideLoading してから呼ぶ
+    hideLoading();
     await load();
   } catch(err) {
     console.error(err);
     toast('行の追加に失敗しました');
-  } finally {
     hideLoading();
   }
 }
@@ -2708,15 +2713,20 @@ function renderSurveyDetail(sv){
   }
   statusBar.innerHTML = bannerHtml;
 
-  // ペア一覧（得票数順）
+  // ペア一覧（得票数順）- 同票は同順位
   const sorted = [...(sv.pairs||[])].sort((a,b)=>(b.votes||0)-(a.votes||0));
+  // 同票同順位の計算
+  const rankOf = sorted.map((p, idx) => {
+    if(idx === 0) return 1;
+    return (p.votes||0) === (sorted[idx-1].votes||0) ? rankOf[idx-1] : idx+1;
+  });
   const pairsList = document.getElementById('sv-pairs-list');
 
   if(!sorted.length){
     pairsList.innerHTML = '<div class="empty" style="padding:.75rem">まだペアがありません</div>';
   } else {
     pairsList.innerHTML = sorted.map((p, idx) => {
-      const rank = idx+1;
+      const rank = rankOf[idx];
       const rankClass = rank===1?'rank1':rank===2?'rank2':rank===3?'rank3':'';
       const isPending = _pendingVotes.has(p.id);
       const isConfirmed = _confirmedVotes.has(p.id);
