@@ -1140,9 +1140,12 @@ function toggleAssist(){
 function pickRank(r){
   const cd=S.chars.find(x=>x.name===E.charName);
   const allowed=cd?cd.ranks:ALL_RANKS;
+  const blockedByRar=(cd&&isUrWithLowerRar(cd)&&E.pendingRar&&SR_OR_BELOW.includes(E.pendingRar))
+    ?HIGH_RANKS_BLOCKED:[];
   if(_assistMode){
-    toggleWithHierarchy(E.pendingRanks,r,v=>getRankImplied(v).filter(x=>allowed.includes(x)));
+    toggleWithHierarchy(E.pendingRanks,r,v=>getRankImplied(v).filter(x=>allowed.includes(x)&&!blockedByRar.includes(x)));
   } else {
+    if(blockedByRar.includes(r)) return;
     const i=E.pendingRanks.indexOf(r);
     if(i>=0) E.pendingRanks.splice(i,1);
     else E.pendingRanks.push(r);
@@ -1153,12 +1156,13 @@ function pickEx(lv){
   E.pendingEx = E.pendingEx===lv ? null : lv;
   renderLvPanel();
 }
-function getRequiredRanks(pendingRanks, allowedRanks){
+function getRequiredRanks(pendingRanks, allowedRanks, blockedRanks){
   // 入力補助でチェックが付く項目をすべて列挙する
   // pickRankと同じロジック: 選択中の各ランクのgetRankImplied結果の和集合
+  const blocked = blockedRanks || [];
   const required = new Set();
   pendingRanks.forEach(r => {
-    getRankImplied(r).filter(x => allowedRanks.includes(x)).forEach(x => required.add(x));
+    getRankImplied(r).filter(x => allowedRanks.includes(x) && !blocked.includes(x)).forEach(x => required.add(x));
   });
   return [...required];
 }
@@ -1175,7 +1179,7 @@ async function saveTraining(){
     const blockedByRar = (cd && isUrWithLowerRar(cd) && SR_OR_BELOW.includes(E.pendingRar))
       ? HIGH_RANKS_BLOCKED : [];
     const effectiveAllowed = allowedRanks.filter(r => !blockedByRar.includes(r));
-    const required = getRequiredRanks(E.pendingRanks, effectiveAllowed);
+    const required = getRequiredRanks(E.pendingRanks, effectiveAllowed, blockedByRar);
     if(required){
       const missing = required.filter(r => !E.pendingRanks.includes(r) && !blockedByRar.includes(r));
       if(missing.length){
@@ -2674,6 +2678,7 @@ async function fetchAndRenderDetail(svId){
     _pendingVotes = new Set(_confirmedVotes);
     renderSurveyDetail(sv);
   } catch(e){
+    console.error(e);
     document.getElementById('sv-pairs-list').innerHTML = '<div class="empty">読み込みに失敗しました</div>';
   }
 }
