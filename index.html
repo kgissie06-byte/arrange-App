@@ -1998,13 +1998,33 @@ function addShukuenMember(){
 }
 
 function shukuenLevel(memberChar, charDef){
-  if(!memberChar||!memberChar.ranks||!memberChar.ranks.length) return null;
-  const ranks=memberChar.ranks;
-  if(ranks.includes('全技極')||ranks.includes('裏技極')||ranks.includes('技極')) return 'gikkyoku';
-  const hasUR=charDef&&charDef.rars&&charDef.rars.includes('UR');
-  const GREEN=['表6','裏1','裏2','裏3','裏4','裏5','裏6'];
-  const greenThreshold=hasUR?GREEN:['表5','表6','裏1','裏2','裏3','裏4','裏5','裏6'];
-  if(greenThreshold.some(r=>ranks.includes(r))) return 'omote6';
+  if(!memberChar || !memberChar.ranks || !memberChar.ranks.length) return null;
+
+  const ranks = memberChar.ranks;
+  const hasUR = charDef?.rars?.includes('UR');
+
+  // ① 紫（技極以上）
+  if(ranks.includes('裏技極') || ranks.includes('技極')){
+    return 'gikkyoku';
+  }
+
+  // ② 緑（最大）
+  if(hasUR){
+    // URあり → 表6以上
+    if(ranks.includes('表6') || ranks.some(r => r.startsWith('裏'))){
+      return 'omote6';
+    }
+  }else{
+    // URなし → 表5以上
+    if(
+      ranks.includes('表5') ||
+      ranks.some(r => r.startsWith('裏'))
+    ){
+      return 'omote6';
+    }
+  }
+
+  // ③ 黄（所持のみ）
   return 'soji';
 }
 
