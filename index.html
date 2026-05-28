@@ -1997,12 +1997,14 @@ function addShukuenMember(){
   closeModal();
 }
 
-function shukuenLevel(memberChar){
+function shukuenLevel(memberChar, charDef){
   if(!memberChar||!memberChar.ranks||!memberChar.ranks.length) return null;
   const ranks=memberChar.ranks;
   if(ranks.includes('全技極')||ranks.includes('裏技極')||ranks.includes('技極')) return 'gikkyoku';
-  const OMOTE6_AND_ABOVE=['表6','裏1','裏2','裏3','裏4','裏5','裏6'];
-  if(OMOTE6_AND_ABOVE.some(r=>ranks.includes(r))) return 'omote6';
+  const hasUR=charDef&&charDef.rars&&charDef.rars.includes('UR');
+  const GREEN=['表6','裏1','裏2','裏3','裏4','裏5','裏6'];
+  const greenThreshold=hasUR?GREEN:['表5','表6','裏1','裏2','裏3','裏4','裏5','裏6'];
+  if(greenThreshold.some(r=>ranks.includes(r))) return 'omote6';
   return 'soji';
 }
 
@@ -2017,7 +2019,7 @@ function shukuenBadgeHtml(member, charDef){
     sh.members.forEach(sName=>{
       if(sName==='?') return;
       const mc=member.chars.find(c=>c.name===sName);
-      const lv=shukuenLevel(mc);
+      const lv=shukuenLevel(mc, S.chars.find(x=>x.name===sName));
       if(lv==='gikkyoku') g++;
       else if(lv==='omote6') o++;
       else if(lv==='soji') s++;
@@ -2048,7 +2050,7 @@ function shukuenPt(member, charDef){
     sh.members.forEach(sName=>{
       if(sName==='?') return;
       const mc=member.chars.find(c=>c.name===sName);
-      const lv=shukuenLevel(mc);
+      const lv=shukuenLevel(mc, S.chars.find(x=>x.name===sName));
       if(lv==='gikkyoku') total+=3;
       else if(lv==='omote6') total+=2;
       else if(lv==='soji') total+=1;
