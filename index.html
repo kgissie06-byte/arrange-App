@@ -2011,15 +2011,13 @@ function shukuenLevel(memberChar, charDef){
   // ② 緑（最大）
   if(hasUR){
     // URあり → 表6以上
-    if(ranks.includes('表6') || ranks.some(r => r.startsWith('裏'))){
+    if(ranks.includes('表6')){
       return 'omote6';
     }
   }else{
     // URなし → 表5以上
     if(
-      ranks.includes('表5') ||
-      ranks.some(r => r.startsWith('裏'))
-    ){
+      ranks.includes('表5')){
       return 'omote6';
     }
   }
