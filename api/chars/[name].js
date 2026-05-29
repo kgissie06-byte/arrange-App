@@ -29,6 +29,45 @@ export default async function handler(req, res) {
     if (img !== undefined) updates.img = img || null
     if (exSotsui !== undefined) updates.ex_sotsui = exSotsui
 
+    // rarsが更新される場合、SR以下→UR以上への変更かチェックして技極系ranksを削除
+    if (rars !== undefined) {
+      const UR_OR_ABOVE = ['UR', 'LG', 'LG1', 'LG2', 'LG3']
+      const SR_OR_BELOW = ['SR', 'R', 'N']
+      const GIKOKU_RANKS = ['技極', '裏技極', '全技極']
+
+      const { data: currentChar } = await supabase
+        .from('chars')
+        .select('rars')
+        .eq('name', name)
+        .single()
+
+      const currentRars = currentChar?.rars || []
+      const wasOnlySrOrBelow = currentRars.length > 0 &&
+        currentRars.every(r => SR_OR_BELOW.includes(r))
+      const newRarsHasUrOrAbove = rars.some(r => UR_OR_ABOVE.includes(r))
+
+      if (wasOnlySrOrBelow && newRarsHasUrOrAbove) {
+        // 技極系のranksを持っている育成データを取得して除去
+        const { data: targets, error: fetchErr } = await supabase
+          .from('training')
+          .select('id, ranks')
+          .eq('char_name', name)
+
+        if (fetchErr) return res.status(500).json({ error: fetchErr })
+
+        for (const t of (targets || [])) {
+          const hasGikoku = (t.ranks || []).some(r => GIKOKU_RANKS.includes(r))
+          if (!hasGikoku) continue
+          const newRanks = (t.ranks || []).filter(r => !GIKOKU_RANKS.includes(r))
+          const { error: updateErr } = await supabase
+            .from('training')
+            .update({ ranks: newRanks })
+            .eq('id', t.id)
+          if (updateErr) return res.status(500).json({ error: updateErr })
+        }
+      }
+    }
+
     const { error } = await supabase
       .from('chars')
       .update(updates)
