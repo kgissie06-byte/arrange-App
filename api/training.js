@@ -52,11 +52,12 @@ export default async function handler(req, res) {
           .from('training')
           .select('id, ranks')
           .eq('char_name', name)
-          .overlaps('ranks', GIKOKU_RANKS)
 
         if (fetchErr) return res.status(500).json({ error: fetchErr })
 
         for (const t of (targets || [])) {
+          const hasGikoku = (t.ranks || []).some(r => GIKOKU_RANKS.includes(r))
+          if (!hasGikoku) continue
           const newRanks = (t.ranks || []).filter(r => !GIKOKU_RANKS.includes(r))
           const { error: updateErr } = await supabase
             .from('training')
