@@ -1050,7 +1050,7 @@ function renderLvPanel(){
   const aR=cd?cd.rars:ALL_RARITIES,aK=cd?cd.ranks:ALL_RANKS;
   document.getElementById('rar-btns').innerHTML=aR.map(r=>{const s=RAR_S[r]||{};const on=E.pendingRar===r;
     return`<button class="p-btn${on?` on-rar-${r}`:''}" onclick="pickRar('${r}')">${r}</button>`;}).join('');
-  const hideHighRanks = cd && E.pendingRar && SR_OR_BELOW.includes(E.pendingRar) && cd.rars.every(r => SR_OR_BELOW.includes(r));
+  const hideHighRanks = cd && isUrWithLowerRar(cd) && E.pendingRar && SR_OR_BELOW.includes(E.pendingRar);
   document.getElementById('rank-btns').innerHTML=aK.map(r=>{
     if(hideHighRanks && HIGH_RANKS_BLOCKED.includes(r)) return '';
     const on=E.pendingRanks.includes(r);const top=TOP_RANKS.includes(r);
