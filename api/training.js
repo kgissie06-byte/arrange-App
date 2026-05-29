@@ -46,6 +46,11 @@ export default async function handler(req, res) {
         currentRars.every(r => SR_OR_BELOW.includes(r))
       const newRarsHasUrOrAbove = rars.some(r => UR_OR_ABOVE.includes(r))
 
+      console.log('currentRars:', currentRars)
+      console.log('wasOnlySrOrBelow:', wasOnlySrOrBelow)
+      console.log('newRarsHasUrOrAbove:', newRarsHasUrOrAbove)
+      console.log('rars (new):', rars)
+      
       if (wasOnlySrOrBelow && newRarsHasUrOrAbove) {
         // 技極系のranksを持っている育成データを取得して除去
         const { data: targets, error: fetchErr } = await supabase
