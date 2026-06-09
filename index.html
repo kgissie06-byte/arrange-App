@@ -26,6 +26,7 @@
 <meta name="twitter:title" content="育成管理ツール">
 <meta name="twitter:description" content="武将の育成管理・援軍調整サイト">
 <meta name="twitter:image" content="https://arrange-app.vercel.app/ogp/ogp.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/wanakana/5.3.1/wanakana.min.js"></script>
 </head>
 <body>
 <style>
@@ -113,6 +114,8 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .p-btn.on-rar-LG {background:#FFF0D0;color:#854F0B;border-color:#EF9F27;font-weight:500}
 .p-btn.on-rar-UR {background:#EEEDFE;color:#3C3489;border-color:#7F77DD;font-weight:500}
 .p-btn.on-rar-SR {background:#E6F1FB;color:#0C447C;border-color:#378ADD;font-weight:500}
+.p-btn.on-rar-R  {background:#E8F4EC;color:#1A5C32;border-color:#4CAF72;font-weight:500}
+.p-btn.on-rar-N  {background:#EBEBEB;color:#3C3C3C;border-color:#999999;font-weight:500}
 .p-btn.on-rank-top{background:#EEEDFE;color:#3C3489;border-color:#AFA9EC;font-weight:500}
 .p-btn.on-rank    {background:#EDE5D8;color:#634B38;border-color:#B4A494;font-weight:500}
 .p-btn.on-ex      {background:#FDF6E0;color:#7A5E10;border-color:#C89B20;font-weight:500}
@@ -1015,8 +1018,13 @@ function renderCharGridEdit(m){
   }).join('');
   filterCharGrid();
 }
+
+function romaToHira(s){
+  return typeof wanakana!=='undefined'?wanakana.toHiragana(s,{IMEMode:true}):s;
+}
+
 function filterCharGrid(){
-  const q=(document.getElementById('cc-search')?.value||'').trim();
+  const q=romaToHira((document.getElementById('cc-search')?.value||'').trim());
   if(q){
     E.charName=null;E.pendingRar=null;E.pendingRanks=[];
     document.querySelectorAll('#char-grid-edit .cc').forEach(el=>el.classList.remove('sel'));
@@ -1295,7 +1303,7 @@ function toggleFil(type,val){
   renderFilters();renderSearch();
 }
 function renderSearch(alreadyNames){
-  const q=(document.getElementById('s-input').value||'').trim();
+  const q=romaToHira((document.getElementById('s-input').value||'').trim());
   const el=document.getElementById('search-results');
   if(!q){el.innerHTML='<div class="empty">キャラ名を入力してください</div>';return;}
   const matched=S.chars.filter(cd=>cd.name.includes(q)||(cd.yomi||'').includes(q));
@@ -1486,7 +1494,7 @@ function toggleCombo(id) {
   }, 0);
 }
 
-function filterCombo(id, q) {
+function filterCombo(id, q) { q=romaToHira(q||'');
   const chars = _comboState[id] ? _comboState[id].chars : [];
   const sel = document.getElementById(id) ? document.getElementById(id).value : '';
   const list = document.getElementById(`combo-list-${id}`);
@@ -1968,7 +1976,7 @@ function openShukuenChangeModal(prefix,idx,changeIdx){
     </div>`);
 }
 function filterShukuenSel(){
-  const q=(document.getElementById('shukuen-search')?.value||'').trim();
+  const q=romaToHira((document.getElementById('shukuen-search')?.value||'').trim());
   const sel=document.getElementById('shukuen-char-sel');if(!sel)return;
   Array.from(sel.options).forEach(opt=>{
     if(!opt.value){opt.style.display='';return;}
@@ -2214,7 +2222,7 @@ function renderCharUpdateSel(){
   renderCuSelList('');
 }
 
-function renderCuSelList(q){
+function renderCuSelList(q){ q=romaToHira(q||'');
   const list=document.getElementById('cu-sel-list');if(!list)return;
   const chars=sortByYomi(S.chars).filter(c=>!q||(c.name.includes(q)||(c.yomi||'').includes(q)));
   if(!chars.length){
