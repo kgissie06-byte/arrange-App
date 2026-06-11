@@ -2715,6 +2715,8 @@ async function openSurveyDetail(svId){
   document.getElementById('sv-detail-view').style.display = 'block';
   document.getElementById('sv-detail-title').textContent = '読み込み中...';
   document.getElementById('sv-pairs-list').innerHTML = '<div class="empty">読み込み中...</div>';
+  document.getElementById('sv-add-pair-area').style.display = 'none';
+  document.getElementById('sv-vote-confirm-area').style.display = 'none';
   await fetchAndRenderDetail(svId);
 }
 
@@ -2731,8 +2733,6 @@ async function fetchAndRenderDetail(svId){
     _confirmedVotes = new Set(sv.myVotePairIds || []);
     // ペンディングは確定済みで初期化
     _pendingVotes = new Set(_confirmedVotes);
-    document.getElementById('sv-add-pair-area').style.display = 'none';
-    document.getElementById('sv-vote-confirm-area').style.display = 'none';
     renderSurveyDetail(sv);
   } catch(e){
     console.error(e);
