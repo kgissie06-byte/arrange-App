@@ -2753,6 +2753,9 @@ function renderSurveyDetail(sv){
   const isOpen = new Date(sv.deadline).getTime() > now;
   const tableLabel = sv.tableType === 'ransaki' ? '乱咲' : '蕾';
   const member = getSvMember();
+  const TABLE_ROLE = { ransaki: '乱咲', tsubomi: '蕾' };
+  const memberObj = S.members.find(x => x.id === currentMemberId);
+  const canInteract = isOpen && (memberObj?.role ?? '') === (TABLE_ROLE[sv.tableType] ?? '');
 
   document.getElementById('sv-detail-title').textContent = sv.title;
   document.getElementById('sv-detail-meta').innerHTML =
@@ -2798,16 +2801,16 @@ function renderSurveyDetail(sv){
 
       // チェックアイコン
       let checkHtml = '';
-      if(isOpen){
+      if(canInteract){
         if(isConfirmed && isPending) checkHtml = `<div class="sv-check confirmed">✓</div>`;
         else if(isPending) checkHtml = `<div class="sv-check on">✓</div>`;
         else checkHtml = `<div class="sv-check"></div>`;
       }
 
       // 受付中はタップで仮選択、終了後はタップで投票者表示
-      const clickAction = isOpen
+      const clickAction = canInteract
         ? `togglePendingVote(${sv.id},${p.id})`
-        : `showVotersPopup(${sv.id},${p.id})`;
+        : !isOpen ? `showVotersPopup(${sv.id},${p.id})` : '';
 
       return `<div class="sv-pair-item${isTop&&!isOpen?' top':''}${isPending?' pending':''}" onclick="${clickAction}">
         <div class="sv-pair-rank ${rankClass}">${rank}位</div>
@@ -2823,7 +2826,7 @@ function renderSurveyDetail(sv){
 
   // 投票確定ボタン（受付中 かつ 仮選択が確定済みと異なるときだけ表示）
   const confirmArea = document.getElementById('sv-vote-confirm-area');
-  if(isOpen){
+  if(canInteract){
     const hasChange = [..._pendingVotes].some(id => !_confirmedVotes.has(id)) ||
                       [..._confirmedVotes].some(id => !_pendingVotes.has(id));
     confirmArea.style.display = hasChange ? 'block' : 'none';
@@ -2831,7 +2834,7 @@ function renderSurveyDetail(sv){
     confirmArea.style.display = 'none';
   }
 
-  document.getElementById('sv-add-pair-area').style.display = isOpen ? 'block' : 'none';
+  document.getElementById('sv-add-pair-area').style.display = canInteract ? 'block' : 'none';
 
   const applyArea = document.getElementById('sv-apply-area');
   applyArea.style.display = (!isOpen && (currentRole==='admin'||currentRole==='reinf-admin')) ? 'block' : 'none';

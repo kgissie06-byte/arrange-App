@@ -6,6 +6,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
+/** tableTypeとメンバーの所属が一致するか確認する */
+const TABLE_TYPE_ROLE_MAP = {
+  ransaki: '乱咲',
+  tsubomi: '蕾',
+}
+
 /**
  * /api/surveys  ← 1つのServerless Functionで全ルートをさばく
  *
@@ -245,14 +251,24 @@ async function createSurvey(req, res) {
 
 /* ===== ペア追加 ===== */
 async function addPair(req, res, surveyId) {
-  const { main, sub } = req.body
+  const { main, sub, memberId: bodyMemberId } = req.body
   if (!main && !sub) return res.status(400).json({ error: '大将か副将を選択してください' })
 
   const { data: sv } = await supabase
-    .from('surveys').select('deadline').eq('id', surveyId).single()
+    .from('surveys').select('deadline, table_type').eq('id', surveyId).single()
   if (!sv) return res.status(404).json({ error: 'アンケートが見つかりません' })
   if (new Date(sv.deadline).getTime() <= Date.now()) {
     return res.status(400).json({ error: 'このアンケートは終了しています' })
+  }
+
+  // 所属チェック：アンケートのtableTypeに対応する所属のメンバーのみペア追加可能
+  const requiredRole = TABLE_TYPE_ROLE_MAP[sv.table_type]
+  if (requiredRole && bodyMemberId) {
+    const { data: memberData } = await supabase
+      .from('members').select('role').eq('id', bodyMemberId).single()
+    if (!memberData || memberData.role !== requiredRole) {
+      return res.status(403).json({ error: `このアンケートは${requiredRole}のメンバーのみペアを追加できます` })
+    }
   }
 
   const { data: dup } = await supabase
@@ -292,10 +308,20 @@ async function handleVote(req, res, auth) {
   if (!memberId) return res.status(400).json({ error: 'メンバーIDが必要です。メンバーを選択してください' })
 
   const { data: sv } = await supabase
-    .from('surveys').select('deadline').eq('id', surveyId).single()
+    .from('surveys').select('deadline, table_type').eq('id', surveyId).single()
   if (!sv) return res.status(404).json({ error: 'アンケートが見つかりません' })
   if (new Date(sv.deadline).getTime() <= Date.now()) {
     return res.status(400).json({ error: 'このアンケートは終了しています' })
+  }
+
+  // 所属チェック：アンケートのtableTypeに対応する所属のメンバーのみ投票可能
+  const requiredRole = TABLE_TYPE_ROLE_MAP[sv.table_type]
+  if (requiredRole) {
+    const { data: memberData } = await supabase
+      .from('members').select('role').eq('id', memberId).single()
+    if (!memberData || memberData.role !== requiredRole) {
+      return res.status(403).json({ error: `このアンケートは${requiredRole}のメンバーのみ投票できます` })
+    }
   }
 
   // 既にこのペアに投票済みか確認
