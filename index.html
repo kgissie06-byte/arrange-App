@@ -2731,6 +2731,8 @@ async function fetchAndRenderDetail(svId){
     _confirmedVotes = new Set(sv.myVotePairIds || []);
     // ペンディングは確定済みで初期化
     _pendingVotes = new Set(_confirmedVotes);
+    document.getElementById('sv-add-pair-area').style.display = 'none';
+    document.getElementById('sv-vote-confirm-area').style.display = 'none';
     renderSurveyDetail(sv);
   } catch(e){
     console.error(e);
