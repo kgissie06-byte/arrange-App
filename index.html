@@ -2444,7 +2444,7 @@ function openMemberModal(mode){
         <option value="reinf-admin">援軍管理者</option>
         <option value="admin">管理者</option>
       </select></div>
-      <div class="field"><label>パスワード</label><input type="password" id="mm-pw" placeholder="4文字以上"></div>
+      <div class="field"><label>パスワード</label><input type="password" id="mm-pw" placeholder="4文字以上(未入力：自動設定)"></div>
       <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="addMember()">追加</button></div>`);
   } else {
     if(!S.members.length){toast('メンバーがいません');return;}
