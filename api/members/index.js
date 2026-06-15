@@ -15,28 +15,41 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { name, role, memberRole, password } = req.body
 
-     if (!name) return res.status(400).json({ error: 'name is required' })
+    if (!name) return res.status(400).json({ error: 'name is required' })
     if (!memberRole) return res.status(400).json({ error: 'memberRole is required' })
-    if (!password || password.length < 4) {
-      return res.status(400).json({ error: 'password must be 4+ chars' })
+
+    // パスワードが指定されている場合は4文字以上チェック
+    if (password && password.length < 4) {
+      return res.status(400).json({ error: '4文字以上のパスワードを設定してください' })
     }
 
-     const { data, error } = await supabase
-       .from('members')
-       .insert({ name, role: role || '' })
-       .select()
-       .single()
+    const { data, error } = await supabase
+      .from('members')
+      .insert({ name, role: role || '' })
+      .select()
+      .single()
 
-     if (error) return res.status(500).json({ error })
+    if (error) return res.status(500).json({ error })
 
-    const hashed = await bcrypt.hash(password, 10)
+    // パスワード未入力なら「年2桁 + ID4桁ゼロ埋め」で自動生成
+    // 例: 2026年・ID17 → "260017"、2027年・ID100 → "270100"
+    const yearStr = String(new Date().getFullYear()).slice(-2)  // "26"
+    const idStr = String(data.id).padStart(4, '0')             // "0017"
+    const finalPassword = password || `${yearStr}${idStr}`
+
+    const hashed = await bcrypt.hash(finalPassword, 10)
     const { error: authErr } = await supabase
       .from('auth_role')
       .insert({ member_id: data.id, role: memberRole, password: hashed })
     if (authErr) return res.status(500).json({ error: authErr })
 
-     return res.json(data)
-   }
+    // 完了後、ポップアップ表示用に平文パスワードも返す
+    return res.json({
+      ...data,
+      memberRole,
+      initialPassword: finalPassword,
+    })
+  }
 
   return res.status(405).json({ error: 'Method not allowed' })
 }
