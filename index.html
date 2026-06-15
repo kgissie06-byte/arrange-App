@@ -49,6 +49,7 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .login-box button{width:100%;padding:10px;font-size:13px;border:none;border-radius:10px;background:var(--acc);color:#FFF8F0;cursor:pointer;font-family:inherit;font-weight:500;transition:opacity .15s}
 .login-box button:hover{opacity:.88}
 .login-error{font-size:11px;color:var(--danger);margin-top:6px;min-height:16px}
+.added-val{font-size:15px;font-weight:600;color:var(--tab);background:var(--acc-bg);border-radius:8px;padding:6px 10px;letter-spacing:.5px}
 
 /* ===== ローディングオーバーレイ ===== */
 #loading-overlay{position:fixed;inset:0;background:rgba(247,244,239,.78);z-index:8000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px}
@@ -2523,18 +2524,27 @@ async function addMember(){
   const memberRole=(document.getElementById('mm-member-role').value||'user');
   const password=(document.getElementById('mm-pw').value||'').trim();
   if(!name)return;
-  if(!password||password.length<4){toast('パスワードは4文字以上にしてください');return;}
+  if(password && password.length<4){toast('パスワードは4文字以上にしてください');return;}
   showLoading();
   try {
     const res = await fetch('/api/members', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, role, memberRole, password })
+      body: JSON.stringify({ name, role, memberRole, password: password || undefined })
     });
     if(!res.ok){ throw new Error('保存失敗'); }
+    const data = await res.json();
     await load();
     closeModal();
-    toast('追加しました');
+    // 追加完了ポップアップ
+    const roleLabel = {user:'利用者','reinf-admin':'援軍管理者',admin:'管理者'}[data.memberRole] || data.memberRole;
+    openModal('member-added',`<h3>メンバーを追加しました</h3>
+      <div class="field"><label>ID</label><div class="added-val">${data.id}</div></div>
+      <div class="field"><label>パスワード</label><div class="added-val">${data.initialPassword}</div></div>
+      <div class="field"><label>名前</label><div class="added-val">${data.name}</div></div>
+      <div class="field"><label>所属</label><div class="added-val">${data.role || '―'}</div></div>
+      <div class="field"><label>権限</label><div class="added-val">${roleLabel}</div></div>
+      <div class="modal-acts"><button class="btn pri" onclick="closeModal()">閉じる</button></div>`);
   } catch(err){
     console.error(err);
     toast('エラーが発生しました');
