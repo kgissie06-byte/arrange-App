@@ -507,7 +507,6 @@ body.touch-device .sub-tab.active:active {
           <button id="assist-toggle-btn" onclick="toggleAssist()" style="padding:2px 9px;font-size:10px;border-radius:20px;border:1px solid var(--bm);background:var(--acc);color:#FFF8F0;cursor:pointer;font-family:inherit;transition:all .15s">入力補助 ON</button>
         </div>
         <div class="pick-btns" id="rank-btns"></div>
-        <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div>
         <div class="pick-label" style="margin-top:10px">EX追想</div>
         <div class="pick-btns" id="ex-btns"></div>
         <div class="pick-label" style="margin-top:10px" id="lv-shukuen-label">宿縁</div>
@@ -1107,7 +1106,6 @@ function renderLvPanel(){
   // save-bar（Saveボタン含む）も同様に制御
   const saveBar=document.querySelector('#lv-panel .save-bar');
   if(saveBar) saveBar.style.display=canEdit?'':'none';
-  document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
   const exEl=document.getElementById('ex-btns');
   const exLabel=document.getElementById('ex-btns')?.previousElementSibling;
   if(cd&&cd.exSotsui){
@@ -1127,7 +1125,6 @@ function renderLvPanel(){
   if(shEl) shEl.style.display=shHtml?'':'none';
   if(shLabel) shLabel.style.display=shHtml?'':'none';
 }
-
 function selectCharEdit(cn){
   if(E.charName===cn){
     closeLvPanel();
