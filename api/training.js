@@ -25,6 +25,11 @@ export default async function handler(req, res) {
 
   // 保存（upsert）
   if (req.method === 'POST') {
+    // 管理者のみ書き込み可能
+    if (auth.role !== 'admin') {
+      return res.status(403).json({ error: '権限がありません' })
+    }
+
     const { memberId, charName, rar, ranks, ex } = req.body
 
     if (!memberId || !charName) {
@@ -50,6 +55,11 @@ export default async function handler(req, res) {
 
   // 削除
   if (req.method === 'DELETE') {
+    // 管理者のみ削除可能
+    if (auth.role !== 'admin') {
+      return res.status(403).json({ error: '権限がありません' })
+    }
+
     const { memberId, charName } = req.body
 
     if (!memberId || !charName) {
