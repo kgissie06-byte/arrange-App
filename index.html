@@ -1907,8 +1907,19 @@ function renderRSResults(){
   }).join('');
 }
 
+// 変更後
 async function setReinfMember(rowId,name){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
+
+  // 同じtableType内で既に同名の行があればローカルもnullにする
+  if(name){
+    S.reinf.forEach(r=>{
+      if(r.id!==rowId && r.memberName===name && (r.tableType||'ransaki')===(row.tableType||'ransaki')){
+        r.memberName=null;
+      }
+    });
+  }
+
   row.memberName=name||null;
   try {
     await fetch(`/api/reinf?id=${rowId}`, {
@@ -1920,6 +1931,7 @@ async function setReinfMember(rowId,name){
         normalSub: row.normalSub,
         castleMain: row.castleMain,
         castleSub: row.castleSub,
+        tableType: row.tableType||'ransaki',
       })
     });
   } catch(err) {
