@@ -2279,6 +2279,21 @@ function openCropModal(prefix, dataUrl) {
   };
   window.onmouseup = () => { _cropState.dragging = false; };
 
+  // ── マウスホイールズーム ──
+  stage.onwheel = e => {
+    e.preventDefault();
+    const zoom = document.getElementById('crop-zoom');
+    const delta = e.deltaY > 0 ? -0.05 : 0.05;
+    _cropState.scale = Math.min(Math.max(
+      _cropState.scale + delta * _cropState.scale,
+      parseFloat(zoom.min)
+    ), parseFloat(zoom.max));
+    zoom.value = _cropState.scale;
+    clampOffset();
+    applyTransform();
+    updateCropPreview();
+  };
+
   // ── タッチ（1本：ドラッグ / 2本：ピンチ） ──
   stage.ontouchstart = e => {
     if(e.touches.length === 2){
