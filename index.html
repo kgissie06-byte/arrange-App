@@ -2178,6 +2178,43 @@ let _cropState = {
 };
 
 function openCropModal(prefix, dataUrl) {
+  // モーダルがなければ動的に生成
+  if(!document.getElementById('img-crop-modal')){
+    const div = document.createElement('div');
+    div.id = 'img-crop-modal';
+    div.className = 'hidden';
+    div.innerHTML = `
+      <div class="crop-box">
+        <div style="font-weight:600;font-size:14px">画像を調整</div>
+        <div class="crop-stage" id="crop-stage">
+          <img id="crop-img" src="" alt="">
+          <svg class="crop-overlay" id="crop-svg" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <mask id="crop-mask">
+                <rect width="100%" height="100%" fill="white"/>
+                <rect id="crop-hole" fill="black" rx="4"/>
+              </mask>
+            </defs>
+            <rect width="100%" height="100%" fill="rgba(0,0,0,.45)" mask="url(#crop-mask)"/>
+            <rect id="crop-border" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.5" rx="4"/>
+          </svg>
+        </div>
+        <div class="crop-ctrl">
+          <span>🔍</span>
+          <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1">
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <canvas id="crop-preview-canvas" width="80" height="80" style="border-radius:10px;border:1px solid var(--border);flex-shrink:0"></canvas>
+          <span style="font-size:11px;color:var(--t2)">プレビュー（80×80）</span>
+        </div>
+        <div class="crop-btns">
+          <button class="btn-s" onclick="closeCropModal()">キャンセル</button>
+          <button class="btn-s" style="background:var(--acc);color:#fff" onclick="confirmCrop()">この位置で確定</button>
+        </div>
+      </div>`;
+    document.body.appendChild(div);
+  }
+
   const modal = document.getElementById('img-crop-modal');
   const stage = document.getElementById('crop-stage');
   const imgEl = document.getElementById('crop-img');
