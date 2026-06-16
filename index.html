@@ -427,6 +427,19 @@ body.touch-device .sub-tab.active:active {
   color: #FFF8F0 !important;
   opacity: 1 !important;
 }
+
+/* ── クロッパーモーダル ── */
+#img-crop-modal{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55)}
+#img-crop-modal.hidden{display:none}
+.crop-box{background:var(--card);border-radius:14px;padding:18px;width:min(94vw,380px);display:flex;flex-direction:column;gap:14px}
+.crop-stage{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:10px;background:#111;touch-action:none;cursor:grab;user-select:none}
+.crop-stage:active{cursor:grabbing}
+.crop-stage img{position:absolute;transform-origin:center center;will-change:transform}
+.crop-overlay{position:absolute;inset:0;pointer-events:none}
+.crop-ctrl{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--t2)}
+.crop-ctrl input[type=range]{flex:1;accent-color:var(--acc)}
+.crop-preview-img{width:80px;height:80px;border-radius:10px;object-fit:cover;border:1px solid var(--border)}
+.crop-btns{display:flex;gap:8px;justify-content:flex-end}
 </style>
 
 <!-- ローディングオーバーレイ -->
@@ -2147,40 +2160,238 @@ function initCharNewForm(){
 let _cnImg = null;
 let _cuImg = null;
 
+// ── クロッパー状態 ──────────────────────────────────
+let _cropState = {
+  prefix: null,
+  imgEl: null,
+  stageW: 0, stageH: 0,
+  holeSize: 0,          // 正方形の一辺 px
+  scale: 1,
+  ox: 0, oy: 0,         // 画像中心オフセット（ステージ中心からの差分）
+  naturalW: 0, naturalH: 0,
+  dragging: false,
+  lastX: 0, lastY: 0,
+  // ピンチ
+  pinching: false,
+  pinchDist0: 0,
+  pinchScale0: 1,
+};
+
+function openCropModal(prefix, dataUrl) {
+  const modal = document.getElementById('img-crop-modal');
+  const stage = document.getElementById('crop-stage');
+  const imgEl = document.getElementById('crop-img');
+  const zoom  = document.getElementById('crop-zoom');
+
+  modal.classList.remove('hidden');
+  imgEl.src = dataUrl;
+
+  imgEl.onload = () => {
+    const sw = stage.clientWidth;
+    const sh = stage.clientHeight;
+    const hole = Math.round(sw * 0.78); // 正方形サイズ（ステージの78%）
+
+    const cs = _cropState;
+    cs.prefix = prefix;
+    cs.imgEl = imgEl;
+    cs.stageW = sw; cs.stageH = sh;
+    cs.holeSize = hole;
+    cs.naturalW = imgEl.naturalWidth;
+    cs.naturalH = imgEl.naturalHeight;
+    cs.ox = 0; cs.oy = 0;
+
+    // 初期スケール：短辺がholeにぴったり収まるよう
+    const fitScale = hole / Math.min(cs.naturalW, cs.naturalH);
+    cs.scale = fitScale;
+    zoom.min = fitScale;
+    zoom.max = fitScale * 4;
+    zoom.step = fitScale * 0.01;
+    zoom.value = fitScale;
+
+    // SVGのホール位置を設定
+    updateCropHole(sw, sh, hole);
+    applyTransform();
+    updateCropPreview();
+  };
+
+  zoom.oninput = () => {
+    _cropState.scale = parseFloat(zoom.value);
+    clampOffset();
+    applyTransform();
+    updateCropPreview();
+  };
+
+  // ── マウスドラッグ ──
+  stage.onmousedown = e => {
+    _cropState.dragging = true;
+    _cropState.lastX = e.clientX;
+    _cropState.lastY = e.clientY;
+    e.preventDefault();
+  };
+  window.onmousemove = e => {
+    if(!_cropState.dragging) return;
+    _cropState.ox += e.clientX - _cropState.lastX;
+    _cropState.oy += e.clientY - _cropState.lastY;
+    _cropState.lastX = e.clientX;
+    _cropState.lastY = e.clientY;
+    clampOffset();
+    applyTransform();
+    updateCropPreview();
+  };
+  window.onmouseup = () => { _cropState.dragging = false; };
+
+  // ── タッチ（1本：ドラッグ / 2本：ピンチ） ──
+  stage.ontouchstart = e => {
+    if(e.touches.length === 2){
+      _cropState.pinching = true;
+      _cropState.pinchDist0 = pinchDist(e.touches);
+      _cropState.pinchScale0 = _cropState.scale;
+    } else {
+      _cropState.dragging = true;
+      _cropState.lastX = e.touches[0].clientX;
+      _cropState.lastY = e.touches[0].clientY;
+    }
+    e.preventDefault();
+  };
+  stage.ontouchmove = e => {
+    if(_cropState.pinching && e.touches.length === 2){
+      const ratio = pinchDist(e.touches) / _cropState.pinchDist0;
+      const zoom = document.getElementById('crop-zoom');
+      _cropState.scale = Math.min(Math.max(_cropState.pinchScale0 * ratio, parseFloat(zoom.min)), parseFloat(zoom.max));
+      zoom.value = _cropState.scale;
+      clampOffset();
+      applyTransform();
+      updateCropPreview();
+    } else if(_cropState.dragging && e.touches.length === 1){
+      _cropState.ox += e.touches[0].clientX - _cropState.lastX;
+      _cropState.oy += e.touches[0].clientY - _cropState.lastY;
+      _cropState.lastX = e.touches[0].clientX;
+      _cropState.lastY = e.touches[0].clientY;
+      clampOffset();
+      applyTransform();
+      updateCropPreview();
+    }
+    e.preventDefault();
+  };
+  stage.ontouchend = e => {
+    if(e.touches.length < 2) _cropState.pinching = false;
+    if(e.touches.length === 0) _cropState.dragging = false;
+  };
+}
+
+function pinchDist(touches){
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx*dx + dy*dy);
+}
+
+function updateCropHole(sw, sh, hole){
+  const x = (sw - hole) / 2;
+  const y = (sh - hole) / 2;
+  document.getElementById('crop-hole').setAttribute('x', x);
+  document.getElementById('crop-hole').setAttribute('y', y);
+  document.getElementById('crop-hole').setAttribute('width', hole);
+  document.getElementById('crop-hole').setAttribute('height', hole);
+  document.getElementById('crop-border').setAttribute('x', x);
+  document.getElementById('crop-border').setAttribute('y', y);
+  document.getElementById('crop-border').setAttribute('width', hole);
+  document.getElementById('crop-border').setAttribute('height', hole);
+}
+
+function applyTransform(){
+  const cs = _cropState;
+  const cx = cs.stageW / 2 + cs.ox;
+  const cy = cs.stageH / 2 + cs.oy;
+  cs.imgEl.style.left = '0px';
+  cs.imgEl.style.top  = '0px';
+  cs.imgEl.style.width  = cs.naturalW * cs.scale + 'px';
+  cs.imgEl.style.height = cs.naturalH * cs.scale + 'px';
+  cs.imgEl.style.transform = `translate(${cx - cs.naturalW*cs.scale/2}px, ${cy - cs.naturalH*cs.scale/2}px)`;
+}
+
+function clampOffset(){
+  const cs = _cropState;
+  const hw = cs.naturalW * cs.scale / 2;
+  const hh = cs.naturalH * cs.scale / 2;
+  const hs = cs.holeSize / 2;
+  // 正方形の端が画像の端より外に出ないよう制限
+  const maxOx = hw - hs;
+  const maxOy = hh - hs;
+  cs.ox = Math.max(-maxOx, Math.min(maxOx, cs.ox));
+  cs.oy = Math.max(-maxOy, Math.min(maxOy, cs.oy));
+}
+
+function updateCropPreview(){
+  const cs = _cropState;
+  const canvas = document.getElementById('crop-preview-canvas');
+  const ctx = canvas.getContext('2d');
+  const size = 80;
+  canvas.width = canvas.height = size;
+
+  // 正方形の左上（ステージ座標）
+  const hx = (cs.stageW - cs.holeSize) / 2;
+  const hy = (cs.stageH - cs.holeSize) / 2;
+  // 画像の左上（ステージ座標）
+  const imgLeft = cs.stageW/2 + cs.ox - cs.naturalW*cs.scale/2;
+  const imgTop  = cs.stageH/2 + cs.oy - cs.naturalH*cs.scale/2;
+  // 正方形内の画像座標（元画像ピクセル）
+  const srcX = (hx - imgLeft) / cs.scale;
+  const srcY = (hy - imgTop)  / cs.scale;
+  const srcS = cs.holeSize / cs.scale;
+
+  ctx.drawImage(cs.imgEl, srcX, srcY, srcS, srcS, 0, 0, size, size);
+}
+
+function closeCropModal(){
+  document.getElementById('img-crop-modal').classList.add('hidden');
+  // ファイル入力をリセット（同じファイルを再選択できるよう）
+  const prefix = _cropState.prefix;
+  if(prefix){
+    const inp = document.getElementById(`${prefix}-img-input`);
+    if(inp) inp.value = '';
+  }
+}
+
+async function confirmCrop(){
+  const cs = _cropState;
+  const size = 400;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  const hx = (cs.stageW - cs.holeSize) / 2;
+  const hy = (cs.stageH - cs.holeSize) / 2;
+  const imgLeft = cs.stageW/2 + cs.ox - cs.naturalW*cs.scale/2;
+  const imgTop  = cs.stageH/2 + cs.oy - cs.naturalH*cs.scale/2;
+  const srcX = (hx - imgLeft) / cs.scale;
+  const srcY = (hy - imgTop)  / cs.scale;
+  const srcS = cs.holeSize / cs.scale;
+
+  ctx.drawImage(cs.imgEl, srcX, srcY, srcS, srcS, 0, 0, size, size);
+
+  canvas.toBlob(async blob => {
+    document.getElementById('img-crop-modal').classList.add('hidden');
+    const prefix = cs.prefix;
+    const previewUrl = URL.createObjectURL(blob);
+    renderImgPreview(prefix, previewUrl, true);
+    try {
+      const url = await uploadCharImage(blob);
+      if(prefix==='cn') _cnImg = url;
+      else              _cuImg = url;
+      renderImgPreview(prefix, url, false);
+    } catch(e) {
+      toast('画像のアップロードに失敗しました');
+      resetImgArea(prefix);
+    }
+  }, 'image/jpeg', 0.82);
+}
+
 function handleImgSelect(prefix, input){
   const file = input.files[0];
   if(!file) return;
   const reader = new FileReader();
-  reader.onload = e => {
-    cropSquare(e.target.result, 400, async blob => {
-      const previewUrl = URL.createObjectURL(blob);
-      renderImgPreview(prefix, previewUrl, true);
-      try {
-        const url = await uploadCharImage(blob);
-        if(prefix==='cn') _cnImg = url;
-        else              _cuImg = url;
-        renderImgPreview(prefix, url, false);
-      } catch(e) {
-        toast('画像のアップロードに失敗しました');
-        resetImgArea(prefix);
-      }
-    });
-  };
+  reader.onload = e => openCropModal(prefix, e.target.result);
   reader.readAsDataURL(file);
-}
-
-function cropSquare(src, size, cb){
-  const img = new Image();
-  img.onload = () => {
-    const s = Math.min(img.width, img.height);
-    const ox = (img.width  - s) / 2;
-    const oy = (img.height - s) / 2;
-    const canvas = document.createElement('canvas');
-    canvas.width = canvas.height = size;
-    canvas.getContext('2d').drawImage(img, ox, oy, s, s, 0, 0, size, size);
-    canvas.toBlob(cb, 'image/jpeg', 0.82);
-  };
-  img.src = src;
 }
 
 async function uploadCharImage(blob){
@@ -2219,7 +2430,7 @@ function resetImgArea(prefix){
   area.innerHTML = `<div class="img-upload-area">
     <input type="file" id="${prefix}-img-input" accept="image/*" onchange="handleImgSelect('${prefix}',this)">
     <div style="font-size:12px;color:var(--t2)">タップして画像を選択</div>
-    <div style="font-size:10px;color:var(--t3);margin-top:2px">正方形にトリミングして保存されます</div>
+    <div style="font-size:10px;color:var(--t3);margin-top:2px">トリミングして保存されます</div>
   </div>`;
 }
 
