@@ -2452,6 +2452,7 @@ function openMemberModal(mode){
       <div class="field"><label>メンバーを選択</label>
         <select id="me-sel" onchange="loadMemberEdit()"><option value="">-- 選択 --</option>${[...S.members].sort((a,b)=>a.name.localeCompare(b.name,'ja')).map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select></div>
       <div id="me-detail" style="display:none">
+        <div class="field"><label>ID</label>${data.id}</div>
         <div class="field"><label>名前</label><input type="text" id="me-name"></div>
         <div class="field"><label>所属</label>${roleSelect('me-role')}</div>
         <div class="field"><label>権限</label><select id="me-member-role">
