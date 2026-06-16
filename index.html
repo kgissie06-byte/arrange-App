@@ -510,6 +510,8 @@ body.touch-device .sub-tab.active:active {
         <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div>
         <div class="pick-label" style="margin-top:10px">EX追想</div>
         <div class="pick-btns" id="ex-btns"></div>
+        <div class="pick-label" style="margin-top:10px" id="lv-shukuen-label">宿縁</div>
+        <div id="lv-shukuen-badge"></div>
       </div>
       <div class="save-bar">
         <button class="btn" onclick="closeLvPanel()">キャンセル</button>
@@ -1118,7 +1120,14 @@ function renderLvPanel(){
     if(exEl){ exEl.innerHTML=''; exEl.style.display='none'; }
     if(exLabel) exLabel.style.display='none';
   }
+  const shEl=document.getElementById('lv-shukuen-badge');
+  const shLabel=document.getElementById('lv-shukuen-label');
+  const shHtml=(m&&cd)?shukuenBadgeHtml(m,cd):'';
+  if(shEl) shEl.innerHTML=shHtml;
+  if(shEl) shEl.style.display=shHtml?'':'none';
+  if(shLabel) shLabel.style.display=shHtml?'':'none';
 }
+
 function selectCharEdit(cn){
   if(E.charName===cn){
     closeLvPanel();
