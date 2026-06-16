@@ -1099,8 +1099,12 @@ function renderLvPanel(){
     assistBtn.style.color = _assistMode ? '#FFF8F0' : 'var(--t2)';
     assistBtn.style.borderColor = _assistMode ? 'var(--acc)' : 'var(--bm)';
   }
+  const canEdit = currentRole === 'admin' || E.memberId === currentMemberId;
   const clearBtn=document.getElementById('clear-training-btn');
-  if(clearBtn) clearBtn.style.display=c?'':'none';
+  if(clearBtn) clearBtn.style.display=(c && canEdit)?'':'none';
+  // save-bar（Saveボタン含む）も同様に制御
+  const saveBar=document.querySelector('#lv-panel .save-bar');
+  if(saveBar) saveBar.style.display=canEdit?'':'none';
   document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
   const exEl=document.getElementById('ex-btns');
   const exLabel=document.getElementById('ex-btns')?.previousElementSibling;

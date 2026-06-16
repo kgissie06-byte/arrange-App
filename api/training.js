@@ -25,15 +25,15 @@ export default async function handler(req, res) {
 
   // 保存（upsert）
   if (req.method === 'POST') {
-    // 管理者のみ書き込み可能
-    if (auth.role !== 'admin') {
-      return res.status(403).json({ error: '権限がありません' })
-    }
-
     const { memberId, charName, rar, ranks, ex } = req.body
 
     if (!memberId || !charName) {
       return res.status(400).json({ error: 'memberId and charName are required' })
+    }
+
+    // 管理者 OR 自分自身のデータのみ書き込み可能
+    if (auth.role !== 'admin' && auth.memberId !== memberId) {
+      return res.status(403).json({ error: '権限がありません' })
     }
 
     const { error } = await supabase
@@ -55,15 +55,15 @@ export default async function handler(req, res) {
 
   // 削除
   if (req.method === 'DELETE') {
-    // 管理者のみ削除可能
-    if (auth.role !== 'admin') {
-      return res.status(403).json({ error: '権限がありません' })
-    }
-
     const { memberId, charName } = req.body
 
     if (!memberId || !charName) {
       return res.status(400).json({ error: 'memberId and charName are required' })
+    }
+
+    // 管理者 OR 自分自身のデータのみ削除可能
+    if (auth.role !== 'admin' && auth.memberId !== memberId) {
+      return res.status(403).json({ error: '権限がありません' })
     }
 
     const { error } = await supabase
