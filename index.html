@@ -2226,9 +2226,9 @@ function openCropModal(prefix, dataUrl) {
   modal.classList.remove('hidden');
   imgEl.src = dataUrl;
 
-  imgEl.onload = () => {
-    const sw = stage.clientWidth;
-    const sh = stage.clientHeight;
+  requestAnimationFrame(() => {
+  const sw = stage.clientWidth;
+  const sh = stage.clientHeight || sw;
     const hole = Math.round(sw * 0.78); // 正方形サイズ（ステージの78%）
 
     const cs = _cropState;
@@ -2252,7 +2252,7 @@ function openCropModal(prefix, dataUrl) {
     updateCropHole(sw, sh, hole);
     applyTransform();
     updateCropPreview();
-  };
+  });
 
   zoom.oninput = () => {
     _cropState.scale = parseFloat(zoom.value);
@@ -2326,16 +2326,19 @@ function pinchDist(touches){
 }
 
 function updateCropHole(sw, sh, hole){
+  const svg = document.getElementById('crop-svg');
+  svg.setAttribute('width', sw);
+  svg.setAttribute('height', sh);
+  svg.setAttribute('viewBox', `0 0 ${sw} ${sh}`);
   const x = (sw - hole) / 2;
   const y = (sh - hole) / 2;
-  document.getElementById('crop-hole').setAttribute('x', x);
-  document.getElementById('crop-hole').setAttribute('y', y);
-  document.getElementById('crop-hole').setAttribute('width', hole);
-  document.getElementById('crop-hole').setAttribute('height', hole);
-  document.getElementById('crop-border').setAttribute('x', x);
-  document.getElementById('crop-border').setAttribute('y', y);
-  document.getElementById('crop-border').setAttribute('width', hole);
-  document.getElementById('crop-border').setAttribute('height', hole);
+  ['crop-hole','crop-border'].forEach(id => {
+    const el = document.getElementById(id);
+    el.setAttribute('x', x);
+    el.setAttribute('y', y);
+    el.setAttribute('width', hole);
+    el.setAttribute('height', hole);
+  });
 }
 
 function applyTransform(){
