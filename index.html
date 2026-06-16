@@ -2452,7 +2452,7 @@ function openMemberModal(mode){
       <div class="field"><label>メンバーを選択</label>
         <select id="me-sel" onchange="loadMemberEdit()"><option value="">-- 選択 --</option>${[...S.members].sort((a,b)=>a.name.localeCompare(b.name,'ja')).map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select></div>
       <div id="me-detail" style="display:none">
-        <div class="field"><label>ID</label>${data.id}</div>
+        <div class="field"><label>ID</label><span id="me-id-label"></span></div>
         <div class="field"><label>名前</label><input type="text" id="me-name"></div>
         <div class="field"><label>所属</label>${roleSelect('me-role')}</div>
         <div class="field"><label>権限</label><select id="me-member-role">
@@ -2471,6 +2471,8 @@ function loadMemberEdit(){
   const id=parseInt(document.getElementById('me-sel').value);
   const m=S.members.find(x=>x.id===id);
   if(!m){document.getElementById('me-detail').style.display='none';return;}
+  const idLabel=document.getElementById('me-id-label');
+  if(idLabel) idLabel.textContent=m.id;
   document.getElementById('me-name').value=m.name;
   const roleEl=document.getElementById('me-role');
   roleEl.value=ROLE_OPTIONS.includes(m.role)?m.role:'その他';
