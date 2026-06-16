@@ -25,7 +25,26 @@ export default async function handler(req, res) {
     if (isNaN(rowId)) return res.status(400).json({ error: 'invalid id' })
 
     if (req.method === 'PUT') {
-      const { memberName, normalMain, normalSub, castleMain, castleSub } = req.body
+      const { memberName, normalMain, normalSub, castleMain, castleSub, tableType } = req.body
+
+      // 同じtableType内で既に同名の盟員がいれば、その行をnullにする
+      if (memberName) {
+        const { data: dupes } = await supabase
+          .from('reinf')
+          .select('id')
+          .eq('table_type', tableType || 'ransaki')
+          .eq('member_name', memberName)
+          .neq('id', rowId)
+
+        if (dupes && dupes.length > 0) {
+          const { error: clearErr } = await supabase
+            .from('reinf')
+            .update({ member_name: null })
+            .in('id', dupes.map(d => d.id))
+          if (clearErr) return res.status(500).json({ error: clearErr })
+        }
+      }
+
       const { error } = await supabase
         .from('reinf')
         .update({
