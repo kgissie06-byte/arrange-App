@@ -2779,6 +2779,8 @@ function loadMemberEdit(){
   document.getElementById('me-detail').style.display='block';
 }
 
+let _pendingMemberEdit = null;
+
 async function saveMemberEdit(){
   const id=parseInt(document.getElementById('me-sel').value);
   const name=document.getElementById('me-name').value;
@@ -2786,6 +2788,26 @@ async function saveMemberEdit(){
   const memberRole=document.getElementById('me-member-role').value;
   const password=(document.getElementById('me-pw').value||'').trim();
   if(password && password.length<4){toast('パスワードは4文字以上にしてください');return;}
+
+  if(password && id === currentMemberId){
+    _pendingMemberEdit = {id,name,role,memberRole,password};
+    const roleLabel = {user:'利用者','reinf-admin':'援軍管理者',admin:'管理者'}[memberRole] || memberRole;
+    openModal('member-edit-confirm',`<h3>パスワードを変更しますか？</h3>
+      <p style="font-size:13px;color:var(--t2);margin:0 0 8px">変更すると自動的にログアウトされ、新しいパスワードで再度ログインが必要になります。</p>
+      <div class="field"><label>ID</label><div class="added-val">${id}</div></div>
+      <div class="field"><label>パスワード</label><div class="added-val">${password}</div></div>
+      <div class="field"><label>名前</label><div class="added-val">${name}</div></div>
+      <div class="field"><label>所属</label><div class="added-val">${role || '―'}</div></div>
+      <div class="field"><label>権限</label><div class="added-val">${roleLabel}</div></div>
+      <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="commitMemberEdit()">変更してログアウト</button></div>`);
+    return;
+  }
+  await commitMemberEdit({id,name,role,memberRole,password});
+}
+
+async function commitMemberEdit(pending){
+  const {id,name,role,memberRole,password} = pending || _pendingMemberEdit;
+  _pendingMemberEdit = null;
   showLoading();
   try {
     const res = await fetch(`/api/members/${id}`,{
