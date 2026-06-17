@@ -45,8 +45,14 @@ export default async function handler(req, res) {
       if (authErr) return res.status(500).json({ error: authErr })
     }
 
-     return res.json({ ok: true })
-   }
+    return res.json({
+      id: memberId,
+      name,
+      role: role || '',
+      memberRole: memberRole || undefined,
+      updatedPassword: password || null,
+    })
+  }
 
   // メンバー削除（関連する育成データも削除）
   if (req.method === 'DELETE') {

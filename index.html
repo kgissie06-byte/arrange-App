@@ -2783,14 +2783,26 @@ async function saveMemberEdit(){
   if(password && password.length<4){toast('パスワードは4文字以上にしてください');return;}
   showLoading();
   try {
-    await fetch(`/api/members/${id}`,{
+    const res = await fetch(`/api/members/${id}`,{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({name,role,memberRole,password:password||undefined})
     });
+    if(!res.ok){ throw new Error('保存失敗'); }
+    const data = await res.json();
     await load();
     closeModal();
-    toast('更新しました');
+    const roleLabel = {user:'利用者','reinf-admin':'援軍管理者',admin:'管理者'}[data.memberRole] || data.memberRole;
+    openModal('member-updated',`<h3>メンバーを更新しました</h3>
+      <div class="field"><label>ID</label><div class="added-val">${data.id}</div></div>
+      ${data.updatedPassword ? `<div class="field"><label>パスワード</label><div class="added-val">${data.updatedPassword}</div></div>` : ''}
+      <div class="field"><label>名前</label><div class="added-val">${data.name}</div></div>
+      <div class="field"><label>所属</label><div class="added-val">${data.role || '―'}</div></div>
+      <div class="field"><label>権限</label><div class="added-val">${roleLabel}</div></div>
+      <div class="modal-acts"><button class="btn pri" onclick="closeModal()">閉じる</button></div>`);
+  } catch(err){
+    console.error(err);
+    toast('エラーが発生しました');
   } finally {
     hideLoading();
   }
