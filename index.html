@@ -957,6 +957,11 @@ async function load() {
   showLoading();
   try {
     const res = await fetch('/api/init');
+    if(res.status === 401){
+      toast('セッションが切れました。再度ログインしてください');
+      doLogout();
+      return;
+    }
     const data = await res.json();
     S = data;
     // アンケートキャッシュも更新
@@ -2790,6 +2795,14 @@ async function saveMemberEdit(){
     });
     if(!res.ok){ throw new Error('保存失敗'); }
     const data = await res.json();
+    // 自分自身のパスワードを変更した場合はセッションが無効になるため再ログインへ
+    if(password && id === currentMemberId){
+      closeModal();
+      toast('パスワードを変更しました。再度ログインしてください');
+      doLogout();
+      return;
+    }
+
     await load();
     closeModal();
     const roleLabel = {user:'利用者','reinf-admin':'援軍管理者',admin:'管理者'}[data.memberRole] || data.memberRole;
