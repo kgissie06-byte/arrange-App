@@ -1401,7 +1401,17 @@ function renderSearch(alreadyNames){
   const q=romaToHira((document.getElementById('s-input').value||'').trim());
   const el=document.getElementById('search-results');
   if(!q){el.innerHTML='<div class="empty">キャラ名を入力してください</div>';return;}
-  const matched=S.chars.filter(cd=>cd.name.includes(q)||(cd.yomi||'').includes(q));
+  const matched = S.chars.filter(cd =>
+    cd.name.startsWith(q) ||
+    (cd.yomi || '').startsWith(q)
+  )
+
+  const subMatched = S.chars.filter(cd =>
+    (cd.name.includes(q) || (cd.yomi || '').includes(q)) &&
+    !matched.includes(cd)
+  )
+
+  const results = [...matched, ...subMatched]
   if(!matched.length){el.innerHTML='<div class="empty">該当キャラが見つかりません</div>';return;}
   let rows=[];
   matched.forEach(cd=>{S.members.forEach((m,mi)=>{
