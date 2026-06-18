@@ -1275,7 +1275,7 @@ async function saveTraining(){
   if(!E.pendingRar||!E.pendingRanks.length){toast('選択してください');return;}
 
   // 入力補助ランクバリデーション
-  if(_assistMode && E.pendingRar){
+  if(E.pendingRar){
     const cd = S.chars.find(x=>x.name===E.charName);
     const allowedRanks = cd ? cd.ranks : ALL_RANKS;
     // SRなど表6・裏6が非表示の場合はHIGH_RANKS_BLOCKEDを検証対象から除く
