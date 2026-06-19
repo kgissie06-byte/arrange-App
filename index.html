@@ -347,6 +347,8 @@ body.touch-device .del-btn:hover,
 body.touch-device .del-btn:active,
 body.touch-device .add-row-btn:hover,
 body.touch-device .add-row-btn:active,
+body.touch-device .grid-chars:hover,
+body.touch-device .grid-chars:active,
 body.touch-device .sub-tab:hover,
 body.touch-device .sub-tab:active,
 body.touch-device .logout-btn:hover,
@@ -1177,9 +1179,11 @@ function renderLvPanel(){
     if(exLabel) exLabel.style.display='none';
   }
   const shEl=document.getElementById('lv-shukuen-badge');
+  const shLabel=document.getElementById('lv-shukuen-label');
   const shHtml=(m&&cd)?shukuenBadgeHtml(m,cd):'';
   if(shEl) shEl.innerHTML=shHtml;
   if(shEl) shEl.style.display=shHtml?'':'none';
+  if(shLabel) shLabel.style.display=shHtml?'':'none';
   document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
 }
 function selectCharEdit(cn){
