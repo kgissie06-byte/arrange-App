@@ -1182,6 +1182,7 @@ function renderLvPanel(){
   if(shEl) shEl.innerHTML=shHtml;
   if(shEl) shEl.style.display=shHtml?'':'none';
   if(shLabel) shLabel.style.display=shHtml?'':'none';
+  document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
 }
 function selectCharEdit(cn){
   if(E.charName===cn){
