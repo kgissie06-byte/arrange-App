@@ -523,6 +523,7 @@ body.touch-device .sub-tab.active:active {
         <div class="pick-btns" id="ex-btns"></div>
         <div class="pick-label" style="margin-top:10px" id="lv-shukuen-label">宿縁</div>
         <div id="lv-shukuen-badge"></div>
+        <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div>
       </div>
       <div class="save-bar">
         <button class="btn" onclick="closeLvPanel()">キャンセル</button>
@@ -2157,7 +2158,7 @@ function shukuenBadgeHtml(member, charDef){
   const enabledSlots=slots.filter(x=>x&&x.enabled);
   const badges=[];
   slots.forEach((sh,si)=>{
-    if(!sh||!sh.enabled||!sh.members||!sh.members.length) return;
+    if(!sh||!sh.enabled||!sh.members) return;
     let g=0,o=0,s=0;
     sh.members.forEach(sName=>{
       if(sName==='?') return;
@@ -2172,9 +2173,9 @@ function shukuenBadgeHtml(member, charDef){
       ?`<span style="font-size:10px;color:var(--t2)">宿縁${si+1}</span>`
       :`<span style="font-size:10px;color:var(--t2)">宿縁</span>`;
     let pills='';
-    if(g) pills+=`<span class="sh-pill gikkyoku"><span class="sh-pill-dot"></span>${g}</span>`;
-    if(o) pills+=`<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
-    if(s) pills+=`<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
+    pills+=`<span class="sh-pill gikkyoku"><span class="sh-pill-dot"></span>${g}</span>`;
+    pills+=`<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
+    pills+=`<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
     badges.push(`<div class="sh-badge-wrap">${label}${pills}<span style="font-size:10px;color:var(--t3)">/${total}</span></div>`);
   });
   if(!badges.length) return '';
