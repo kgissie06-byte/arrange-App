@@ -59,7 +59,7 @@ export default async function handler(req, res) {
       return await addPair(req, res, surveyId)
     }
     if (req.method === 'DELETE') {
-      const auth = await requireReinfAuth(req, res)
+      const auth = await requireAuth(req, res, 'admin')
       if (!auth) return
       return await deleteSurvey(res, surveyId)
     }
