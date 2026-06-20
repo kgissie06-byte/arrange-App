@@ -3204,7 +3204,7 @@ function renderSurveyDetail(sv){
   document.getElementById('sv-add-pair-area').style.display = canInteract ? 'block' : 'none';
 
   const applyArea = document.getElementById('sv-apply-area');
-  applyArea.style.display = (!isOpen && (currentRole==='admin'||currentRole==='reinf-admin')) ? 'block' : 'none';
+  applyArea.style.display = (currentRole==='admin'||currentRole==='reinf-admin') ? 'block' : 'none';
 
   // 投票者一覧（終了後のみ非同期で表示）
   const existingSection = document.getElementById('sv-voters-section');
