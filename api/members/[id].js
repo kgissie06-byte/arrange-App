@@ -36,8 +36,8 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: '4文字以上のパスワードを設定してください' })
         }
         updates.password = await bcrypt.hash(password, 10)
-        updates.invalidate_before = new Date().toISOString()
       }
+      updates.invalidate_before = new Date().toISOString()
       const { error: authErr } = await supabase
         .from('auth_role')
         .update(updates)
