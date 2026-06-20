@@ -523,7 +523,7 @@ body.touch-device .sub-tab.active:active {
         <div class="pick-btns" id="ex-btns"></div>
         <div class="pick-label" style="margin-top:10px" id="lv-shukuen-label">宿縁</div>
         <div id="lv-shukuen-badge"></div>
-        <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div>
+        <!-- <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div> -->
       </div>
       <div class="save-bar">
         <button class="btn" onclick="closeLvPanel()">キャンセル</button>
@@ -1183,7 +1183,7 @@ function renderLvPanel(){
   if(shEl) shEl.innerHTML=shHtml;
   if(shEl) shEl.style.display=shHtml?'':'none';
   if(shLabel) shLabel.style.display=shHtml?'':'none';
-  document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
+  // document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
 }
 function selectCharEdit(cn){
   if(E.charName===cn){
