@@ -53,6 +53,21 @@ export default async function handler(req, res) {
       if (!auth) return
       return await getSurvey(res, surveyId, auth, req)
     }
+    if (req.method === 'PUT') {
+      const auth = await requireReinfAuth(req, res)
+      if (!auth) return
+      const { title, deadline } = req.body
+      if (!title && !deadline) return res.status(400).json({ error: 'title または deadline が必要です' })
+      if (deadline && new Date(deadline).getTime() <= Date.now()) {
+        return res.status(400).json({ error: '終了日時は未来の日時を設定してください' })
+      }
+      const updates = {}
+      if (title) updates.title = title
+      if (deadline) updates.deadline = deadline
+      const { error } = await supabase.from('surveys').update(updates).eq('id', surveyId)
+      if (error) return res.status(500).json({ error: error.message })
+      return res.json({ ok: true })
+    }
     if (req.method === 'POST') {
       const auth = await requireAuth(req, res)
       if (!auth) return
