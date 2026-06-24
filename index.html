@@ -2065,44 +2065,30 @@ function openShukuenAddModal(prefix,idx){
   const available=S.chars.filter(c=>!usedInSlot.includes(c.name));
   openModal('shukuen-add',`<h3>宿縁キャラを追加</h3>
     <div class="field">
-      <input type="text" id="shukuen-search" placeholder="名前・読み仮名で絞り込み" style="width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;margin-bottom:8px" oninput="filterShukuenSel()">
-      <select id="shukuen-char-sel" size="6" style="width:100%;font-size:14px;border:1px solid var(--bm);border-radius:8px;padding:4px">
-        <option value="">-- 選択 --</option>
-        ${sortByYomi(available).map(c=>`<option value="${c.name}" data-yomi="${c.yomi||''}">${c.name}</option>`).join('')}
-      </select>
+      ${comboHtml('shukuen-char-combo', available, '', '-- キャラを選択 --')}
     </div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
       <button class="btn" onclick="addShukuenDummy()">？を追加</button>
       <button class="btn pri" onclick="addShukuenMember()">追加</button>
     </div>`);
+  _comboState['shukuen-char-combo']={chars:available};
 }
 function openShukuenChangeModal(prefix,idx,changeIdx){
   shukuenAddTarget={prefix,idx,changeIdx};
   const arr=prefix==='cn'?cnShukuens:cuShukuens;
   const usedInSlot=arr[idx].members.filter((n,i)=>n!=='?'&&i!==changeIdx);
   const available=S.chars.filter(c=>!usedInSlot.includes(c.name));
+  const currentName=arr[idx].members[changeIdx]&&arr[idx].members[changeIdx]!=='?'?arr[idx].members[changeIdx]:'';
   openModal('shukuen-add',`<h3>宿縁キャラを変更</h3>
     <div class="field">
-      <input type="text" id="shukuen-search" placeholder="名前・読み仮名で絞り込み" style="width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;margin-bottom:8px" oninput="filterShukuenSel()">
-      <select id="shukuen-char-sel" size="6" style="width:100%;font-size:14px;border:1px solid var(--bm);border-radius:8px;padding:4px">
-        <option value="">-- 選択 --</option>
-        ${sortByYomi(available).map(c=>`<option value="${c.name}" data-yomi="${c.yomi||''}">${c.name}</option>`).join('')}
-      </select>
+      ${comboHtml('shukuen-char-combo', available, currentName, '-- キャラを選択 --')}
     </div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
       <button class="btn pri" onclick="addShukuenMember()">変更</button>
     </div>`);
-}
-function filterShukuenSel(){
-  const q=romaToHira((document.getElementById('shukuen-search')?.value||'').trim());
-  const sel=document.getElementById('shukuen-char-sel');if(!sel)return;
-  Array.from(sel.options).forEach(opt=>{
-    if(!opt.value){opt.style.display='';return;}
-    const name=opt.value;const yomi=opt.dataset.yomi||'';
-    opt.style.display=(!q||name.includes(q)||yomi.includes(q))?'':'none';
-  });
+  _comboState['shukuen-char-combo']={chars:available};
 }
 function addShukuenDummy(){
   const {prefix,idx}=shukuenAddTarget;
@@ -2112,7 +2098,7 @@ function addShukuenDummy(){
   closeModal();
 }
 function addShukuenMember(){
-  const name=document.getElementById('shukuen-char-sel').value;
+  const name=document.getElementById('shukuen-char-combo')?.value||'';
   if(!name)return;
   const {prefix,idx,changeIdx}=shukuenAddTarget;
   const arr=prefix==='cn'?cnShukuens:cuShukuens;
