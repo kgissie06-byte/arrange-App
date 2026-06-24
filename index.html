@@ -2529,6 +2529,35 @@ async function addChar(){
     });
     await load();
     toast('追加しました');
+    // 宿縁に？が残っているキャラのうち、新キャラが該当するかもしれないものを提示
+    const candidates = S.chars.filter(cd => {
+      if(cd.name === name) return false;
+      const slots = cd.shukuens && cd.shukuens.length ? cd.shukuens : [cd.shukuen||{enabled:false,members:[]}];
+      return slots.some(sh => sh && sh.enabled && sh.members && sh.members.includes('?'));
+    });
+    if(candidates.length){
+      openModal('shukuen-hint',`<h3>宿縁の？候補</h3>
+        <p style="font-size:13px;color:var(--t2);margin:0 0 10px">「${esc(name)}」が宿縁キャラに含まれる可能性があるキャラ（宿縁に未確定の？があるもの）：</p>
+        <div style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto">
+          ${candidates.map(cd=>{
+            const slots=cd.shukuens&&cd.shukuens.length?cd.shukuens:[cd.shukuen||{enabled:false,members:[]}];
+            const slotInfo=slots.map((sh,i)=>{
+              if(!sh||!sh.enabled)return null;
+              const qCount=(sh.members||[]).filter(m=>m==='?').length;
+              if(!qCount)return null;
+              return `宿縁${i+1}（？×${qCount}）`;
+            }).filter(Boolean).join('、');
+            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;gap:8px">
+              <div>
+                <div style="font-size:13px;font-weight:500">${esc(cd.name)}</div>
+                <div style="font-size:11px;color:var(--t3);margin-top:2px">${slotInfo}</div>
+              </div>
+              <button class="btn" style="font-size:11px;padding:4px 10px;white-space:nowrap" onclick="closeModal();jumpToCharUpdate('${esc(cd.name)}')">確認する</button>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="modal-acts"><button class="btn pri" onclick="closeModal()">閉じる</button></div>`);
+    }
   } finally {
     hideLoading();
   }
