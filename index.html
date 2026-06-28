@@ -2773,7 +2773,16 @@ function openMemberModal(mode){
     if(!S.members.length){toast('メンバーがいません');return;}
     openModal('member-edit',`<h3>メンバー編集</h3>
       <div class="field"><label>メンバーを選択</label>
-        <select id="me-sel" onchange="loadMemberEdit()"><option value="">-- 選択 --</option>${[...S.members].sort((a,b)=>a.name.localeCompare(b.name,'ja')).map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select></div>
+        <div class="combo-wrap" id="me-sel-wrap">
+          <input type="text" class="combo-input" id="me-sel-display" placeholder="-- 選択 --" readonly onclick="toggleMeSelCombo()" autocomplete="off">
+          <span class="combo-arrow">▾</span>
+          <div class="combo-dropdown" id="me-sel-dropdown">
+            <div class="combo-search-box">
+              <input type="text" id="me-sel-search" placeholder="名前・IDで絞り込み..." oninput="filterMeSelCombo(this.value)" autocomplete="off">
+            </div>
+            <div class="combo-list" id="me-sel-list"></div>
+          </div>
+        </div></div>
       <div id="me-detail" style="display:none">
         <div class="field"><label>ID</label><span id="me-id-label"></span></div>
         <div class="field"><label>名前</label><input type="text" id="me-name"></div>
@@ -2786,12 +2795,13 @@ function openMemberModal(mode){
         <div class="field"><label>パスワード変更</label><input type="password" id="me-pw" placeholder="変更する場合のみ入力"></div>
         <div class="modal-acts"><button class="btn danger" onclick="deleteMember()">削除</button><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="saveMemberEdit()">保存</button></div>
       </div>`);
+    _renderMeSelList('');
   }
 }
 function closeModal(){document.getElementById('modal-overlay').style.display='none';}
 
 function loadMemberEdit(){
-  const id=parseInt(document.getElementById('me-sel').value);
+  const id = _meSelId;
   const m=S.members.find(x=>x.id===id);
   if(!m){document.getElementById('me-detail').style.display='none';return;}
   const idLabel=document.getElementById('me-id-label');
@@ -2810,7 +2820,7 @@ function loadMemberEdit(){
 let _pendingMemberEdit = null;
 
 async function saveMemberEdit(){
-  const id=parseInt(document.getElementById('me-sel').value);
+  const id = _meSelId;
   const name=document.getElementById('me-name').value;
   const role=document.getElementById('me-role').value;
   const memberRole=document.getElementById('me-member-role').value;
@@ -2831,6 +2841,52 @@ async function saveMemberEdit(){
     return;
   }
   await commitMemberEdit({id,name,role,memberRole,password});
+}
+
+// ===== メンバー編集 combo =====
+let _meSelId = null; // 選択中のmember id
+
+function _renderMeSelList(q) {
+  const list = document.getElementById('me-sel-list');
+  if (!list) return;
+  const sorted = [...S.members].sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+  const filtered = q
+    ? sorted.filter(m => m.name.toLowerCase().includes(q.toLowerCase()) || String(m.id).includes(q))
+    : sorted;
+  if (!filtered.length) {
+    list.innerHTML = '<div class="combo-option combo-empty">該当なし</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(m =>
+    `<div class="combo-option${_meSelId === m.id ? ' selected' : ''}" onclick="selectMeSel(${m.id},'${m.name.replace(/'/g,"\\'")}')">
+      ${m.name}<span style="font-size:11px;color:var(--t3);margin-left:6px">ID:${m.id}</span>
+    </div>`
+  ).join('');
+}
+
+function toggleMeSelCombo() {
+  const dd = document.getElementById('me-sel-dropdown');
+  if (!dd) return;
+  const isOpen = dd.classList.contains('open');
+  dd.classList.toggle('open', !isOpen);
+  if (!isOpen) {
+    const s = document.getElementById('me-sel-search');
+    if (s) { s.value = ''; s.focus(); }
+    _renderMeSelList('');
+  }
+}
+
+function filterMeSelCombo(q) {
+  _renderMeSelList(q);
+}
+
+function selectMeSel(id, name) {
+  _meSelId = id;
+  const disp = document.getElementById('me-sel-display');
+  if (disp) disp.value = name;
+  const dd = document.getElementById('me-sel-dropdown');
+  if (dd) dd.classList.remove('open');
+  loadMemberEdit();
 }
 
 async function commitMemberEdit(pending){
@@ -2872,7 +2928,7 @@ async function commitMemberEdit(pending){
 }
 
 async function deleteMember(){
-  const id=parseInt(document.getElementById('me-sel').value);
+  const id = _meSelId;
   const name=(document.getElementById('me-name').value||'このメンバー').trim();
   if(!confirm(`${name} を削除しますか？\n育成データもすべて削除されます。`)) return;
   showLoading();
