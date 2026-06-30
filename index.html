@@ -2270,7 +2270,7 @@ function openCropModal(prefix, dataUrl) {
   });
 
   zoom.oninput = () => {
-    _cropState.scale = parseFloat(zoom.value);
+    setCropScale(parseFloat(zoom.value));
     clampOffset();
     applyTransform();
     updateCropPreview();
@@ -2300,10 +2300,11 @@ function openCropModal(prefix, dataUrl) {
     e.preventDefault();
     const zoom = document.getElementById('crop-zoom');
     const delta = e.deltaY > 0 ? -0.05 : 0.05;
-    _cropState.scale = Math.min(Math.max(
+    const newScale = Math.min(Math.max(
       _cropState.scale + delta * _cropState.scale,
       parseFloat(zoom.min)
     ), parseFloat(zoom.max));
+    setCropScale(newScale);
     zoom.value = _cropState.scale;
     clampOffset();
     applyTransform();
@@ -2327,7 +2328,8 @@ function openCropModal(prefix, dataUrl) {
     if(_cropState.pinching && e.touches.length === 2){
       const ratio = pinchDist(e.touches) / _cropState.pinchDist0;
       const zoom = document.getElementById('crop-zoom');
-      _cropState.scale = Math.min(Math.max(_cropState.pinchScale0 * ratio, parseFloat(zoom.min)), parseFloat(zoom.max));
+      const newScale = Math.min(Math.max(_cropState.pinchScale0 * ratio, parseFloat(zoom.min)), parseFloat(zoom.max));
+      setCropScale(newScale);
       zoom.value = _cropState.scale;
       clampOffset();
       applyTransform();
@@ -2369,6 +2371,15 @@ function updateCropHole(sw, sh, hole){
     el.setAttribute('width', hole);
     el.setAttribute('height', hole);
   });
+}
+
+// プレビュー枠（ホール）の中心を軸にスケールを変更する
+function setCropScale(newScale){
+  const cs = _cropState;
+  const ratio = newScale / cs.scale;
+  cs.ox *= ratio;
+  cs.oy *= ratio;
+  cs.scale = newScale;
 }
 
 function applyTransform(){
