@@ -2239,8 +2239,8 @@ function openCropModal(prefix, dataUrl) {
   const zoom  = document.getElementById('crop-zoom');
 
   modal.classList.remove('hidden');
-  imgEl.src = dataUrl;
 
+  const initCrop = () => {
   requestAnimationFrame(() => {
   const sw = stage.clientWidth;
   const sh = stage.clientHeight || sw;
@@ -2268,6 +2268,17 @@ function openCropModal(prefix, dataUrl) {
     applyTransform();
     updateCropPreview();
   });
+  };
+
+  // 画像のデコード完了を待ってから初期化する（iPhoneの大きい写真で
+  // デコードが遅れ naturalWidth が 0 のまま処理が進み、真っ黒な
+  // 画像が書き出される不具合への対策）
+  imgEl.onload = initCrop;
+  imgEl.src = dataUrl;
+  if (imgEl.complete && imgEl.naturalWidth > 0) {
+    // すでにキャッシュ等で読み込み済みの場合は即実行
+    initCrop();
+  }
 
   zoom.oninput = () => {
     setCropScale(parseFloat(zoom.value));
@@ -2438,6 +2449,10 @@ function closeCropModal(){
 
 async function confirmCrop(){
   const cs = _cropState;
+  if (!cs.naturalW || !cs.naturalH) {
+    toast('画像の読み込みが完了していません。もう一度お試しください');
+    return;
+  }
   const size = 400;
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
