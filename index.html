@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<!-- user-scalable=no: ピンチズーム無効 / interactive-widget=overlays-content: キーボード表示時にレイアウトを縮めず、キーボードを上に重ねて表示する（縮めるとキーボード開閉のたびに再レイアウトでガタつくため） -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=overlays-content">
+<!-- user-scalable=no: ピンチズーム無効 / interactive-widget=resizes-content: キーボード表示でもビューポートサイズを変えない -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -40,7 +40,7 @@
 body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(--bg)}
 
 /* ===== ログイン画面 ===== */
-#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto}
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
 .login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem 1.75rem;width:calc(100% - 2rem);max-width:340px;text-align:center}
 .login-box h1{font-size:16px;font-weight:600;margin-bottom:6px;color:var(--t)}
 .login-box p{font-size:12px;color:var(--t2);margin-bottom:1.5rem}
@@ -2239,8 +2239,8 @@ function openCropModal(prefix, dataUrl) {
   const zoom  = document.getElementById('crop-zoom');
 
   modal.classList.remove('hidden');
+  imgEl.src = dataUrl;
 
-  const initCrop = () => {
   requestAnimationFrame(() => {
   const sw = stage.clientWidth;
   const sh = stage.clientHeight || sw;
@@ -2268,20 +2268,9 @@ function openCropModal(prefix, dataUrl) {
     applyTransform();
     updateCropPreview();
   });
-  };
-
-  // 画像のデコード完了を待ってから初期化する（iPhoneの大きい写真で
-  // デコードが遅れ naturalWidth が 0 のまま処理が進み、真っ黒な
-  // 画像が書き出される不具合への対策）
-  imgEl.onload = initCrop;
-  imgEl.src = dataUrl;
-  if (imgEl.complete && imgEl.naturalWidth > 0) {
-    // すでにキャッシュ等で読み込み済みの場合は即実行
-    initCrop();
-  }
 
   zoom.oninput = () => {
-    setCropScale(parseFloat(zoom.value));
+    _cropState.scale = parseFloat(zoom.value);
     clampOffset();
     applyTransform();
     updateCropPreview();
@@ -2311,11 +2300,10 @@ function openCropModal(prefix, dataUrl) {
     e.preventDefault();
     const zoom = document.getElementById('crop-zoom');
     const delta = e.deltaY > 0 ? -0.05 : 0.05;
-    const newScale = Math.min(Math.max(
+    _cropState.scale = Math.min(Math.max(
       _cropState.scale + delta * _cropState.scale,
       parseFloat(zoom.min)
     ), parseFloat(zoom.max));
-    setCropScale(newScale);
     zoom.value = _cropState.scale;
     clampOffset();
     applyTransform();
@@ -2339,8 +2327,7 @@ function openCropModal(prefix, dataUrl) {
     if(_cropState.pinching && e.touches.length === 2){
       const ratio = pinchDist(e.touches) / _cropState.pinchDist0;
       const zoom = document.getElementById('crop-zoom');
-      const newScale = Math.min(Math.max(_cropState.pinchScale0 * ratio, parseFloat(zoom.min)), parseFloat(zoom.max));
-      setCropScale(newScale);
+      _cropState.scale = Math.min(Math.max(_cropState.pinchScale0 * ratio, parseFloat(zoom.min)), parseFloat(zoom.max));
       zoom.value = _cropState.scale;
       clampOffset();
       applyTransform();
@@ -2382,15 +2369,6 @@ function updateCropHole(sw, sh, hole){
     el.setAttribute('width', hole);
     el.setAttribute('height', hole);
   });
-}
-
-// プレビュー枠（ホール）の中心を軸にスケールを変更する
-function setCropScale(newScale){
-  const cs = _cropState;
-  const ratio = newScale / cs.scale;
-  cs.ox *= ratio;
-  cs.oy *= ratio;
-  cs.scale = newScale;
 }
 
 function applyTransform(){
@@ -2449,10 +2427,6 @@ function closeCropModal(){
 
 async function confirmCrop(){
   const cs = _cropState;
-  if (!cs.naturalW || !cs.naturalH) {
-    toast('画像の読み込みが完了していません。もう一度お試しください');
-    return;
-  }
   const size = 400;
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
