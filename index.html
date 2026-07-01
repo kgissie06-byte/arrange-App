@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<!-- user-scalable=no: ピンチズーム無効 / interactive-widget=resizes-content: キーボード表示でもビューポートサイズを変えない -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+<!-- user-scalable=no: ピンチズーム無効 / interactive-widget=overlays-content: キーボード表示時にレイアウトを縮めず、キーボードを上に重ねて表示する（縮めるとキーボード開閉のたびに再レイアウトでガタつくため） -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=overlays-content">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -40,7 +40,7 @@
 body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(--bg)}
 
 /* ===== ログイン画面 ===== */
-#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto}
 .login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem 1.75rem;width:calc(100% - 2rem);max-width:340px;text-align:center}
 .login-box h1{font-size:16px;font-weight:600;margin-bottom:6px;color:var(--t)}
 .login-box p{font-size:12px;color:var(--t2);margin-bottom:1.5rem}
@@ -467,11 +467,11 @@ body.touch-device .sub-tab.active:active {
 </div>
 <div class="top-bar">
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('input',this)">① 育成入力</button>
-    <button class="tab" onclick="switchTab('search',this)">② 育成検索</button>
-    <button class="tab" onclick="switchTab('survey',this)">③ アンケート</button>
-    <button class="tab" onclick="switchTab('reinf',this)">④ 援軍表</button>
-    <button class="tab admin-only" onclick="switchTab('chars',this)">⑤ キャラ管理</button>
+    <button class="tab active" onclick="switchTab('input',this)">育成入力</button>
+    <button class="tab" onclick="switchTab('search',this)">育成検索</button>
+    <button class="tab" onclick="switchTab('survey',this)">アンケート</button>
+    <button class="tab" onclick="switchTab('reinf',this)">援軍表</button>
+    <button class="tab admin-only" onclick="switchTab('chars',this)">キャラ管理</button>
   </div>
 </div>
 
@@ -523,6 +523,7 @@ body.touch-device .sub-tab.active:active {
         <div class="pick-btns" id="ex-btns"></div>
         <div class="pick-label" style="margin-top:10px" id="lv-shukuen-label">宿縁</div>
         <div id="lv-shukuen-badge"></div>
+        <!-- <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div> -->
       </div>
       <div class="save-bar">
         <button class="btn" onclick="closeLvPanel()">キャンセル</button>
@@ -573,7 +574,8 @@ body.touch-device .sub-tab.active:active {
     <div class="sec-head">
       <h2 id="sv-detail-title">アンケート詳細</h2>
       <div style="display:flex;gap:6px">
-        <button class="btn danger reinf-admin-only" id="sv-delete-btn" onclick="deleteSurvey()">削除</button>
+        <button class="btn reinf-admin-only" id="sv-edit-btn" onclick="openEditSurvey()">編集</button>
+        <button class="btn danger admin-only" id="sv-delete-btn" onclick="deleteSurvey()">削除</button>
         <button class="back-btn" onclick="closeSurveyDetail()">← 戻る</button>
       </div>
     </div>
@@ -957,6 +959,11 @@ async function load() {
   showLoading();
   try {
     const res = await fetch('/api/init');
+    if(res.status === 401){
+      toast('セッションが切れました。再度ログインしてください');
+      doLogout();
+      return;
+    }
     const data = await res.json();
     S = data;
     // アンケートキャッシュも更新
@@ -1176,6 +1183,7 @@ function renderLvPanel(){
   if(shEl) shEl.innerHTML=shHtml;
   if(shEl) shEl.style.display=shHtml?'':'none';
   if(shLabel) shLabel.style.display=shHtml?'':'none';
+  // document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
 }
 function selectCharEdit(cn){
   if(E.charName===cn){
@@ -1270,7 +1278,7 @@ async function saveTraining(){
   if(!E.pendingRar||!E.pendingRanks.length){toast('選択してください');return;}
 
   // 入力補助ランクバリデーション
-  if(_assistMode && E.pendingRar){
+  if(E.pendingRar){
     const cd = S.chars.find(x=>x.name===E.charName);
     const allowedRanks = cd ? cd.ranks : ALL_RANKS;
     // SRなど表6・裏6が非表示の場合はHIGH_RANKS_BLOCKEDを検証対象から除く
@@ -1396,7 +1404,17 @@ function renderSearch(alreadyNames){
   const q=romaToHira((document.getElementById('s-input').value||'').trim());
   const el=document.getElementById('search-results');
   if(!q){el.innerHTML='<div class="empty">キャラ名を入力してください</div>';return;}
-  const matched=S.chars.filter(cd=>cd.name.includes(q)||(cd.yomi||'').includes(q));
+  const matched = S.chars.filter(cd =>
+    cd.name.startsWith(q) ||
+    (cd.yomi || '').startsWith(q)
+  )
+
+  const subMatched = S.chars.filter(cd =>
+    (cd.name.includes(q) || (cd.yomi || '').includes(q)) &&
+    !matched.includes(cd)
+  )
+
+  const results = [...matched, ...subMatched]
   if(!matched.length){el.innerHTML='<div class="empty">該当キャラが見つかりません</div>';return;}
   let rows=[];
   matched.forEach(cd=>{S.members.forEach((m,mi)=>{
@@ -2047,44 +2065,30 @@ function openShukuenAddModal(prefix,idx){
   const available=S.chars.filter(c=>!usedInSlot.includes(c.name));
   openModal('shukuen-add',`<h3>宿縁キャラを追加</h3>
     <div class="field">
-      <input type="text" id="shukuen-search" placeholder="名前・読み仮名で絞り込み" style="width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;margin-bottom:8px" oninput="filterShukuenSel()">
-      <select id="shukuen-char-sel" size="6" style="width:100%;font-size:14px;border:1px solid var(--bm);border-radius:8px;padding:4px">
-        <option value="">-- 選択 --</option>
-        ${sortByYomi(available).map(c=>`<option value="${c.name}" data-yomi="${c.yomi||''}">${c.name}</option>`).join('')}
-      </select>
+      ${comboHtml('shukuen-char-combo', available, '', '-- キャラを選択 --')}
     </div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
       <button class="btn" onclick="addShukuenDummy()">？を追加</button>
       <button class="btn pri" onclick="addShukuenMember()">追加</button>
     </div>`);
+  _comboState['shukuen-char-combo']={chars:available};
 }
 function openShukuenChangeModal(prefix,idx,changeIdx){
   shukuenAddTarget={prefix,idx,changeIdx};
   const arr=prefix==='cn'?cnShukuens:cuShukuens;
   const usedInSlot=arr[idx].members.filter((n,i)=>n!=='?'&&i!==changeIdx);
   const available=S.chars.filter(c=>!usedInSlot.includes(c.name));
+  const currentName=arr[idx].members[changeIdx]&&arr[idx].members[changeIdx]!=='?'?arr[idx].members[changeIdx]:'';
   openModal('shukuen-add',`<h3>宿縁キャラを変更</h3>
     <div class="field">
-      <input type="text" id="shukuen-search" placeholder="名前・読み仮名で絞り込み" style="width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;margin-bottom:8px" oninput="filterShukuenSel()">
-      <select id="shukuen-char-sel" size="6" style="width:100%;font-size:14px;border:1px solid var(--bm);border-radius:8px;padding:4px">
-        <option value="">-- 選択 --</option>
-        ${sortByYomi(available).map(c=>`<option value="${c.name}" data-yomi="${c.yomi||''}">${c.name}</option>`).join('')}
-      </select>
+      ${comboHtml('shukuen-char-combo', available, currentName, '-- キャラを選択 --')}
     </div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
       <button class="btn pri" onclick="addShukuenMember()">変更</button>
     </div>`);
-}
-function filterShukuenSel(){
-  const q=romaToHira((document.getElementById('shukuen-search')?.value||'').trim());
-  const sel=document.getElementById('shukuen-char-sel');if(!sel)return;
-  Array.from(sel.options).forEach(opt=>{
-    if(!opt.value){opt.style.display='';return;}
-    const name=opt.value;const yomi=opt.dataset.yomi||'';
-    opt.style.display=(!q||name.includes(q)||yomi.includes(q))?'':'none';
-  });
+  _comboState['shukuen-char-combo']={chars:available};
 }
 function addShukuenDummy(){
   const {prefix,idx}=shukuenAddTarget;
@@ -2094,7 +2098,7 @@ function addShukuenDummy(){
   closeModal();
 }
 function addShukuenMember(){
-  const name=document.getElementById('shukuen-char-sel').value;
+  const name=document.getElementById('shukuen-char-combo')?.value||'';
   if(!name)return;
   const {prefix,idx,changeIdx}=shukuenAddTarget;
   const arr=prefix==='cn'?cnShukuens:cuShukuens;
@@ -2142,7 +2146,7 @@ function shukuenBadgeHtml(member, charDef){
   const enabledSlots=slots.filter(x=>x&&x.enabled);
   const badges=[];
   slots.forEach((sh,si)=>{
-    if(!sh||!sh.enabled||!sh.members||!sh.members.length) return;
+    if(!sh||!sh.enabled||!sh.members) return;
     let g=0,o=0,s=0;
     sh.members.forEach(sName=>{
       if(sName==='?') return;
@@ -2157,9 +2161,9 @@ function shukuenBadgeHtml(member, charDef){
       ?`<span style="font-size:10px;color:var(--t2)">宿縁${si+1}</span>`
       :`<span style="font-size:10px;color:var(--t2)">宿縁</span>`;
     let pills='';
-    if(g) pills+=`<span class="sh-pill gikkyoku"><span class="sh-pill-dot"></span>${g}</span>`;
-    if(o) pills+=`<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
-    if(s) pills+=`<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
+    pills+=`<span class="sh-pill gikkyoku"><span class="sh-pill-dot"></span>${g}</span>`;
+    pills+=`<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
+    pills+=`<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
     badges.push(`<div class="sh-badge-wrap">${label}${pills}<span style="font-size:10px;color:var(--t3)">/${total}</span></div>`);
   });
   if(!badges.length) return '';
@@ -2235,8 +2239,8 @@ function openCropModal(prefix, dataUrl) {
   const zoom  = document.getElementById('crop-zoom');
 
   modal.classList.remove('hidden');
-  imgEl.src = dataUrl;
 
+  const initCrop = () => {
   requestAnimationFrame(() => {
   const sw = stage.clientWidth;
   const sh = stage.clientHeight || sw;
@@ -2264,9 +2268,20 @@ function openCropModal(prefix, dataUrl) {
     applyTransform();
     updateCropPreview();
   });
+  };
+
+  // 画像のデコード完了を待ってから初期化する（iPhoneの大きい写真で
+  // デコードが遅れ naturalWidth が 0 のまま処理が進み、真っ黒な
+  // 画像が書き出される不具合への対策）
+  imgEl.onload = initCrop;
+  imgEl.src = dataUrl;
+  if (imgEl.complete && imgEl.naturalWidth > 0) {
+    // すでにキャッシュ等で読み込み済みの場合は即実行
+    initCrop();
+  }
 
   zoom.oninput = () => {
-    _cropState.scale = parseFloat(zoom.value);
+    setCropScale(parseFloat(zoom.value));
     clampOffset();
     applyTransform();
     updateCropPreview();
@@ -2296,10 +2311,11 @@ function openCropModal(prefix, dataUrl) {
     e.preventDefault();
     const zoom = document.getElementById('crop-zoom');
     const delta = e.deltaY > 0 ? -0.05 : 0.05;
-    _cropState.scale = Math.min(Math.max(
+    const newScale = Math.min(Math.max(
       _cropState.scale + delta * _cropState.scale,
       parseFloat(zoom.min)
     ), parseFloat(zoom.max));
+    setCropScale(newScale);
     zoom.value = _cropState.scale;
     clampOffset();
     applyTransform();
@@ -2323,7 +2339,8 @@ function openCropModal(prefix, dataUrl) {
     if(_cropState.pinching && e.touches.length === 2){
       const ratio = pinchDist(e.touches) / _cropState.pinchDist0;
       const zoom = document.getElementById('crop-zoom');
-      _cropState.scale = Math.min(Math.max(_cropState.pinchScale0 * ratio, parseFloat(zoom.min)), parseFloat(zoom.max));
+      const newScale = Math.min(Math.max(_cropState.pinchScale0 * ratio, parseFloat(zoom.min)), parseFloat(zoom.max));
+      setCropScale(newScale);
       zoom.value = _cropState.scale;
       clampOffset();
       applyTransform();
@@ -2365,6 +2382,15 @@ function updateCropHole(sw, sh, hole){
     el.setAttribute('width', hole);
     el.setAttribute('height', hole);
   });
+}
+
+// プレビュー枠（ホール）の中心を軸にスケールを変更する
+function setCropScale(newScale){
+  const cs = _cropState;
+  const ratio = newScale / cs.scale;
+  cs.ox *= ratio;
+  cs.oy *= ratio;
+  cs.scale = newScale;
 }
 
 function applyTransform(){
@@ -2423,6 +2449,10 @@ function closeCropModal(){
 
 async function confirmCrop(){
   const cs = _cropState;
+  if (!cs.naturalW || !cs.naturalH) {
+    toast('画像の読み込みが完了していません。もう一度お試しください');
+    return;
+  }
   const size = 400;
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
@@ -2525,6 +2555,35 @@ async function addChar(){
     });
     await load();
     toast('追加しました');
+    // 宿縁に？が残っているキャラのうち、新キャラが該当するかもしれないものを提示
+    const candidates = S.chars.filter(cd => {
+      if(cd.name === name) return false;
+      const slots = cd.shukuens && cd.shukuens.length ? cd.shukuens : [cd.shukuen||{enabled:false,members:[]}];
+      return slots.some(sh => sh && sh.enabled && sh.members && sh.members.includes('?'));
+    });
+    if(candidates.length){
+      openModal('shukuen-hint',`<h3>宿縁の？候補</h3>
+        <p style="font-size:13px;color:var(--t2);margin:0 0 10px">「${esc(name)}」が宿縁キャラに含まれる可能性があるキャラ（宿縁に未確定の？があるもの）：</p>
+        <div style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto">
+          ${candidates.map(cd=>{
+            const slots=cd.shukuens&&cd.shukuens.length?cd.shukuens:[cd.shukuen||{enabled:false,members:[]}];
+            const slotInfo=slots.map((sh,i)=>{
+              if(!sh||!sh.enabled)return null;
+              const qCount=(sh.members||[]).filter(m=>m==='?').length;
+              if(!qCount)return null;
+              return `宿縁${i+1}（？×${qCount}）`;
+            }).filter(Boolean).join('、');
+            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;gap:8px">
+              <div>
+                <div style="font-size:13px;font-weight:500">${esc(cd.name)}</div>
+                <div style="font-size:11px;color:var(--t3);margin-top:2px">${slotInfo}</div>
+              </div>
+              <button class="btn" style="font-size:11px;padding:4px 10px;white-space:nowrap" onclick="closeModal();jumpToCharUpdate('${esc(cd.name)}')">確認する</button>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="modal-acts"><button class="btn pri" onclick="closeModal()">閉じる</button></div>`);
+    }
   } finally {
     hideLoading();
   }
@@ -2740,7 +2799,16 @@ function openMemberModal(mode){
     if(!S.members.length){toast('メンバーがいません');return;}
     openModal('member-edit',`<h3>メンバー編集</h3>
       <div class="field"><label>メンバーを選択</label>
-        <select id="me-sel" onchange="loadMemberEdit()"><option value="">-- 選択 --</option>${[...S.members].sort((a,b)=>a.name.localeCompare(b.name,'ja')).map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select></div>
+        <div class="combo-wrap" id="me-sel-wrap">
+          <input type="text" class="combo-input" id="me-sel-display" placeholder="-- 選択 --" readonly onclick="toggleMeSelCombo()" autocomplete="off">
+          <span class="combo-arrow">▾</span>
+          <div class="combo-dropdown" id="me-sel-dropdown">
+            <div class="combo-search-box">
+              <input type="text" id="me-sel-search" placeholder="名前・IDで絞り込み..." oninput="filterMeSelCombo(this.value)" autocomplete="off">
+            </div>
+            <div class="combo-list" id="me-sel-list"></div>
+          </div>
+        </div></div>
       <div id="me-detail" style="display:none">
         <div class="field"><label>ID</label><span id="me-id-label"></span></div>
         <div class="field"><label>名前</label><input type="text" id="me-name"></div>
@@ -2753,12 +2821,13 @@ function openMemberModal(mode){
         <div class="field"><label>パスワード変更</label><input type="password" id="me-pw" placeholder="変更する場合のみ入力"></div>
         <div class="modal-acts"><button class="btn danger" onclick="deleteMember()">削除</button><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="saveMemberEdit()">保存</button></div>
       </div>`);
+    _renderMeSelList('');
   }
 }
 function closeModal(){document.getElementById('modal-overlay').style.display='none';}
 
 function loadMemberEdit(){
-  const id=parseInt(document.getElementById('me-sel').value);
+  const id = _meSelId;
   const m=S.members.find(x=>x.id===id);
   if(!m){document.getElementById('me-detail').style.display='none';return;}
   const idLabel=document.getElementById('me-id-label');
@@ -2774,30 +2843,118 @@ function loadMemberEdit(){
   document.getElementById('me-detail').style.display='block';
 }
 
+let _pendingMemberEdit = null;
+
 async function saveMemberEdit(){
-  const id=parseInt(document.getElementById('me-sel').value);
+  const id = _meSelId;
   const name=document.getElementById('me-name').value;
   const role=document.getElementById('me-role').value;
   const memberRole=document.getElementById('me-member-role').value;
   const password=(document.getElementById('me-pw').value||'').trim();
   if(password && password.length<4){toast('パスワードは4文字以上にしてください');return;}
+
+  if(password && id === currentMemberId){
+    _pendingMemberEdit = {id,name,role,memberRole,password};
+    const roleLabel = {user:'利用者','reinf-admin':'援軍管理者',admin:'管理者'}[memberRole] || memberRole;
+    openModal('member-edit-confirm',`<h3>パスワードを変更しますか？</h3>
+      <p style="font-size:13px;color:var(--t2);margin:0 0 8px">変更すると自動的にログアウトされ、新しいパスワードで再度ログインが必要になります。</p>
+      <div class="field"><label>ID</label><div class="added-val">${id}</div></div>
+      <div class="field"><label>パスワード</label><div class="added-val">${password}</div></div>
+      <div class="field"><label>名前</label><div class="added-val">${name}</div></div>
+      <div class="field"><label>所属</label><div class="added-val">${role || '―'}</div></div>
+      <div class="field"><label>権限</label><div class="added-val">${roleLabel}</div></div>
+      <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="commitMemberEdit()">変更してログアウト</button></div>`);
+    return;
+  }
+  await commitMemberEdit({id,name,role,memberRole,password});
+}
+
+// ===== メンバー編集 combo =====
+let _meSelId = null; // 選択中のmember id
+
+function _renderMeSelList(q) {
+  const list = document.getElementById('me-sel-list');
+  if (!list) return;
+  const sorted = [...S.members].sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+  const filtered = q
+    ? sorted.filter(m => m.name.toLowerCase().includes(q.toLowerCase()) || String(m.id).includes(q))
+    : sorted;
+  if (!filtered.length) {
+    list.innerHTML = '<div class="combo-option combo-empty">該当なし</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(m =>
+    `<div class="combo-option${_meSelId === m.id ? ' selected' : ''}" onclick="selectMeSel(${m.id},'${m.name.replace(/'/g,"\\'")}')">
+      ${m.name}<span style="font-size:11px;color:var(--t3);margin-left:6px">ID:${m.id}</span>
+    </div>`
+  ).join('');
+}
+
+function toggleMeSelCombo() {
+  const dd = document.getElementById('me-sel-dropdown');
+  if (!dd) return;
+  const isOpen = dd.classList.contains('open');
+  dd.classList.toggle('open', !isOpen);
+  if (!isOpen) {
+    const s = document.getElementById('me-sel-search');
+    if (s) { s.value = ''; s.focus(); }
+    _renderMeSelList('');
+  }
+}
+
+function filterMeSelCombo(q) {
+  _renderMeSelList(q);
+}
+
+function selectMeSel(id, name) {
+  _meSelId = id;
+  const disp = document.getElementById('me-sel-display');
+  if (disp) disp.value = name;
+  const dd = document.getElementById('me-sel-dropdown');
+  if (dd) dd.classList.remove('open');
+  loadMemberEdit();
+}
+
+async function commitMemberEdit(pending){
+  const {id,name,role,memberRole,password} = pending || _pendingMemberEdit;
+  _pendingMemberEdit = null;
   showLoading();
   try {
-    await fetch(`/api/members/${id}`,{
+    const res = await fetch(`/api/members/${id}`,{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({name,role,memberRole,password:password||undefined})
     });
+    if(!res.ok){ throw new Error('保存失敗'); }
+    const data = await res.json();
+    // 自分自身のパスワードを変更した場合はセッションが無効になるため再ログインへ
+    if(password && id === currentMemberId){
+      closeModal();
+      toast('パスワードを変更しました。再度ログインしてください');
+      doLogout();
+      return;
+    }
+
     await load();
     closeModal();
-    toast('更新しました');
+    const roleLabel = {user:'利用者','reinf-admin':'援軍管理者',admin:'管理者'}[data.memberRole] || data.memberRole;
+    openModal('member-updated',`<h3>メンバーを更新しました</h3>
+      <div class="field"><label>ID</label><div class="added-val">${data.id}</div></div>
+      ${data.updatedPassword ? `<div class="field"><label>パスワード</label><div class="added-val">${data.updatedPassword}</div></div>` : ''}
+      <div class="field"><label>名前</label><div class="added-val">${data.name}</div></div>
+      <div class="field"><label>所属</label><div class="added-val">${data.role || '―'}</div></div>
+      <div class="field"><label>権限</label><div class="added-val">${roleLabel}</div></div>
+      <div class="modal-acts"><button class="btn pri" onclick="closeModal()">閉じる</button></div>`);
+  } catch(err){
+    console.error(err);
+    toast('エラーが発生しました');
   } finally {
     hideLoading();
   }
 }
 
 async function deleteMember(){
-  const id=parseInt(document.getElementById('me-sel').value);
+  const id = _meSelId;
   const name=(document.getElementById('me-name').value||'このメンバー').trim();
   if(!confirm(`${name} を削除しますか？\n育成データもすべて削除されます。`)) return;
   showLoading();
@@ -3144,7 +3301,7 @@ function renderSurveyDetail(sv){
   document.getElementById('sv-add-pair-area').style.display = canInteract ? 'block' : 'none';
 
   const applyArea = document.getElementById('sv-apply-area');
-  applyArea.style.display = (!isOpen && (currentRole==='admin'||currentRole==='reinf-admin')) ? 'block' : 'none';
+  applyArea.style.display = (currentRole==='admin'||currentRole==='reinf-admin') ? 'block' : 'none';
 
   // 投票者一覧（終了後のみ非同期で表示）
   const existingSection = document.getElementById('sv-voters-section');
@@ -3316,6 +3473,47 @@ async function doAddPair(){
   }
 }
 
+function openEditSurvey(){
+  const sv = _surveys.find(s => s.id === _activeSurveyId);
+  if(!sv) return;
+  const localDeadline = new Date(new Date(sv.deadline).getTime() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
+  openModal('sv-edit', `<h3>アンケート編集</h3>
+    <div class="field"><label>タイトル</label><input type="text" id="sv-edit-title" value="${esc(sv.title)}" style="font-size:16px"></div>
+    <div class="field"><label>終了日時</label><input type="datetime-local" id="sv-edit-deadline" value="${localDeadline}" style="font-size:16px"></div>
+    <div style="font-size:11px;color:var(--danger);min-height:14px" id="sv-edit-err"></div>
+    <div class="modal-acts">
+      <button class="btn" onclick="closeModal()">キャンセル</button>
+      <button class="btn pri" id="sv-edit-save-btn" onclick="doEditSurvey()">保存</button>
+    </div>`);
+}
+
+async function doEditSurvey(){
+  const title = (document.getElementById('sv-edit-title').value||'').trim();
+  const deadlineLocal = document.getElementById('sv-edit-deadline').value;
+  const errEl = document.getElementById('sv-edit-err');
+  const btn = document.getElementById('sv-edit-save-btn');
+  if(!title){ errEl.textContent = 'タイトルを入力してください'; return; }
+  if(!deadlineLocal){ errEl.textContent = '終了日時を設定してください'; return; }
+  const deadline = new Date(deadlineLocal).toISOString();
+  btn.disabled = true; btn.textContent = '保存中...';
+  try {
+    const res = await fetch(`/api/surveys?id=${_activeSurveyId}`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ title, deadline }),
+    });
+    const data = await res.json();
+    if(!res.ok){ errEl.textContent = data.error||'保存に失敗しました'; btn.disabled=false; btn.textContent='保存'; return; }
+    const sv = _surveys.find(s => s.id === _activeSurveyId);
+    if(sv){ sv.title = title; sv.deadline = deadline; }
+    closeModal();
+    toast('アンケートを更新しました');
+    renderSurveyDetail(_surveys.find(s => s.id === _activeSurveyId));
+  } catch(e){
+    errEl.textContent = 'エラーが発生しました'; btn.disabled=false; btn.textContent='保存';
+  }
+}
+
 /* ---------- アンケート削除 ---------- */
 function deleteSurvey(){
   openModal('sv-delete-confirm', `<h3>アンケートを削除</h3>
@@ -3341,8 +3539,8 @@ async function doDeleteSurvey(){
 function applySurveyToReinf(){
   const sv = _surveys.find(s => s.id === _activeSurveyId);
   if(!sv) return;
-  if(new Date(sv.deadline).getTime() > Date.now()){ toast('まだ終了していません'); return; }
   if(!sv.pairs||!sv.pairs.length){ toast('ペアがありません'); return; }
+  const isOpen = new Date(sv.deadline).getTime() > Date.now();
 
   const sortedPairs = [...sv.pairs].sort((a,b)=>(b.votes||0)-(a.votes||0));
   const tableType = sv.tableType;
@@ -3357,9 +3555,10 @@ function applySurveyToReinf(){
 
   openModal('apply-confirm', `<h3>援軍表に反映</h3>
     <div style="font-size:12px;margin-bottom:12px">
+      ${isOpen ? '<div style="background:#FAEEDA;color:#633806;border:1px solid #FAC775;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11px">⚠️ まだ受付中です。このまま反映しますか？</div>' : ''}
       【${tableLabel}】援軍表の<strong>全行を削除</strong>し、以下の${sortedPairs.length}行を新規作成します。<br><br>
       <div style="margin:8px 0;max-height:200px;overflow-y:auto">${pairsPreview}</div>
-      ${existingRows.length>0?`<span style="color:var(--danger)">※ 既存の${existingRows.length}行が全て削除されます</span>`:''}
+      ${existingRows.length>0?`<span style="color:var(--danger)">※ 既存の行が削除されます</span>`:''}
     </div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
