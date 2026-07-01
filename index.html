@@ -40,7 +40,9 @@
 body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(--bg)}
 
 /* ===== ログイン画面 ===== */
-#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto}
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto;transition:padding-top .15s ease}
+/* キーボード表示時：中央寄せをやめて上寄せにし、入力欄がキーボードに隠れないようにする */
+#login-screen.kb-open{align-items:flex-start;padding-top:max(24px, env(safe-area-inset-top))}
 .login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem 1.75rem;width:calc(100% - 2rem);max-width:340px;text-align:center}
 .login-box h1{font-size:16px;font-weight:600;margin-bottom:6px;color:var(--t)}
 .login-box p{font-size:12px;color:var(--t2);margin-bottom:1.5rem}
@@ -3592,6 +3594,29 @@ async function doApplySurvey(tableType){
   } catch(e){ toast('反映に失敗しました'); }
   finally { hideLoading(); }
 }
+
+// ログイン画面：スマホでソフトウェアキーボードが出た時に入力欄が隠れないようにする
+(function(){
+  const screen = document.getElementById('login-screen');
+  if(!window.visualViewport){ return; } // 非対応ブラウザは従来通り（中央表示）
+  const vv = window.visualViewport;
+  function onViewportChange(){
+    // レイアウトビューポートとの差分からキーボードの高さを推定
+    const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop;
+    const kbOpen = keyboardHeight > 100;
+    screen.classList.toggle('kb-open', kbOpen);
+    if(kbOpen){
+      const active = document.activeElement;
+      if(active && screen.contains(active) && active.tagName === 'INPUT'){
+        requestAnimationFrame(() => {
+          active.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        });
+      }
+    }
+  }
+  vv.addEventListener('resize', onViewportChange);
+  vv.addEventListener('scroll', onViewportChange);
+})();
 
 // roleのみメモリ上に保持してUI制御に使う
  (async function restoreSession(){
