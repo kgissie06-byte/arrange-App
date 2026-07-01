@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<!-- user-scalable=no: ピンチズーム無効 / interactive-widget=overlays-content: キーボード表示時にレイアウトを縮めず、キーボードを上に重ねて表示する（縮めるとキーボード開閉のたびに再レイアウトでガタつくため） -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=overlays-content">
+<!-- user-scalable=no: ピンチズーム無効 / interactive-widget=resizes-content: キーボード表示でもビューポートサイズを変えない -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,19 +13,6 @@
 <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-120.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <title>育成管理ツール</title>
-
-<!-- OGP -->
-<meta property="og:title" content="育成管理ツール">
-<meta property="og:description" content="武将の育成管理・援軍調整サイト">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://arrange-app.vercel.app/">
-<meta property="og:image" content="https://arrange-app.vercel.app/ogp/ogp.png">
-
-<!-- Twitter(X) -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="育成管理ツール">
-<meta name="twitter:description" content="武将の育成管理・援軍調整サイト">
-<meta name="twitter:image" content="https://arrange-app.vercel.app/ogp/ogp.png">
 </head>
 <body>
 <style>
@@ -40,7 +27,7 @@
 body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(--bg)}
 
 /* ===== ログイン画面 ===== */
-#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto}
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
 .login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem 1.75rem;width:calc(100% - 2rem);max-width:340px;text-align:center}
 .login-box h1{font-size:16px;font-weight:600;margin-bottom:6px;color:var(--t)}
 .login-box p{font-size:12px;color:var(--t2);margin-bottom:1.5rem}
@@ -49,7 +36,6 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .login-box button{width:100%;padding:10px;font-size:13px;border:none;border-radius:10px;background:var(--acc);color:#FFF8F0;cursor:pointer;font-family:inherit;font-weight:500;transition:opacity .15s}
 .login-box button:hover{opacity:.88}
 .login-error{font-size:11px;color:var(--danger);margin-top:6px;min-height:16px}
-.added-val{font-size:15px;font-weight:600;color:var(--tab);background:var(--acc-bg);border-radius:8px;padding:6px 10px;letter-spacing:.5px}
 
 /* ===== ローディングオーバーレイ ===== */
 #loading-overlay{position:fixed;inset:0;background:rgba(247,244,239,.78);z-index:8000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px}
@@ -114,8 +100,6 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .p-btn.on-rar-LG {background:#FFF0D0;color:#854F0B;border-color:#EF9F27;font-weight:500}
 .p-btn.on-rar-UR {background:#EEEDFE;color:#3C3489;border-color:#7F77DD;font-weight:500}
 .p-btn.on-rar-SR {background:#E6F1FB;color:#0C447C;border-color:#378ADD;font-weight:500}
-.p-btn.on-rar-R  {background:#E8F4EC;color:#1A5C32;border-color:#4CAF72;font-weight:500}
-.p-btn.on-rar-N  {background:#EBEBEB;color:#3C3C3C;border-color:#999999;font-weight:500}
 .p-btn.on-rank-top{background:#EEEDFE;color:#3C3489;border-color:#AFA9EC;font-weight:500}
 .p-btn.on-rank    {background:#EDE5D8;color:#634B38;border-color:#B4A494;font-weight:500}
 .p-btn.on-ex      {background:#FDF6E0;color:#7A5E10;border-color:#C89B20;font-weight:500}
@@ -198,76 +182,10 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .add-to-table-btn:hover:not(:disabled){background:var(--acc-bg)}
 .add-to-table-btn:disabled{opacity:.4;cursor:default}
 .already-tag{font-size:10px;padding:1px 7px;border-radius:10px;background:var(--acc-bg);color:var(--acc);border:.5px solid var(--bm);margin-left:auto;flex-shrink:0}
-
-/* ===== コンボボックス（検索付きドロップダウン） ===== */
-.combo-wrap{position:relative;width:100%}
-.combo-input{width:100%;padding:7px 32px 7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;box-sizing:border-box;cursor:pointer}
-.combo-input:focus{outline:none;border-color:var(--tab);box-shadow:0 0 0 2px rgba(60,52,137,.12)}
-.combo-arrow{position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--t3);font-size:12px}
-.combo-dropdown{position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--card);border:1px solid var(--bm);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.14);z-index:600;overflow:hidden;display:none}
-.combo-dropdown.open{display:block}
-.combo-search-box{padding:8px 10px;border-bottom:1px solid var(--border)}
-.combo-search-box input{width:100%;padding:5px 9px;font-size:14px;border:1px solid var(--bm);border-radius:7px;background:var(--bg);color:var(--t);font-family:inherit;box-sizing:border-box}
-.combo-search-box input:focus{outline:none;border-color:var(--tab)}
-.combo-list{max-height:200px;overflow-y:auto}
-.combo-option{padding:8px 12px;font-size:13px;cursor:pointer;color:var(--t);transition:background .1s}
-.combo-option:hover,.combo-option.focused{background:var(--acc-lt)}
-.combo-option.selected{background:var(--acc-bg);font-weight:500;color:var(--acc)}
-.combo-option.combo-empty{color:var(--t3);cursor:default;font-size:12px;text-align:center}
-.combo-option.combo-empty:hover{background:transparent}
 .empty{color:var(--t3);text-align:center;padding:1.5rem;font-size:12px}
 hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .toast-fixed{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--toast-bg);color:var(--toast-c);border-radius:20px;padding:8px 18px;font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
 .toast-fixed.show{opacity:1}
-
-/* ===== トップへ戻るボタン ===== */
-#scroll-top-btn{position:fixed;bottom:24px;right:16px;width:40px;height:40px;border-radius:50%;background:var(--acc);color:#FFF8F0;border:none;cursor:pointer;font-size:18px;line-height:40px;text-align:center;z-index:150;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:0 2px 8px rgba(0,0,0,.22)}
-#scroll-top-btn.show{opacity:1;pointer-events:auto}
-
-/* ===== アンケート ===== */
-.sv-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,background .15s}
-.sv-card:hover{border-color:var(--bm);background:var(--acc-lt)}
-.sv-card-title{font-size:13px;font-weight:600;color:var(--t);margin-bottom:4px}
-.sv-card-meta{font-size:11px;color:var(--t2);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.sv-status{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500}
-.sv-status.open{background:#E1F5EE;color:#085041;border:.5px solid #1D9E75}
-.sv-status.closed{background:var(--acc-bg);color:var(--acc);border:.5px solid var(--bm)}
-.sv-pair-item{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:7px;display:flex;align-items:center;gap:10px;transition:background .15s,border-color .15s;cursor:pointer;user-select:none}
-.sv-pair-item:active{opacity:.85}
-.sv-pair-item.top{border-color:#C89B20;background:#FDF6E0}
-.sv-pair-item.pending{border-color:var(--tab);background:#EEEDFE}
-.sv-pair-item.voted{border-color:var(--tab);background:#EEEDFE}
-.sv-pair-vote{min-width:36px;text-align:center}
-.sv-pair-vote-num{font-size:18px;font-weight:700;color:var(--tab);line-height:1}
-.sv-pair-vote-label{font-size:9px;color:var(--t3)}
-.sv-pair-names{flex:1;font-size:13px;font-weight:500}
-.sv-pair-sub{font-size:11px;color:var(--t2)}
-.sv-vote-btn{padding:5px 13px;font-size:12px;border:1px solid var(--tab);border-radius:8px;background:var(--card);cursor:pointer;color:var(--tab);font-family:inherit;font-weight:500;transition:all .15s;white-space:nowrap}
-.sv-vote-btn:hover{background:#EEEDFE}
-.sv-vote-btn.voted{background:var(--tab);color:#fff}
-.sv-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;background:var(--card)}
-.sv-check.on{background:var(--tab);border-color:var(--tab);color:#fff}
-.sv-check.confirmed{background:#1D9E75;border-color:#1D9E75;color:#fff}
-/* 投票者ポップアップ */
-.sv-voters-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;min-width:240px;max-width:90vw;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.18)}
-.sv-voters-popup-title{font-size:13px;font-weight:600;margin-bottom:10px;color:var(--t)}
-.sv-voters-popup-list{font-size:12px;color:var(--t2);line-height:2}
-.sv-voters-popup-close{margin-top:12px;width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);cursor:pointer;font-family:inherit;font-size:12px}
-.sv-voters-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:199}
-.sv-pair-rank{font-size:10px;font-weight:700;width:22px;text-align:center;color:var(--t3)}
-.sv-pair-rank.rank1{color:#C89B20}
-.sv-pair-rank.rank2{color:#A09890}
-.sv-pair-rank.rank3{color:#B08060}
-/* メンバー選択バナー */
-.sv-member-banner{display:flex;align-items:center;gap:10px;background:#EEEDFE;border:1px solid #AFA9EC;border-radius:10px;padding:10px 13px;margin-bottom:14px;font-size:12px}
-.sv-member-banner-name{font-weight:600;color:var(--tab);flex:1}
-.sv-member-change-btn{padding:4px 11px;font-size:11px;border:1px solid #7F77DD;border-radius:7px;background:var(--card);cursor:pointer;color:var(--tab);font-family:inherit;white-space:nowrap}
-/* 投票者一覧 */
-.sv-voters-section{margin-top:18px;border-top:1px solid var(--border);padding-top:14px}
-.sv-voters-title{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:10px}
-.sv-voter-row{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:5px}
-.sv-voter-name{font-size:12px;font-weight:500;color:var(--t);min-width:64px;flex-shrink:0;padding-top:2px}
-.sv-member-sel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:7px;max-height:300px;overflow-y:auto;padding:2px}
 /* ===== 宿縁 ===== */
 .shukuen-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:5px}
 .shukuen-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
@@ -328,6 +246,7 @@ body{overscroll-behavior:none}
 body.touch-device .tab:hover:not(.active),
 body.touch-device .tab:active:not(.active),
 body.touch-device .btn:hover,
+body.touch-device .btn.pri:hover,
 body.touch-device .btn:active,
 body.touch-device .back-btn:hover,
 body.touch-device .back-btn:active,
@@ -362,83 +281,17 @@ body.touch-device .login-box button:active,
 body.touch-device .shukuen-toggle button:hover,
 body.touch-device .shukuen-toggle button:active,
 body.touch-device .c-card:hover,
-body.touch-device .c-card:active,
-body.touch-device #page-search .btn.pri:hover,
-body.touch-device #page-search .btn.pri:active,
-body.touch-device #page-reinf .sec-head .btn:hover,
-body.touch-device #page-reinf .sec-head .btn:active,
-body.touch-device .img-upload-area:hover,
-body.touch-device .img-upload-area:active,
-body.touch-device .shukuen-icon:hover,
-body.touch-device .shukuen-icon:active,
-body.touch-device .combo-option:hover,
-body.touch-device .combo-option:active {
+body.touch-device .c-card:active {
   background: var(--card) !important;
   border-color: var(--border) !important;
   color: inherit !important;
   opacity: 1 !important;
 }
-body.touch-device .f-btn.on:hover,
-body.touch-device .f-btn.on:active {
-  background: var(--acc-bg) !important;
-  border-color: var(--bm) !important;
-  color: var(--acc) !important;
-  opacity: 1 !important;
+body.touch-device *:focus,
+body.touch-device *:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
-body.touch-device .btn.pri:hover,
-body.touch-device .btn.pri:active {
-  background: var(--acc) !important;
-  border-color: var(--acc) !important;
-  color: #FFF8F0 !important;
-  opacity: 1 !important;
-}
-body.touch-device .shukuen-toggle button.on:hover,
-body.touch-device .shukuen-toggle button.on:active {
-  background: var(--acc) !important;
-  border-color: var(--acc) !important;
-  color: #FFF8F0 !important;
-  opacity: 1 !important;
-}
-body.touch-device .login-box button:hover,
-body.touch-device .login-box button:active {
-  background: var(--acc) !important;
-  border-color: var(--acc) !important;
-  color: #FFF8F0 !important;
-  opacity: 1 !important;
-}
-body.touch-device .sv-card:hover,
-body.touch-device .sv-card:active,
-body.touch-device .sv-vote-btn:hover,
-body.touch-device .sv-vote-btn:active {
-  background: var(--card) !important;
-  border-color: var(--border) !important;
-  color: inherit !important;
-  opacity: 1 !important;
-}
-body.touch-device .sv-vote-btn.voted:hover,
-body.touch-device .sv-vote-btn.voted:active {
-  background: var(--tab) !important;
-  color: #fff !important;
-}
-body.touch-device .sub-tab.active:hover,
-body.touch-device .sub-tab.active:active {
-  background: var(--acc) !important;
-  border-color: var(--acc) !important;
-  color: #FFF8F0 !important;
-  opacity: 1 !important;
-}
-
-/* ── クロッパーモーダル ── */
-#img-crop-modal{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55)}
-#img-crop-modal.hidden{display:none}
-.crop-box{background:var(--card);border-radius:14px;padding:18px;width:min(94vw,380px);display:flex;flex-direction:column;gap:14px}
-.crop-stage{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:10px;background:#111;touch-action:none;cursor:grab;user-select:none}
-.crop-stage:active{cursor:grabbing}
-.crop-stage img{position:absolute;transform-origin:center center;will-change:transform}
-.crop-overlay{position:absolute;inset:0;pointer-events:none}
-.crop-ctrl{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--t2)}
-.crop-ctrl input[type=range]{flex:1;accent-color:var(--acc)}
-.crop-preview-img{width:80px;height:80px;border-radius:10px;object-fit:cover;border:1px solid var(--border)}
 </style>
 
 <!-- ローディングオーバーレイ -->
@@ -451,8 +304,7 @@ body.touch-device .sub-tab.active:active {
 <div id="login-screen">
   <div class="login-box">
     <h1>育成管理</h1>
-    <p>IDとパスワードを入力してください</p>
-    <input type="number" id="login-id" placeholder="メンバーID" style="width:100%;padding:10px 12px;font-size:16px;border:1px solid var(--bm);border-radius:10px;background:var(--bg);color:var(--t);font-family:inherit;text-align:center;margin-bottom:10px">
+    <p>パスワードを入力してください</p>
     <input type="password" id="login-pw" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()">
     <button onclick="doLogin()">ログイン</button>
     <div class="login-error" id="login-error"></div>
@@ -463,21 +315,20 @@ body.touch-device .sub-tab.active:active {
 <div class="top-action-bar">
   <span id="role-badge-wrap"></span>
   <button class="logout-btn" id="reload-btn" onclick="manualReload()">更新</button>
+  <button class="logout-btn admin-only" onclick="openChangePwModal()">パスワード変更</button>
   <button class="logout-btn" onclick="doLogout()">ログアウト</button>
 </div>
 <div class="top-bar">
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('input',this)">育成入力</button>
-    <button class="tab" onclick="switchTab('search',this)">育成検索</button>
-    <button class="tab" onclick="switchTab('survey',this)">アンケート</button>
-    <button class="tab" onclick="switchTab('reinf',this)">援軍表</button>
-    <button class="tab admin-only" onclick="switchTab('chars',this)">キャラ管理</button>
+    <button class="tab active" onclick="switchTab('input',this)">① 育成入力</button>
+    <button class="tab" onclick="switchTab('search',this)">② 育成検索</button>
+    <button class="tab reinf-admin-only" onclick="switchTab('reinf',this)">③ 援軍表</button>
+    <button class="tab admin-only" onclick="switchTab('chars',this)">④ キャラ管理</button>
   </div>
 </div>
 
 <div class="content">
 <div class="toast-fixed" id="toast"></div>
-<button id="scroll-top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="トップへ戻る">↑</button>
 
 <!-- ① 育成入力 -->
 <div id="page-input" class="page active">
@@ -488,11 +339,6 @@ body.touch-device .sub-tab.active:active {
         <button class="btn input-admin-only" onclick="openMemberModal('add')">+ 追加</button>
         <button class="btn input-admin-only" onclick="openMemberModal('edit')">編集</button>
       </div>
-    </div>
-    <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap">
-      <button class="f-btn on" id="mf-all"    onclick="setMemberFilter('all')">すべて</button>
-      <button class="f-btn"   id="mf-ransaki" onclick="setMemberFilter('ransaki')">乱咲</button>
-      <button class="f-btn"   id="mf-tsubomi" onclick="setMemberFilter('tsubomi')">蕾</button>
     </div>
     <div class="grid-members" id="member-list"></div>
   </div>
@@ -519,11 +365,9 @@ body.touch-device .sub-tab.active:active {
           <button id="assist-toggle-btn" onclick="toggleAssist()" style="padding:2px 9px;font-size:10px;border-radius:20px;border:1px solid var(--bm);background:var(--acc);color:#FFF8F0;cursor:pointer;font-family:inherit;transition:all .15s">入力補助 ON</button>
         </div>
         <div class="pick-btns" id="rank-btns"></div>
+        <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div>
         <div class="pick-label" style="margin-top:10px">EX追想</div>
         <div class="pick-btns" id="ex-btns"></div>
-        <div class="pick-label" style="margin-top:10px" id="lv-shukuen-label">宿縁</div>
-        <div id="lv-shukuen-badge"></div>
-        <!-- <div style="font-size:11px;color:var(--t2);margin-top:2px">選択中: <span id="cur-pick-txt" style="font-weight:500;color:var(--t)">未選択</span></div> -->
       </div>
       <div class="save-bar">
         <button class="btn" onclick="closeLvPanel()">キャンセル</button>
@@ -549,48 +393,10 @@ body.touch-device .sub-tab.active:active {
 <div id="page-reinf" class="page">
   <div class="sec-head">
     <h2>援軍表</h2>
-    <button class="btn reinf-edit-only" onclick="addReinfRow()">+ 行追加</button>
-  </div>
-  <!-- ▼ テーブル切り替えタブ -->
-  <div class="sub-tabs" style="margin-bottom:.875rem">
-    <button class="sub-tab active" id="reinf-tab-ransaki" onclick="switchReinfTable('ransaki',this)">乱咲</button>
-    <button class="sub-tab" id="reinf-tab-tsubomi" onclick="switchReinfTable('tsubomi',this)">蕾</button>
+    <button class="btn" onclick="addReinfRow()">+ 行追加</button>
   </div>
   <div class="reinf-wrap">
     <table class="reinf-table" id="reinf-table"></table>
-  </div>
-</div>
-
-<!-- ⑤ アンケート -->
-<div id="page-survey" class="page">
-  <div id="sv-list-view">
-    <div class="sec-head">
-      <h2>アンケート</h2>
-      <button class="btn pri reinf-admin-only" onclick="openCreateSurvey()">＋ 新規作成</button>
-    </div>
-    <div id="sv-list"></div>
-  </div>
-  <div id="sv-detail-view" style="display:none">
-    <div class="sec-head">
-      <h2 id="sv-detail-title">アンケート詳細</h2>
-      <div style="display:flex;gap:6px">
-        <button class="btn reinf-admin-only" id="sv-edit-btn" onclick="openEditSurvey()">編集</button>
-        <button class="btn danger admin-only" id="sv-delete-btn" onclick="deleteSurvey()">削除</button>
-        <button class="back-btn" onclick="closeSurveyDetail()">← 戻る</button>
-      </div>
-    </div>
-    <div id="sv-detail-meta" style="font-size:11px;color:var(--t2);margin-bottom:12px"></div>
-    <div id="sv-detail-status-bar" style="margin-bottom:12px"></div>
-    <div id="sv-pairs-list" style="margin-bottom:12px"></div>
-    <div id="sv-vote-confirm-area" style="display:none;margin-bottom:12px">
-      <button class="btn pri" style="width:100%;padding:12px" onclick="confirmVotes()">投票する</button>
-    </div>
-    <div id="sv-add-pair-area">
-      <button class="add-row-btn" onclick="openAddPairModal()">＋ ペアを追加</button>
-    </div>
-    <div id="sv-apply-area" style="margin-top:14px;display:none">
-      <button class="btn pri" onclick="applySurveyToReinf()">援軍表に反映する</button>
-    </div>
   </div>
 </div>
 
@@ -655,17 +461,7 @@ body.touch-device .sub-tab.active:active {
   </div>
   <div id="char-update-form" style="display:none">
     <div class="field"><label>更新するキャラを選択</label>
-      <div class="combo-wrap" id="cu-sel-wrap">
-        <input type="text" class="combo-input" id="cu-sel-display" placeholder="-- キャラを選択 --" readonly onclick="toggleCuSelCombo()" autocomplete="off">
-        <span class="combo-arrow">▾</span>
-        <div class="combo-dropdown" id="cu-sel-dropdown">
-          <div class="combo-search-box">
-            <input type="text" id="cu-sel-search" placeholder="キャラ名・読み仮名で絞り込み" oninput="filterCuSelCombo()" autocomplete="off">
-          </div>
-          <div class="combo-list" id="cu-sel-list"></div>
-        </div>
-      </div>
-      <input type="hidden" id="cu-sel" value="">
+      <select id="cu-sel" onchange="loadCharForUpdate()"><option value="">-- 選択 --</option></select>
     </div>
     <div id="cu-detail" style="display:none">
       <div class="field"><label>キャラ名</label><input type="text" id="cu-name"></div>
@@ -731,7 +527,6 @@ body.touch-device .sub-tab.active:active {
 </div>
 
 <!-- モーダルコンテナ -->
-
 <div class="overlay" id="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modal-box"><div id="modal-content"></div></div>
 </div>
@@ -771,6 +566,10 @@ body.touch-device .sub-tab.active:active {
       </div>
     </div>
     <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:.75rem">
+      <div class="fil-sec" style="flex:1;min-width:0">
+        <div class="fil-label">所属で絞り込み</div>
+        <div class="fil-btns" id="rs-role"></div>
+      </div>
       <div class="fil-sec" style="flex-shrink:0">
         <div class="fil-label">ソート優先度</div>
         <div style="display:flex;gap:4px">
@@ -783,46 +582,6 @@ body.touch-device .sub-tab.active:active {
     <div class="reinf-results-list" id="rs-results"></div>
   </div>
 </div>
-</div>
-
-<!-- 画像クロッパーモーダル -->
-<div id="img-crop-modal" class="hidden">
-  <div class="crop-box">
-    <div style="font-weight:600;font-size:14px">画像を調整</div>
-
-    <!-- ステージ（ドラッグ＋ピンチ対応） -->
-    <div class="crop-stage" id="crop-stage">
-      <img id="crop-img" src="" alt="">
-      <!-- オーバーレイ：四隅を灰色で覆い、中央正方形だけ透明 -->
-      <svg class="crop-overlay" id="crop-svg" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <mask id="crop-mask">
-            <rect width="100%" height="100%" fill="white"/>
-            <rect id="crop-hole" fill="black" rx="4"/>
-          </mask>
-        </defs>
-        <rect width="100%" height="100%" fill="rgba(0,0,0,.45)" mask="url(#crop-mask)"/>
-        <rect id="crop-border" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.5" rx="4"/>
-      </svg>
-    </div>
-
-    <!-- ズームスライダー -->
-    <div class="crop-ctrl">
-      <span>🔍</span>
-      <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1">
-    </div>
-
-    <!-- プレビュー -->
-    <div style="display:flex;align-items:center;gap:12px">
-      <canvas id="crop-preview-canvas" width="80" height="80" style="border-radius:10px;border:1px solid var(--border);flex-shrink:0"></canvas>
-      <span style="font-size:11px;color:var(--t2)">プレビュー（80×80）</span>
-    </div>
-
-    <div class="crop-btns" style="display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn" onclick="closeCropModal()">キャンセル</button>
-      <button class="btn pri" onclick="confirmCrop()">この位置で確定</button>
-    </div>
-  </div>
 </div>
 
 <script>
@@ -842,14 +601,6 @@ document.addEventListener('touchend', () => {
     }
   }, 100);
 }, { passive: true });
-
-// トップへ戻るボタン
-(function(){
-  const btn=document.getElementById('scroll-top-btn');
-  window.addEventListener('scroll',function(){
-    btn.classList.toggle('show', window.scrollY > 200);
-  },{passive:true});
-})();
 
 const ALL_RARITIES=['LG3','LG2','LG1','LG','UR','SR','R','N'];
 const ALL_RANKS=['全技極','裏技極','技極','表1','表2','表3','表4','表5','表6','裏1','裏2','裏3','裏4','裏5','裏6'];
@@ -921,7 +672,6 @@ let S={
   nextId:5, nextReinfId:1,
   filRar:[],filRank:[],filRole:[],
 };
-let _activeReinfTable = 'ransaki';
 let E={memberId:null,charName:null,pendingRar:null,pendingRanks:[],pendingEx:null};
 let cnSelRar=[],cnSelRank=[],cuSelRar=[],cuSelRank=[];
 let cnExSotsui=false, cuExSotsui=false;
@@ -959,15 +709,8 @@ async function load() {
   showLoading();
   try {
     const res = await fetch('/api/init');
-    if(res.status === 401){
-      toast('セッションが切れました。再度ログインしてください');
-      doLogout();
-      return;
-    }
     const data = await res.json();
     S = data;
-    // アンケートキャッシュも更新
-    if(Array.isArray(data.surveys)) _surveys = data.surveys;
     renderAll();
   } finally {
     hideLoading();
@@ -987,42 +730,17 @@ function renderAll(){
 }
 
 /* ========== ① 育成入力 ========== */
-let _memberFilter = 'all'; // 'all' | 'ransaki' | 'tsubomi'
-function setMemberFilter(f){
-  _memberFilter = f;
-  ['all','ransaki','tsubomi'].forEach(k=>{
-    const btn=document.getElementById('mf-'+k);
-    if(btn) btn.classList.toggle('on', k===f);
-  });
-  renderMembers();
-}
 function renderMembers(){
   const el=document.getElementById('member-list');
-  // 全ロールで「その他」は非表示（編集モーダルでは別途全件表示）
-  let visible = S.members.filter(m => m.role !== 'その他');
-  if(_memberFilter === 'ransaki') visible = visible.filter(m => m.role === '乱咲');
-  if(_memberFilter === 'tsubomi') visible = visible.filter(m => m.role === '蕾');
+  const visible = currentRole === 'user' || currentRole === 'reinf-admin'
+    ? S.members.filter(m => m.role !== 'その他')
+    : S.members;
   if(!visible.length){el.innerHTML='<div class="empty">メンバーがいません</div>';return;}
-  // ログインメンバーのカードを先頭に固定表示
-  let html = '';
-  const loginMember = currentMemberId ? S.members.find(m => m.id === currentMemberId) : null;
-  if(loginMember && visible.find(m => m.id === loginMember.id)){
-    const a = av(S.members.indexOf(loginMember));
-    html += `<div style="grid-column:1/-1;margin-bottom:4px;font-size:11px;color:var(--t2);font-weight:500">ログイン中のアカウント</div>`;
-    html += `<div class="m-card" style="border-color:var(--tab);background:#f4f4ff" onclick="selectMember(${loginMember.id})">
-      <div class="avatar" style="background:${a.bg};color:${a.c}">${ini(loginMember.name)}</div>
-      <div class="m-name">${loginMember.name}</div><div class="m-sub">${loginMember.role}</div>
-      <div class="m-sub">${loginMember.chars.length}体育成中</div>
-    </div>
-    <div style="grid-column:1/-1;margin:4px 0 2px;font-size:11px;color:var(--t2);font-weight:500">全メンバー</div>`;
-    visible = visible.filter(m => m.id !== loginMember.id);
-  }
   el.innerHTML=visible.map((m,i)=>{const a=av(S.members.indexOf(m));return`<div class="m-card" onclick="selectMember(${m.id})">
     <div class="avatar" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
     <div class="m-name">${m.name}</div><div class="m-sub">${m.role}</div>
     <div class="m-sub">${m.chars.length}体育成中</div>
   </div>`;}).join('');
-  el.innerHTML = html + el.innerHTML;
 }
 function selectMember(id){
   const m=S.members.find(x=>x.id===id);if(!m)return;
@@ -1078,41 +796,8 @@ function renderCharGridEdit(m){
   }).join('');
   filterCharGrid();
 }
-
-function romaToHira(s){
-  if(!s)return s;
-  const t=[['shi','し'],['chi','ち'],['tchi','っち'],['cchi','っち'],['tsu','つ'],['sha','しゃ'],['shu','しゅ'],
-  ['sho','しょ'],['cha','ちゃ'],['chu','ちゅ'],['cho','ちょ'],['kya','きゃ'],['kyu','きゅ'],['kyo','きょ'],['nya','にゃ'],
-  ['nyu','にゅ'],['nyo','にょ'],['hya','ひゃ'],['hyu','ひゅ'],['hyo','ひょ'],['mya','みゃ'],['myu','みゅ'],['myo','みょ'],
-  ['rya','りゃ'],['ryu','りゅ'],['ryo','りょ'],['gya','ぎゃ'],['gyu','ぎゅ'],['gyo','ぎょ'],['ja','じゃ'],['ji','じ'],
-  ['ju','じゅ'],['jo','じょ'],['bya','びゃ'],['byu','びゅ'],['byo','びょ'],['pya','ぴゃ'],['pyu','ぴゅ'],['pyo','ぴょ'],
-  ['fa','ふぁ'],['fu','ふ'],['kka','っか'],['kki','っき'],['kku','っく'],['kke','っけ'],['kko','っこ'],['ssa','っさ'],
-  ['ssi','っし'],['ssu','っす'],['sse','っせ'],['sso','っそ'],['tta','った'],['tte','って'],['tto','っと'],['hha','っは'],
-  ['hhi','っひ'],['hhu','っふ'],['hhe','っへ'],['hho','っほ'],['mma','っま'],['mmi','っみ'],['mmu','っむ'],['mme','っめ'],
-  ['mmo','っも'],['rra','っら'],['rri','っり'],['rru','っる'],['rre','っれ'],['rro','っろ'],['ka','か'],['ki','き'],['ku','く'],
-  ['ke','け'],['ko','こ'],['sa','さ'],['si','し'],['su','す'],['se','せ'],['so','そ'],['ta','た'],['ti','ち'],['tu','つ'],
-  ['te','て'],['to','と'],['na','な'],['ni','に'],['nu','ぬ'],['ne','ね'],['no','の'],['ha','は'],['hi','ひ'],['he','へ'],
-  ['ho','ほ'],['ma','ま'],['mi','み'],['mu','む'],['me','め'],['mo','も'],['ya','や'],['yu','ゆ'],['yo','よ'],['ra','ら'],
-  ['ri','り'],['ru','る'],['re','れ'],['ro','ろ'],['wa','わ'],['wo','を'],['nn','ん'],['ga','が'],['gi','ぎ'],['gu','ぐ'],['ge','げ'],
-  ['go','ご'],['za','ざ'],['zi','じ'],['zu','ず'],['ze','ぜ'],['zo','ぞ'],['da','だ'],['di','ぢ'],['du','づ'],['de','で'],
-  ['do','ど'],['ba','ば'],['bi','び'],['bu','ぶ'],['be','べ'],['bo','ぼ'],['pa','ぱ'],['pi','ぴ'],['pu','ぷ'],['pe','ぺ'],
-  ['po','ぽ'],['a','あ'],['i','い'],['u','う'],['e','え'],['o','お']];
-  let r='',v=s.toLowerCase();
-  while(v.length){let m=false;
-    for(const[k,h]of t){if(v.startsWith(k)){
-      r+=h;v=v.slice(k.length);
-      m=true;break;
-    }
-  }
-  if(!m){
-    r+=v[0];v=v.slice(1);
-  }
-  }
-  return r;
-}
-
 function filterCharGrid(){
-  const q=romaToHira((document.getElementById('cc-search')?.value||'').trim());
+  const q=(document.getElementById('cc-search')?.value||'').trim();
   if(q){
     E.charName=null;E.pendingRar=null;E.pendingRanks=[];
     document.querySelectorAll('#char-grid-edit .cc').forEach(el=>el.classList.remove('sel'));
@@ -1159,12 +844,9 @@ function renderLvPanel(){
     assistBtn.style.color = _assistMode ? '#FFF8F0' : 'var(--t2)';
     assistBtn.style.borderColor = _assistMode ? 'var(--acc)' : 'var(--bm)';
   }
-  const canEdit = currentRole === 'admin' || E.memberId === currentMemberId;
   const clearBtn=document.getElementById('clear-training-btn');
-  if(clearBtn) clearBtn.style.display=(c && canEdit)?'':'none';
-  // save-bar（Saveボタン含む）も同様に制御
-  const saveBar=document.querySelector('#lv-panel .save-bar');
-  if(saveBar) saveBar.style.display=canEdit?'':'none';
+  if(clearBtn) clearBtn.style.display=c?'':'none';
+  document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
   const exEl=document.getElementById('ex-btns');
   const exLabel=document.getElementById('ex-btns')?.previousElementSibling;
   if(cd&&cd.exSotsui){
@@ -1177,13 +859,6 @@ function renderLvPanel(){
     if(exEl){ exEl.innerHTML=''; exEl.style.display='none'; }
     if(exLabel) exLabel.style.display='none';
   }
-  const shEl=document.getElementById('lv-shukuen-badge');
-  const shLabel=document.getElementById('lv-shukuen-label');
-  const shHtml=(m&&cd)?shukuenBadgeHtml(m,cd):'';
-  if(shEl) shEl.innerHTML=shHtml;
-  if(shEl) shEl.style.display=shHtml?'':'none';
-  if(shLabel) shLabel.style.display=shHtml?'':'none';
-  // document.getElementById('cur-pick-txt').textContent=E.pendingRar&&E.pendingRanks.length?E.pendingRar+' / '+E.pendingRanks.join('・'):E.pendingRar?E.pendingRar+' (ランク未選択)':'未選択';
 }
 function selectCharEdit(cn){
   if(E.charName===cn){
@@ -1246,12 +921,9 @@ function toggleAssist(){
 function pickRank(r){
   const cd=S.chars.find(x=>x.name===E.charName);
   const allowed=cd?cd.ranks:ALL_RANKS;
-  const blockedByRar=(cd&&isUrWithLowerRar(cd)&&E.pendingRar&&SR_OR_BELOW.includes(E.pendingRar))
-    ?HIGH_RANKS_BLOCKED:[];
   if(_assistMode){
-    toggleWithHierarchy(E.pendingRanks,r,v=>getRankImplied(v).filter(x=>allowed.includes(x)&&!blockedByRar.includes(x)));
+    toggleWithHierarchy(E.pendingRanks,r,v=>getRankImplied(v).filter(x=>allowed.includes(x)));
   } else {
-    if(blockedByRar.includes(r)) return;
     const i=E.pendingRanks.indexOf(r);
     if(i>=0) E.pendingRanks.splice(i,1);
     else E.pendingRanks.push(r);
@@ -1262,13 +934,12 @@ function pickEx(lv){
   E.pendingEx = E.pendingEx===lv ? null : lv;
   renderLvPanel();
 }
-function getRequiredRanks(pendingRanks, allowedRanks, blockedRanks){
+function getRequiredRanks(pendingRanks, allowedRanks){
   // 入力補助でチェックが付く項目をすべて列挙する
   // pickRankと同じロジック: 選択中の各ランクのgetRankImplied結果の和集合
-  const blocked = blockedRanks || [];
   const required = new Set();
   pendingRanks.forEach(r => {
-    getRankImplied(r).filter(x => allowedRanks.includes(x) && !blocked.includes(x)).forEach(x => required.add(x));
+    getRankImplied(r).filter(x => allowedRanks.includes(x)).forEach(x => required.add(x));
   });
   return [...required];
 }
@@ -1278,16 +949,12 @@ async function saveTraining(){
   if(!E.pendingRar||!E.pendingRanks.length){toast('選択してください');return;}
 
   // 入力補助ランクバリデーション
-  if(E.pendingRar){
+  if(_assistMode && E.pendingRar){
     const cd = S.chars.find(x=>x.name===E.charName);
     const allowedRanks = cd ? cd.ranks : ALL_RANKS;
-    // SRなど表6・裏6が非表示の場合はHIGH_RANKS_BLOCKEDを検証対象から除く
-    const blockedByRar = (cd && isUrWithLowerRar(cd) && SR_OR_BELOW.includes(E.pendingRar))
-      ? HIGH_RANKS_BLOCKED : [];
-    const effectiveAllowed = allowedRanks.filter(r => !blockedByRar.includes(r));
-    const required = getRequiredRanks(E.pendingRanks, effectiveAllowed, blockedByRar);
+    const required = getRequiredRanks(E.pendingRanks, allowedRanks);
     if(required){
-      const missing = required.filter(r => !E.pendingRanks.includes(r) && !blockedByRar.includes(r));
+      const missing = required.filter(r => !E.pendingRanks.includes(r));
       if(missing.length){
         toast('未チェック: ' + missing.join('・'));
         return;
@@ -1389,9 +1056,9 @@ function goBack(){
 function renderFilters(){
   const allRoles=[...new Set(S.members.map(m=>m.role))].filter(r=>r!=='その他');
   document.getElementById('fil-rar').innerHTML=ALL_RARITIES.map(r=>{const on=S.filRar.includes(r);const s=RAR_S[r]||{};
-    return`<button class="f-btn${on?' on':''}" onclick="toggleFil('rar','${r}')"> ${r}</button>`;}).join('');
+    return`<button class="f-btn${on?' on':''}" onclick="toggleFil('rar','${r}')" style="${on?`background:${s.bg};color:${s.c};border-color:${s.bd}`:''}"> ${r}</button>`;}).join('');
   document.getElementById('fil-rank').innerHTML=ALL_RANKS.map(r=>{const on=S.filRank.includes(r);const top=TOP_RANKS.includes(r);
-    return`<button class="f-btn${on?' on':''}" onclick="toggleFil('rank','${r}')"> ${r}</button>`;}).join('');
+    return`<button class="f-btn${on?' on':''}" onclick="toggleFil('rank','${r}')" style="${on?(top?'background:#EEEDFE;color:#3C3489;border-color:#AFA9EC':'background:#EDE5D8;color:#634B38;border-color:#B4A494'):''}"> ${r}</button>`;}).join('');
   document.getElementById('fil-role').innerHTML=allRoles.map(r=>{const on=S.filRole.includes(r);
     return`<button class="f-btn${on?' on':''}" onclick="toggleFil('role','${r}')"> ${r}</button>`;}).join('');
 }
@@ -1401,20 +1068,10 @@ function toggleFil(type,val){
   renderFilters();renderSearch();
 }
 function renderSearch(alreadyNames){
-  const q=romaToHira((document.getElementById('s-input').value||'').trim());
+  const q=(document.getElementById('s-input').value||'').trim();
   const el=document.getElementById('search-results');
   if(!q){el.innerHTML='<div class="empty">キャラ名を入力してください</div>';return;}
-  const matched = S.chars.filter(cd =>
-    cd.name.startsWith(q) ||
-    (cd.yomi || '').startsWith(q)
-  )
-
-  const subMatched = S.chars.filter(cd =>
-    (cd.name.includes(q) || (cd.yomi || '').includes(q)) &&
-    !matched.includes(cd)
-  )
-
-  const results = [...matched, ...subMatched]
+  const matched=S.chars.filter(cd=>cd.name.includes(q)||(cd.yomi||'').includes(q));
   if(!matched.length){el.innerHTML='<div class="empty">該当キャラが見つかりません</div>';return;}
   let rows=[];
   matched.forEach(cd=>{S.members.forEach((m,mi)=>{
@@ -1444,15 +1101,14 @@ async function addReinfRow(){
     const res = await fetch('/api/reinf', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ tableType: _activeReinfTable })
+      body: JSON.stringify({})
     });
     if (!res.ok) throw new Error('行追加失敗');
-    // load() 内で showLoading/hideLoading するため、ここでは先に hideLoading してから呼ぶ
-    hideLoading();
     await load();
   } catch(err) {
     console.error(err);
     toast('行の追加に失敗しました');
+  } finally {
     hideLoading();
   }
 }
@@ -1465,8 +1121,7 @@ function pairLabel(main,sub){
 
 function renderReinfTable(){
   const tbl=document.getElementById('reinf-table');
-  const rows = S.reinf.filter(r => (r.tableType || 'ransaki') === _activeReinfTable);  // ← 追加
-  if(!rows.length){
+  if(!S.reinf.length){
     tbl.innerHTML=`<thead><tr><th class="rt-name">name</th><th class="rt-pair">通常</th><th class="rt-pair">城</th><th class="rt-del"></th></tr></thead><tbody><tr><td colspan="4" style="text-align:center;color:var(--t3);padding:1.5rem;font-size:12px">「+ 行追加」で行を追加してください</td></tr></tbody>`;
     return;
   }
@@ -1476,49 +1131,35 @@ function renderReinfTable(){
     <th class="rt-pair">城</th>
     <th class="rt-del"></th>
   </tr></thead><tbody>`;
-  rows.forEach(row=>{
-    const canEdit = currentRole === 'admin' || currentRole === 'reinf-admin';
+  S.reinf.forEach(row=>{
     const hasMember=!!row.memberName;
     html+=`<tr>
       <td class="rt-name">
-        <div class="name-cell${hasMember?' filled':''}"
-            ${canEdit ? `onclick="openReinfSearch(${row.id})"` : ''}
-            style="${canEdit ? '' : 'cursor:default;pointer-events:none'}">
-          ${hasMember?row.memberName:'盟員選択'}
+        <div class="name-cell${hasMember?' filled':''}" onclick="openReinfSearch(${row.id})">
+          ${hasMember?row.memberName:'クリックして検索...'}
         </div>
       </td>
       <td class="rt-pair">
-        <div class="pair-cell-inner"
-            ${canEdit ? `onclick="openPairEditModal(${row.id},'normal')"` : ''}
-            style="${canEdit ? '' : 'cursor:default;pointer-events:none'}">
+        <div class="pair-cell-inner" onclick="openPairEditModal(${row.id},'normal')">
           ${pairLabel(row.normalMain,row.normalSub)}
         </div>
       </td>
       <td class="rt-pair">
-        <div class="pair-cell-inner"
-            ${canEdit ? `onclick="openPairEditModal(${row.id},'castle')"` : ''}
-            style="${canEdit ? '' : 'cursor:default;pointer-events:none'}">
+        <div class="pair-cell-inner" onclick="openPairEditModal(${row.id},'castle')">
           ${pairLabel(row.castleMain,row.castleSub)}
         </div>
       </td>
-      <td class="rt-del">${canEdit ? `<div class="del-btn" onclick="deleteReinfRow(${row.id})" title="この行を削除">✕</div>` : ''}</td>
+      <td class="rt-del"><div class="del-btn" onclick="deleteReinfRow(${row.id})" title="この行を削除">✕</div></td>
     </tr>`;
   });
   html+='</tbody>';
   tbl.innerHTML=html;
 }
 
-function switchReinfTable(type, btn){
-  _activeReinfTable = type;
-  document.querySelectorAll('#page-reinf .sub-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderReinfTable();
-}
-
 async function deleteReinfRow(id){
   showLoading();
   try {
-    await fetch(`/api/reinf?id=${id}`, { method: 'DELETE' });
+    await fetch(`/api/reinf/${id}`, { method: 'DELETE' });
     await load();
   } catch(err) {
     console.error(err);
@@ -1526,108 +1167,6 @@ async function deleteReinfRow(id){
   } finally {
     hideLoading();
   }
-}
-
-/* ========== コンボボックス（検索付きドロップダウン） ========== */
-function buildComboOptions(chars, selected) {
-  return [
-    { value: '', label: '（なし）' },
-    ...sortByYomi(chars).map(c => ({ value: c.name, label: c.name, yomi: c.yomi || '' }))
-  ];
-}
-
-function comboHtml(id, chars, selected, placeholder) {
-  const label = selected ? selected : placeholder || '選択してください';
-  return `<div class="combo-wrap" id="combo-wrap-${id}">
-    <div class="combo-input" id="combo-display-${id}" onclick="toggleCombo('${id}')">${label}</div>
-    <span class="combo-arrow">▼</span>
-    <div class="combo-dropdown" id="combo-dropdown-${id}">
-      <div class="combo-search-box">
-        <input type="text" placeholder="名前・読みで絞り込み..." oninput="filterCombo('${id}',this.value)" autocomplete="off" id="combo-search-${id}">
-      </div>
-      <div class="combo-list" id="combo-list-${id}">
-        ${renderComboOptions(id, chars, selected, '')}
-      </div>
-    </div>
-    <input type="hidden" id="${id}" value="${selected||''}">
-  </div>`;
-}
-
-function renderComboOptions(id, chars, selected, q) {
-  const opts = buildComboOptions(chars, selected);
-  const filtered = q
-    ? opts.filter(o => !o.value || o.label.includes(q) || o.yomi.includes(q))
-    : opts;
-  if (!filtered.length) return '<div class="combo-option combo-empty">該当なし</div>';
-  return filtered.map(o =>
-    `<div class="combo-option${o.value === selected ? ' selected' : ''}" data-value="${o.value}" onclick="selectComboOption('${id}','${esc(o.value)}','${esc(o.label)}')">${o.label}</div>`
-  ).join('');
-}
-
-const _comboState = {};
-
-function toggleCombo(id) {
-  const dd = document.getElementById(`combo-dropdown-${id}`);
-  if (!dd) return;
-  const isOpen = dd.classList.contains('open');
-  // 他を全部閉じる
-  document.querySelectorAll('.combo-dropdown.open').forEach(el => {
-    el.classList.remove('open');
-  });
-  if (!isOpen) {
-    dd.classList.add('open');
-    const si = document.getElementById(`combo-search-${id}`);
-    if (si) { si.value = ''; si.focus(); }
-    // 選択肢を全再描画
-    const chars = _comboState[id] ? _comboState[id].chars : [];
-    const sel = document.getElementById(id) ? document.getElementById(id).value : '';
-    const list = document.getElementById(`combo-list-${id}`);
-    if (list) list.innerHTML = renderComboOptions(id, chars, sel, '');
-    // selectedにスクロール
-    setTimeout(() => {
-      const selEl = list && list.querySelector('.combo-option.selected');
-      if (selEl) selEl.scrollIntoView({ block: 'nearest' });
-    }, 30);
-  }
-  // クリック外で閉じる
-  setTimeout(() => {
-    document.addEventListener('click', function closeCombo(e) {
-      const wrap = document.getElementById(`combo-wrap-${id}`);
-      if (wrap && !wrap.contains(e.target)) {
-        const ddEl = document.getElementById(`combo-dropdown-${id}`);
-        if (ddEl) ddEl.classList.remove('open');
-      }
-      document.removeEventListener('click', closeCombo);
-    });
-  }, 0);
-}
-
-function filterCombo(id, q) { q=romaToHira(q||'');
-  const chars = _comboState[id] ? _comboState[id].chars : [];
-  const sel = document.getElementById(id) ? document.getElementById(id).value : '';
-  const list = document.getElementById(`combo-list-${id}`);
-  if (list) list.innerHTML = renderComboOptions(id, chars, sel, q);
-}
-
-function selectComboOption(id, value, label) {
-  const hidden = document.getElementById(id);
-  if (hidden) hidden.value = value;
-  const display = document.getElementById(`combo-display-${id}`);
-  if (display) display.textContent = value ? label : '（なし）';
-  const dd = document.getElementById(`combo-dropdown-${id}`);
-  if (dd) dd.classList.remove('open');
-  // リスト再描画でselectedを更新
-  const chars = _comboState[id] ? _comboState[id].chars : [];
-  const list = document.getElementById(`combo-list-${id}`);
-  if (list) list.innerHTML = renderComboOptions(id, chars, value, '');
-}
-
-function initCombo(id, chars, selected) {
-  _comboState[id] = { chars };
-  const display = document.getElementById(`combo-display-${id}`);
-  if (display) display.textContent = selected || '（なし）';
-  const hidden = document.getElementById(id);
-  if (hidden) hidden.value = selected || '';
 }
 
 function openPairEditModal(rowId,type){
@@ -1644,27 +1183,29 @@ function openPairEditModal(rowId,type){
   const syncBtn=hasSyncSrc
     ?`<button class="btn" onclick="syncPairFromOther(${rowId},'${type}')">← ${otherLabel}から同期</button>`
     :'';
+  const opts=sortByYomi(S.chars).map(c=>`<option value="${c.name}"${c.name===curMain?' selected':''}>${c.name}</option>`).join('');
+  const optsS=sortByYomi(S.chars).map(c=>`<option value="${c.name}"${c.name===curSub?' selected':''}>${c.name}</option>`).join('');
   openModal(`pair-edit`,`<h3>${label}ペアを変更</h3>
     <div class="field"><label>大将</label>
-      ${comboHtml('pe-main', S.chars, curMain, '（なし）')}
+      <select id="pe-main"><option value=""></option>${opts}</select>
     </div>
     <div class="field"><label>副将</label>
-      ${comboHtml('pe-sub', S.chars, curSub, '（なし）')}
+      <select id="pe-sub"><option value=""${!curSub?' selected':''}>なし</option>${optsS}</select>
     </div>
     <div class="modal-acts">
       ${syncBtn}
       <button class="btn" onclick="closeModal()">キャンセル</button>
       <button class="btn pri" onclick="savePairEdit(${rowId},'${type}')">保存</button>
     </div>`);
-  initCombo('pe-main', S.chars, curMain);
-  initCombo('pe-sub', S.chars, curSub);
 }
 function syncPairFromOther(rowId,type){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
   const otherMain=type==='normal'?(row.castleMain||''):(row.normalMain||'');
   const otherSub =type==='normal'?(row.castleSub ||''):(row.normalSub ||'');
-  selectComboOption('pe-main', otherMain, otherMain||'（なし）');
-  selectComboOption('pe-sub', otherSub, otherSub||'（なし）');
+  const mainSel=document.getElementById('pe-main');
+  const subSel=document.getElementById('pe-sub');
+  if(mainSel) mainSel.value=otherMain;
+  if(subSel)  subSel.value=otherSub;
 }
 async function savePairEdit(rowId,type){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
@@ -1674,9 +1215,8 @@ async function savePairEdit(rowId,type){
   const newSub=document.getElementById('pe-sub').value||null;
   row[mainKey]=newMain;
   row[subKey]=newSub;
-  showLoading();
   try {
-    await fetch(`/api/reinf?id=${rowId}`, {
+    await fetch(`/api/reinf/${rowId}`, {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -1689,8 +1229,6 @@ async function savePairEdit(rowId,type){
     });
   } catch(err) {
     console.error(err);
-  } finally {
-    hideLoading();
   }
   renderReinfTable();closeModal();
 }
@@ -1699,12 +1237,12 @@ async function savePairEdit(rowId,type){
 function openReinfSearch(rowId){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
   const prevSortMode=RS.sortMode||'rar';
-  RS={rowId,mainRar:[],mainRank:[],subRar:[],subRank:[],castleMainRar:[],castleMainRank:[],castleSubRar:[],castleSubRank:[],roleFilter:[_activeReinfTable==='ransaki'?'乱咲':'蕾'],sortMode:prevSortMode,dualMode:false};
+  RS={rowId,mainRar:[],mainRank:[],subRar:[],subRank:[],castleMainRar:[],castleMainRank:[],castleSubRar:[],castleSubRank:[],roleFilter:[],sortMode:prevSortMode,dualMode:false};
   // ソートボタン表示を同期
   const onStyle='background:#EDE5D8;color:#634B38;border-color:#B4A494';
   const rarBtn=document.getElementById('rs-sort-rar');const rankBtn=document.getElementById('rs-sort-rank');
-  if(rarBtn){rarBtn.className='f-btn'+(prevSortMode==='rar'?' on':'');rarBtn.style.cssText='white-space:nowrap';}
-  if(rankBtn){rankBtn.className='f-btn'+(prevSortMode==='rank'?' on':'');rankBtn.style.cssText='white-space:nowrap';}
+  if(rarBtn){rarBtn.className='f-btn'+(prevSortMode==='rar'?' on':'');rarBtn.style.cssText=(prevSortMode==='rar'?onStyle+';':'')+'white-space:nowrap';}
+  if(rankBtn){rankBtn.className='f-btn'+(prevSortMode==='rank'?' on':'');rankBtn.style.cssText=(prevSortMode==='rank'?onStyle+';':'')+'white-space:nowrap';}
   const dualMode=!!(row.normalMain&&row.castleMain&&(row.normalMain!==row.castleMain||row.normalSub!==row.castleSub));
   RS.dualMode=dualMode;
   const normalPanel=document.querySelector('.reinf-search-filters');
@@ -1742,6 +1280,8 @@ function openReinfSearch(rowId){
     renderRSFilterBtns('rs-sub-rar',subCd?subCd.rars:ALL_RARITIES,RS.subRar,'sub-rar');
     renderRSFilterBtns('rs-sub-rank',subCd?subCd.ranks:ALL_RANKS,RS.subRank,'sub-rank');
   }
+  const allRoles=[...new Set(S.members.map(m=>m.role))].filter(r=>r!=='その他');
+  document.getElementById('rs-role').innerHTML=allRoles.map(r=>`<button class="f-btn" onclick="toggleRSRole('${esc(r)}')">${r}</button>`).join('');
   document.getElementById('reinf-search-overlay').style.display='flex';
   renderRSResults();
 }
@@ -1750,7 +1290,7 @@ function renderRSFilterBtns(elId,options,selArr,key){
   const isRar=key.endsWith('rar');
   document.getElementById(elId).innerHTML=options.map(r=>{const on=selArr.includes(r);const s=isRar?(RAR_S[r]||{}):null;const top=!isRar&&TOP_RANKS.includes(r);
     let style='';if(on){style=isRar&&s?`background:${s.bg};color:${s.c};border-color:${s.bd}`:top?'background:#EEEDFE;color:#3C3489;border-color:#AFA9EC':'background:#EDE5D8;color:#634B38;border-color:#B4A494';}
-    return`<button class="f-btn${on?' on':''}" onclick="toggleRSFilter('${key}','${esc(r)}')">${r}</button>`;}).join('');
+    return`<button class="f-btn${on?' on':''}" onclick="toggleRSFilter('${key}','${esc(r)}')" style="${style}">${r}</button>`;}).join('');
 }
 
 function toggleRSFilter(key,val){
@@ -1783,6 +1323,12 @@ function toggleRSFilter(key,val){
       renderRSFilterBtns('rs-castle-sub-rank',castleSubCd?castleSubCd.ranks:ALL_RANKS,RS.castleSubRank,'castle-sub-rank');
     }
   }
+  renderRSResults();
+}
+function toggleRSRole(val){const i=RS.roleFilter.indexOf(val);if(i>=0)RS.roleFilter.splice(i,1);else RS.roleFilter.push(val);
+  const allRoles=[...new Set(S.members.map(m=>m.role))];
+  document.getElementById('rs-role').innerHTML=allRoles.map(r=>{const on=RS.roleFilter.includes(r);
+    return`<button class="f-btn${on?' on':''}" onclick="toggleRSRole('${esc(r)}')" style="${on?'background:#EDE5D8;color:#634B38;border-color:#B4A494':''}">${r}</button>`;}).join('');
   renderRSResults();
 }
 
@@ -1863,8 +1409,8 @@ function setRSSort(mode){
   document.getElementById('rs-sort-rar').className='f-btn'+(mode==='rar'?' on':'');
   document.getElementById('rs-sort-rank').className='f-btn'+(mode==='rank'?' on':'');
   const onStyle='background:#EDE5D8;color:#634B38;border-color:#B4A494';
-  document.getElementById('rs-sort-rar').style.cssText='white-space:nowrap';
-  document.getElementById('rs-sort-rank').style.cssText='white-space:nowrap';
+  document.getElementById('rs-sort-rar').style.cssText=(mode==='rar'?onStyle+';':'')+'white-space:nowrap';
+  document.getElementById('rs-sort-rank').style.cssText=(mode==='rank'?onStyle+';':'')+'white-space:nowrap';
   renderRSResults();
 }
 
@@ -1925,22 +1471,11 @@ function renderRSResults(){
   }).join('');
 }
 
-// 変更後
 async function setReinfMember(rowId,name){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
-
-  // 同じtableType内で既に同名の行があればローカルもnullにする
-  if(name){
-    S.reinf.forEach(r=>{
-      if(r.id!==rowId && r.memberName===name && (r.tableType||'ransaki')===(row.tableType||'ransaki')){
-        r.memberName=null;
-      }
-    });
-  }
-
   row.memberName=name||null;
   try {
-    await fetch(`/api/reinf?id=${rowId}`, {
+    await fetch(`/api/reinf/${rowId}`, {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -1949,7 +1484,6 @@ async function setReinfMember(rowId,name){
         normalSub: row.normalSub,
         castleMain: row.castleMain,
         castleSub: row.castleSub,
-        tableType: row.tableType||'ransaki',
       })
     });
   } catch(err) {
@@ -2065,30 +1599,44 @@ function openShukuenAddModal(prefix,idx){
   const available=S.chars.filter(c=>!usedInSlot.includes(c.name));
   openModal('shukuen-add',`<h3>宿縁キャラを追加</h3>
     <div class="field">
-      ${comboHtml('shukuen-char-combo', available, '', '-- キャラを選択 --')}
+      <input type="text" id="shukuen-search" placeholder="名前・読み仮名で絞り込み" style="width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;margin-bottom:8px" oninput="filterShukuenSel()">
+      <select id="shukuen-char-sel" size="6" style="width:100%;font-size:14px;border:1px solid var(--bm);border-radius:8px;padding:4px">
+        <option value="">-- 選択 --</option>
+        ${sortByYomi(available).map(c=>`<option value="${c.name}" data-yomi="${c.yomi||''}">${c.name}</option>`).join('')}
+      </select>
     </div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
       <button class="btn" onclick="addShukuenDummy()">？を追加</button>
       <button class="btn pri" onclick="addShukuenMember()">追加</button>
     </div>`);
-  _comboState['shukuen-char-combo']={chars:available};
 }
 function openShukuenChangeModal(prefix,idx,changeIdx){
   shukuenAddTarget={prefix,idx,changeIdx};
   const arr=prefix==='cn'?cnShukuens:cuShukuens;
   const usedInSlot=arr[idx].members.filter((n,i)=>n!=='?'&&i!==changeIdx);
   const available=S.chars.filter(c=>!usedInSlot.includes(c.name));
-  const currentName=arr[idx].members[changeIdx]&&arr[idx].members[changeIdx]!=='?'?arr[idx].members[changeIdx]:'';
   openModal('shukuen-add',`<h3>宿縁キャラを変更</h3>
     <div class="field">
-      ${comboHtml('shukuen-char-combo', available, currentName, '-- キャラを選択 --')}
+      <input type="text" id="shukuen-search" placeholder="名前・読み仮名で絞り込み" style="width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;margin-bottom:8px" oninput="filterShukuenSel()">
+      <select id="shukuen-char-sel" size="6" style="width:100%;font-size:14px;border:1px solid var(--bm);border-radius:8px;padding:4px">
+        <option value="">-- 選択 --</option>
+        ${sortByYomi(available).map(c=>`<option value="${c.name}" data-yomi="${c.yomi||''}">${c.name}</option>`).join('')}
+      </select>
     </div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
       <button class="btn pri" onclick="addShukuenMember()">変更</button>
     </div>`);
-  _comboState['shukuen-char-combo']={chars:available};
+}
+function filterShukuenSel(){
+  const q=(document.getElementById('shukuen-search')?.value||'').trim();
+  const sel=document.getElementById('shukuen-char-sel');if(!sel)return;
+  Array.from(sel.options).forEach(opt=>{
+    if(!opt.value){opt.style.display='';return;}
+    const name=opt.value;const yomi=opt.dataset.yomi||'';
+    opt.style.display=(!q||name.includes(q)||yomi.includes(q))?'':'none';
+  });
 }
 function addShukuenDummy(){
   const {prefix,idx}=shukuenAddTarget;
@@ -2098,7 +1646,7 @@ function addShukuenDummy(){
   closeModal();
 }
 function addShukuenMember(){
-  const name=document.getElementById('shukuen-char-combo')?.value||'';
+  const name=document.getElementById('shukuen-char-sel').value;
   if(!name)return;
   const {prefix,idx,changeIdx}=shukuenAddTarget;
   const arr=prefix==='cn'?cnShukuens:cuShukuens;
@@ -2111,32 +1659,12 @@ function addShukuenMember(){
   closeModal();
 }
 
-function shukuenLevel(memberChar, charDef){
-  if(!memberChar || !memberChar.ranks || !memberChar.ranks.length) return null;
-
-  const ranks = memberChar.ranks;
-  const hasUR = charDef?.rars?.includes('UR');
-
-  // ① 紫（技極以上）
-  if(ranks.includes('裏技極') || ranks.includes('技極')){
-    return 'gikkyoku';
-  }
-
-  // ② 緑（最大）
-  if(hasUR){
-    // URあり → 表6以上
-    if(ranks.includes('表6')){
-      return 'omote6';
-    }
-  }else{
-    // URなし → 表5以上
-    if(
-      ranks.includes('表5')){
-      return 'omote6';
-    }
-  }
-
-  // ③ 黄（所持のみ）
+function shukuenLevel(memberChar){
+  if(!memberChar||!memberChar.ranks||!memberChar.ranks.length) return null;
+  const ranks=memberChar.ranks;
+  if(ranks.includes('全技極')||ranks.includes('裏技極')||ranks.includes('技極')) return 'gikkyoku';
+  const OMOTE6_AND_ABOVE=['表6','裏1','裏2','裏3','裏4','裏5','裏6'];
+  if(OMOTE6_AND_ABOVE.some(r=>ranks.includes(r))) return 'omote6';
   return 'soji';
 }
 
@@ -2146,12 +1674,12 @@ function shukuenBadgeHtml(member, charDef){
   const enabledSlots=slots.filter(x=>x&&x.enabled);
   const badges=[];
   slots.forEach((sh,si)=>{
-    if(!sh||!sh.enabled||!sh.members) return;
+    if(!sh||!sh.enabled||!sh.members||!sh.members.length) return;
     let g=0,o=0,s=0;
     sh.members.forEach(sName=>{
       if(sName==='?') return;
       const mc=member.chars.find(c=>c.name===sName);
-      const lv=shukuenLevel(mc, S.chars.find(x=>x.name===sName));
+      const lv=shukuenLevel(mc);
       if(lv==='gikkyoku') g++;
       else if(lv==='omote6') o++;
       else if(lv==='soji') s++;
@@ -2161,9 +1689,9 @@ function shukuenBadgeHtml(member, charDef){
       ?`<span style="font-size:10px;color:var(--t2)">宿縁${si+1}</span>`
       :`<span style="font-size:10px;color:var(--t2)">宿縁</span>`;
     let pills='';
-    pills+=`<span class="sh-pill gikkyoku"><span class="sh-pill-dot"></span>${g}</span>`;
-    pills+=`<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
-    pills+=`<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
+    if(g) pills+=`<span class="sh-pill gikkyoku"><span class="sh-pill-dot"></span>${g}</span>`;
+    if(o) pills+=`<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
+    if(s) pills+=`<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
     badges.push(`<div class="sh-badge-wrap">${label}${pills}<span style="font-size:10px;color:var(--t3)">/${total}</span></div>`);
   });
   if(!badges.length) return '';
@@ -2182,7 +1710,7 @@ function shukuenPt(member, charDef){
     sh.members.forEach(sName=>{
       if(sName==='?') return;
       const mc=member.chars.find(c=>c.name===sName);
-      const lv=shukuenLevel(mc, S.chars.find(x=>x.name===sName));
+      const lv=shukuenLevel(mc);
       if(lv==='gikkyoku') total+=3;
       else if(lv==='omote6') total+=2;
       else if(lv==='soji') total+=1;
@@ -2215,282 +1743,40 @@ function initCharNewForm(){
 let _cnImg = null;
 let _cuImg = null;
 
-// ── クロッパー状態 ──────────────────────────────────
-let _cropState = {
-  prefix: null,
-  imgEl: null,
-  stageW: 0, stageH: 0,
-  holeSize: 0,          // 正方形の一辺 px
-  scale: 1,
-  ox: 0, oy: 0,         // 画像中心オフセット（ステージ中心からの差分）
-  naturalW: 0, naturalH: 0,
-  dragging: false,
-  lastX: 0, lastY: 0,
-  // ピンチ
-  pinching: false,
-  pinchDist0: 0,
-  pinchScale0: 1,
-};
-
-function openCropModal(prefix, dataUrl) {
-  const modal = document.getElementById('img-crop-modal');
-  const stage = document.getElementById('crop-stage');
-  const imgEl = document.getElementById('crop-img');
-  const zoom  = document.getElementById('crop-zoom');
-
-  modal.classList.remove('hidden');
-
-  const initCrop = () => {
-  requestAnimationFrame(() => {
-  const sw = stage.clientWidth;
-  const sh = stage.clientHeight || sw;
-    const hole = Math.round(sw * 0.78); // 正方形サイズ（ステージの78%）
-
-    const cs = _cropState;
-    cs.prefix = prefix;
-    cs.imgEl = imgEl;
-    cs.stageW = sw; cs.stageH = sh;
-    cs.holeSize = hole;
-    cs.naturalW = imgEl.naturalWidth;
-    cs.naturalH = imgEl.naturalHeight;
-    cs.ox = 0; cs.oy = 0;
-
-    // 初期スケール：短辺がholeにぴったり収まるよう
-    const fitScale = hole / Math.min(cs.naturalW, cs.naturalH);
-    cs.scale = fitScale;
-    zoom.min = fitScale;
-    zoom.max = fitScale * 7;
-    zoom.step = fitScale * 0.01;
-    zoom.value = fitScale;
-
-    // SVGのホール位置を設定
-    updateCropHole(sw, sh, hole);
-    applyTransform();
-    updateCropPreview();
-  });
-  };
-
-  // 画像のデコード完了を待ってから初期化する（iPhoneの大きい写真で
-  // デコードが遅れ naturalWidth が 0 のまま処理が進み、真っ黒な
-  // 画像が書き出される不具合への対策）
-  imgEl.onload = initCrop;
-  imgEl.src = dataUrl;
-  if (imgEl.complete && imgEl.naturalWidth > 0) {
-    // すでにキャッシュ等で読み込み済みの場合は即実行
-    initCrop();
-  }
-
-  zoom.oninput = () => {
-    setCropScale(parseFloat(zoom.value));
-    clampOffset();
-    applyTransform();
-    updateCropPreview();
-  };
-
-  // ── マウスドラッグ ──
-  stage.onmousedown = e => {
-    _cropState.dragging = true;
-    _cropState.lastX = e.clientX;
-    _cropState.lastY = e.clientY;
-    e.preventDefault();
-  };
-  window.onmousemove = e => {
-    if(!_cropState.dragging) return;
-    _cropState.ox += e.clientX - _cropState.lastX;
-    _cropState.oy += e.clientY - _cropState.lastY;
-    _cropState.lastX = e.clientX;
-    _cropState.lastY = e.clientY;
-    clampOffset();
-    applyTransform();
-    updateCropPreview();
-  };
-  window.onmouseup = () => { _cropState.dragging = false; };
-
-  // ── マウスホイールズーム ──
-  stage.onwheel = e => {
-    e.preventDefault();
-    const zoom = document.getElementById('crop-zoom');
-    const delta = e.deltaY > 0 ? -0.05 : 0.05;
-    const newScale = Math.min(Math.max(
-      _cropState.scale + delta * _cropState.scale,
-      parseFloat(zoom.min)
-    ), parseFloat(zoom.max));
-    setCropScale(newScale);
-    zoom.value = _cropState.scale;
-    clampOffset();
-    applyTransform();
-    updateCropPreview();
-  };
-
-  // ── タッチ（1本：ドラッグ / 2本：ピンチ） ──
-  stage.ontouchstart = e => {
-    if(e.touches.length === 2){
-      _cropState.pinching = true;
-      _cropState.pinchDist0 = pinchDist(e.touches);
-      _cropState.pinchScale0 = _cropState.scale;
-    } else {
-      _cropState.dragging = true;
-      _cropState.lastX = e.touches[0].clientX;
-      _cropState.lastY = e.touches[0].clientY;
-    }
-    e.preventDefault();
-  };
-  stage.ontouchmove = e => {
-    if(_cropState.pinching && e.touches.length === 2){
-      const ratio = pinchDist(e.touches) / _cropState.pinchDist0;
-      const zoom = document.getElementById('crop-zoom');
-      const newScale = Math.min(Math.max(_cropState.pinchScale0 * ratio, parseFloat(zoom.min)), parseFloat(zoom.max));
-      setCropScale(newScale);
-      zoom.value = _cropState.scale;
-      clampOffset();
-      applyTransform();
-      updateCropPreview();
-    } else if(_cropState.dragging && e.touches.length === 1){
-      _cropState.ox += e.touches[0].clientX - _cropState.lastX;
-      _cropState.oy += e.touches[0].clientY - _cropState.lastY;
-      _cropState.lastX = e.touches[0].clientX;
-      _cropState.lastY = e.touches[0].clientY;
-      clampOffset();
-      applyTransform();
-      updateCropPreview();
-    }
-    e.preventDefault();
-  };
-  stage.ontouchend = e => {
-    if(e.touches.length < 2) _cropState.pinching = false;
-    if(e.touches.length === 0) _cropState.dragging = false;
-  };
-}
-
-function pinchDist(touches){
-  const dx = touches[0].clientX - touches[1].clientX;
-  const dy = touches[0].clientY - touches[1].clientY;
-  return Math.sqrt(dx*dx + dy*dy);
-}
-
-function updateCropHole(sw, sh, hole){
-  const svg = document.getElementById('crop-svg');
-  svg.setAttribute('width', sw);
-  svg.setAttribute('height', sh);
-  svg.setAttribute('viewBox', `0 0 ${sw} ${sh}`);
-  const x = (sw - hole) / 2;
-  const y = (sh - hole) / 2;
-  ['crop-hole','crop-border'].forEach(id => {
-    const el = document.getElementById(id);
-    el.setAttribute('x', x);
-    el.setAttribute('y', y);
-    el.setAttribute('width', hole);
-    el.setAttribute('height', hole);
-  });
-}
-
-// プレビュー枠（ホール）の中心を軸にスケールを変更する
-function setCropScale(newScale){
-  const cs = _cropState;
-  const ratio = newScale / cs.scale;
-  cs.ox *= ratio;
-  cs.oy *= ratio;
-  cs.scale = newScale;
-}
-
-function applyTransform(){
-  const cs = _cropState;
-  const cx = cs.stageW / 2 + cs.ox;
-  const cy = cs.stageH / 2 + cs.oy;
-  cs.imgEl.style.left = '0px';
-  cs.imgEl.style.top  = '0px';
-  cs.imgEl.style.width  = cs.naturalW * cs.scale + 'px';
-  cs.imgEl.style.height = cs.naturalH * cs.scale + 'px';
-  cs.imgEl.style.transform = `translate(${cx - cs.naturalW*cs.scale/2}px, ${cy - cs.naturalH*cs.scale/2}px)`;
-}
-
-function clampOffset(){
-  const cs = _cropState;
-  const hw = cs.naturalW * cs.scale / 2;
-  const hh = cs.naturalH * cs.scale / 2;
-  const hs = cs.holeSize / 2;
-  // 正方形の端が画像の端より外に出ないよう制限
-  const maxOx = hw - hs;
-  const maxOy = hh - hs;
-  cs.ox = Math.max(-maxOx, Math.min(maxOx, cs.ox));
-  cs.oy = Math.max(-maxOy, Math.min(maxOy, cs.oy));
-}
-
-function updateCropPreview(){
-  const cs = _cropState;
-  const canvas = document.getElementById('crop-preview-canvas');
-  const ctx = canvas.getContext('2d');
-  const size = 80;
-  canvas.width = canvas.height = size;
-
-  // 正方形の左上（ステージ座標）
-  const hx = (cs.stageW - cs.holeSize) / 2;
-  const hy = (cs.stageH - cs.holeSize) / 2;
-  // 画像の左上（ステージ座標）
-  const imgLeft = cs.stageW/2 + cs.ox - cs.naturalW*cs.scale/2;
-  const imgTop  = cs.stageH/2 + cs.oy - cs.naturalH*cs.scale/2;
-  // 正方形内の画像座標（元画像ピクセル）
-  const srcX = (hx - imgLeft) / cs.scale;
-  const srcY = (hy - imgTop)  / cs.scale;
-  const srcS = cs.holeSize / cs.scale;
-
-  ctx.drawImage(cs.imgEl, srcX, srcY, srcS, srcS, 0, 0, size, size);
-}
-
-function closeCropModal(){
-  document.getElementById('img-crop-modal').classList.add('hidden');
-  // ファイル入力をリセット（同じファイルを再選択できるよう）
-  const prefix = _cropState.prefix;
-  if(prefix){
-    const inp = document.getElementById(`${prefix}-img-input`);
-    if(inp) inp.value = '';
-  }
-}
-
-async function confirmCrop(){
-  const cs = _cropState;
-  if (!cs.naturalW || !cs.naturalH) {
-    toast('画像の読み込みが完了していません。もう一度お試しください');
-    return;
-  }
-  const size = 400;
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext('2d');
-
-  const hx = (cs.stageW - cs.holeSize) / 2;
-  const hy = (cs.stageH - cs.holeSize) / 2;
-  const imgLeft = cs.stageW/2 + cs.ox - cs.naturalW*cs.scale/2;
-  const imgTop  = cs.stageH/2 + cs.oy - cs.naturalH*cs.scale/2;
-  const srcX = (hx - imgLeft) / cs.scale;
-  const srcY = (hy - imgTop)  / cs.scale;
-  const srcS = cs.holeSize / cs.scale;
-
-  ctx.drawImage(cs.imgEl, srcX, srcY, srcS, srcS, 0, 0, size, size);
-
-  canvas.toBlob(async blob => {
-    document.getElementById('img-crop-modal').classList.add('hidden');
-    const prefix = cs.prefix;
-    const previewUrl = URL.createObjectURL(blob);
-    renderImgPreview(prefix, previewUrl, true);
-    try {
-      const url = await uploadCharImage(blob);
-      if(prefix==='cn') _cnImg = url;
-      else              _cuImg = url;
-      renderImgPreview(prefix, url, false);
-    } catch(e) {
-      toast('画像のアップロードに失敗しました');
-      resetImgArea(prefix);
-    }
-  }, 'image/jpeg', 0.82);
-}
-
 function handleImgSelect(prefix, input){
   const file = input.files[0];
   if(!file) return;
   const reader = new FileReader();
-  reader.onload = e => openCropModal(prefix, e.target.result);
+  reader.onload = e => {
+    cropSquare(e.target.result, 400, async blob => {
+      const previewUrl = URL.createObjectURL(blob);
+      renderImgPreview(prefix, previewUrl, true);
+      try {
+        const url = await uploadCharImage(blob);
+        if(prefix==='cn') _cnImg = url;
+        else              _cuImg = url;
+        renderImgPreview(prefix, url, false);
+      } catch(e) {
+        toast('画像のアップロードに失敗しました');
+        resetImgArea(prefix);
+      }
+    });
+  };
   reader.readAsDataURL(file);
+}
+
+function cropSquare(src, size, cb){
+  const img = new Image();
+  img.onload = () => {
+    const s = Math.min(img.width, img.height);
+    const ox = (img.width  - s) / 2;
+    const oy = (img.height - s) / 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    canvas.getContext('2d').drawImage(img, ox, oy, s, s, 0, 0, size, size);
+    canvas.toBlob(cb, 'image/jpeg', 0.82);
+  };
+  img.src = src;
 }
 
 async function uploadCharImage(blob){
@@ -2529,15 +1815,13 @@ function resetImgArea(prefix){
   area.innerHTML = `<div class="img-upload-area">
     <input type="file" id="${prefix}-img-input" accept="image/*" onchange="handleImgSelect('${prefix}',this)">
     <div style="font-size:12px;color:var(--t2)">タップして画像を選択</div>
-    <div style="font-size:10px;color:var(--t3);margin-top:2px">トリミングして保存されます</div>
+    <div style="font-size:10px;color:var(--t3);margin-top:2px">正方形にトリミングして保存されます</div>
   </div>`;
 }
 
 async function addChar(){
   const name=document.getElementById('cn-name').value;
   const yomi=document.getElementById('cn-yomi').value.trim();
-  const sortedRars=ALL_RARITIES.filter(r=>cnSelRar.includes(r));
-  const sortedRanks=ALL_RANKS.filter(r=>cnSelRank.includes(r));
   showLoading();
   try {
     await fetch('/api/chars',{
@@ -2546,8 +1830,8 @@ async function addChar(){
       body:JSON.stringify({
         name,
         yomi,
-        rars:sortedRars,
-        ranks:sortedRanks,
+        rars:cnSelRar,
+        ranks:cnSelRank,
         shukuens:cnShukuens,
         exSotsui:cnExSotsui,
         img: _cnImg || null
@@ -2555,35 +1839,6 @@ async function addChar(){
     });
     await load();
     toast('追加しました');
-    // 宿縁に？が残っているキャラのうち、新キャラが該当するかもしれないものを提示
-    const candidates = S.chars.filter(cd => {
-      if(cd.name === name) return false;
-      const slots = cd.shukuens && cd.shukuens.length ? cd.shukuens : [cd.shukuen||{enabled:false,members:[]}];
-      return slots.some(sh => sh && sh.enabled && sh.members && sh.members.includes('?'));
-    });
-    if(candidates.length){
-      openModal('shukuen-hint',`<h3>宿縁の？候補</h3>
-        <p style="font-size:13px;color:var(--t2);margin:0 0 10px">「${esc(name)}」が宿縁キャラに含まれる可能性があるキャラ（宿縁に未確定の？があるもの）：</p>
-        <div style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto">
-          ${candidates.map(cd=>{
-            const slots=cd.shukuens&&cd.shukuens.length?cd.shukuens:[cd.shukuen||{enabled:false,members:[]}];
-            const slotInfo=slots.map((sh,i)=>{
-              if(!sh||!sh.enabled)return null;
-              const qCount=(sh.members||[]).filter(m=>m==='?').length;
-              if(!qCount)return null;
-              return `宿縁${i+1}（？×${qCount}）`;
-            }).filter(Boolean).join('、');
-            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;gap:8px">
-              <div>
-                <div style="font-size:13px;font-weight:500">${esc(cd.name)}</div>
-                <div style="font-size:11px;color:var(--t3);margin-top:2px">${slotInfo}</div>
-              </div>
-              <button class="btn" style="font-size:11px;padding:4px 10px;white-space:nowrap" onclick="closeModal();jumpToCharUpdate('${esc(cd.name)}')">確認する</button>
-            </div>`;
-          }).join('')}
-        </div>
-        <div class="modal-acts"><button class="btn pri" onclick="closeModal()">閉じる</button></div>`);
-    }
   } finally {
     hideLoading();
   }
@@ -2592,52 +1847,10 @@ async function addChar(){
 function sortByYomi(arr){ return [...arr].sort((a,b)=>(a.yomi||a.name).localeCompare(b.yomi||b.name,'ja')); }
 
 function renderCharUpdateSel(){
-  const hidden=document.getElementById('cu-sel');if(!hidden)return;
-  hidden.value='';
-  const disp=document.getElementById('cu-sel-display');if(disp)disp.value='';
+  const sel=document.getElementById('cu-sel');if(!sel)return;
+  sel.innerHTML='<option value="">-- 選択 --</option>'+sortByYomi(S.chars).map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
   const d=document.getElementById('cu-detail');if(d)d.style.display='none';
-  renderCuSelList('');
 }
-
-function renderCuSelList(q){ q=romaToHira(q||'');
-  const list=document.getElementById('cu-sel-list');if(!list)return;
-  const chars=sortByYomi(S.chars).filter(c=>!q||(c.name.includes(q)||(c.yomi||'').includes(q)));
-  if(!chars.length){
-    list.innerHTML='<div class="combo-option combo-empty">該当なし</div>';return;
-  }
-  const cur=document.getElementById('cu-sel').value;
-  list.innerHTML=chars.map(c=>`<div class="combo-option${c.name===cur?' selected':''}" data-name="${esc(c.name)}" data-yomi="${esc(c.yomi||'')}" onclick="pickCuSel('${esc(c.name)}')">${c.name}</div>`).join('');
-}
-
-function toggleCuSelCombo(){
-  const dd=document.getElementById('cu-sel-dropdown');if(!dd)return;
-  const open=dd.classList.toggle('open');
-  if(open){
-    const si=document.getElementById('cu-sel-search');if(si){si.value='';si.focus();}
-    renderCuSelList('');
-  }
-}
-
-function filterCuSelCombo(){
-  const q=(document.getElementById('cu-sel-search')?.value||'').trim();
-  renderCuSelList(q);
-}
-
-function pickCuSel(name){
-  document.getElementById('cu-sel').value=name;
-  const disp=document.getElementById('cu-sel-display');if(disp)disp.value=name;
-  const dd=document.getElementById('cu-sel-dropdown');if(dd)dd.classList.remove('open');
-  loadCharForUpdate();
-}
-
-// コンボ外クリックで閉じる
-document.addEventListener('click',function(e){
-  const wrap=document.getElementById('cu-sel-wrap');
-  if(wrap&&!wrap.contains(e.target)){
-    const dd=document.getElementById('cu-sel-dropdown');if(dd)dd.classList.remove('open');
-  }
-});
-
 function loadCharForUpdate(){
   const name=document.getElementById('cu-sel').value;
   const cd=S.chars.find(c=>c.name===name);
@@ -2672,14 +1885,12 @@ async function updateChar(){
   const oldName=document.getElementById('cu-sel').value;
   const name=document.getElementById('cu-name').value;
   const yomi=document.getElementById('cu-yomi').value.trim();
-  const sortedRars=ALL_RARITIES.filter(r=>cuSelRar.includes(r));
-  const sortedRanks=ALL_RANKS.filter(r=>cuSelRank.includes(r));
   showLoading();
   try {
     const body = {
       name, yomi,
-      rars:sortedRars,
-      ranks:sortedRanks,
+      rars:cuSelRar,
+      ranks:cuSelRank,
       shukuens:cuShukuens,
       exSotsui:cuExSotsui,
     };
@@ -2762,9 +1973,14 @@ function jumpToCharUpdate(charName){
   const updateTab = document.querySelector('#page-chars .sub-tab:nth-child(2)');
   if(updateTab) switchCharMode('update', updateTab);
 
+  // セレクトに値をセットしてイベントを発火
+  const sel = document.getElementById('cu-sel');
+  if(!sel) return;
+  sel.value = charName;
+  loadCharForUpdate();
+
   // 画面上部へスクロール
-  pickCuSel(charName);
-   window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function switchCharMode(mode,el){
@@ -2788,175 +2004,42 @@ function openMemberModal(mode){
     openModal('member-add',`<h3>メンバー追加</h3>
       <div class="field"><label>名前</label><input type="text" id="mm-name" placeholder=""></div>
       <div class="field"><label>所属</label>${roleSelect('mm-role')}</div>
-      <div class="field"><label>権限</label><select id="mm-member-role">
-        <option value="user">利用者</option>
-        <option value="reinf-admin">援軍管理者</option>
-        <option value="admin">管理者</option>
-      </select></div>
-      <div class="field"><label>パスワード</label><input type="password" id="mm-pw" placeholder="4文字以上(未入力：自動設定)"></div>
       <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="addMember()">追加</button></div>`);
   } else {
     if(!S.members.length){toast('メンバーがいません');return;}
     openModal('member-edit',`<h3>メンバー編集</h3>
       <div class="field"><label>メンバーを選択</label>
-        <div class="combo-wrap" id="me-sel-wrap">
-          <input type="text" class="combo-input" id="me-sel-display" placeholder="-- 選択 --" readonly onclick="toggleMeSelCombo()" autocomplete="off">
-          <span class="combo-arrow">▾</span>
-          <div class="combo-dropdown" id="me-sel-dropdown">
-            <div class="combo-search-box">
-              <input type="text" id="me-sel-search" placeholder="名前・IDで絞り込み..." oninput="filterMeSelCombo(this.value)" autocomplete="off">
-            </div>
-            <div class="combo-list" id="me-sel-list"></div>
-          </div>
-        </div></div>
+        <select id="me-sel" onchange="loadMemberEdit()"><option value="">-- 選択 --</option>${[...S.members].sort((a,b)=>a.name.localeCompare(b.name,'ja')).map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select></div>
       <div id="me-detail" style="display:none">
-        <div class="field"><label>ID</label><span id="me-id-label"></span></div>
         <div class="field"><label>名前</label><input type="text" id="me-name"></div>
         <div class="field"><label>所属</label>${roleSelect('me-role')}</div>
-        <div class="field"><label>権限</label><select id="me-member-role">
-          <option value="user">利用者</option>
-          <option value="reinf-admin">援軍管理者</option>
-          <option value="admin">管理者</option>
-        </select></div>
-        <div class="field"><label>パスワード変更</label><input type="password" id="me-pw" placeholder="変更する場合のみ入力"></div>
         <div class="modal-acts"><button class="btn danger" onclick="deleteMember()">削除</button><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="saveMemberEdit()">保存</button></div>
       </div>`);
-    _renderMeSelList('');
   }
 }
 function closeModal(){document.getElementById('modal-overlay').style.display='none';}
-
-function loadMemberEdit(){
-  const id = _meSelId;
-  const m=S.members.find(x=>x.id===id);
-  if(!m){document.getElementById('me-detail').style.display='none';return;}
-  const idLabel=document.getElementById('me-id-label');
-  if(idLabel) idLabel.textContent=m.id;
-  document.getElementById('me-name').value=m.name;
-  const roleEl=document.getElementById('me-role');
-  roleEl.value=ROLE_OPTIONS.includes(m.role)?m.role:'その他';
-  // auth_roleの現在の権限をセット（メンバーデータにあればそれを使う）
-  const mrEl=document.getElementById('me-member-role');
-  if(mrEl) mrEl.value=(m.memberRole||m.auth_role||'user');
-  const pwEl=document.getElementById('me-pw');
-  if(pwEl) pwEl.value='';
-  document.getElementById('me-detail').style.display='block';
-}
-
-let _pendingMemberEdit = null;
-
+function loadMemberEdit(){const id=parseInt(document.getElementById('me-sel').value);const m=S.members.find(x=>x.id===id);if(!m){document.getElementById('me-detail').style.display='none';return;}document.getElementById('me-name').value=m.name;const roleEl=document.getElementById('me-role');roleEl.value=ROLE_OPTIONS.includes(m.role)?m.role:'その他';document.getElementById('me-detail').style.display='block';}
 async function saveMemberEdit(){
-  const id = _meSelId;
+  const id=parseInt(document.getElementById('me-sel').value);
   const name=document.getElementById('me-name').value;
   const role=document.getElementById('me-role').value;
-  const memberRole=document.getElementById('me-member-role').value;
-  const password=(document.getElementById('me-pw').value||'').trim();
-  if(password && password.length<4){toast('パスワードは4文字以上にしてください');return;}
-
-  if(password && id === currentMemberId){
-    _pendingMemberEdit = {id,name,role,memberRole,password};
-    const roleLabel = {user:'利用者','reinf-admin':'援軍管理者',admin:'管理者'}[memberRole] || memberRole;
-    openModal('member-edit-confirm',`<h3>パスワードを変更しますか？</h3>
-      <p style="font-size:13px;color:var(--t2);margin:0 0 8px">変更すると自動的にログアウトされ、新しいパスワードで再度ログインが必要になります。</p>
-      <div class="field"><label>ID</label><div class="added-val">${id}</div></div>
-      <div class="field"><label>パスワード</label><div class="added-val">${password}</div></div>
-      <div class="field"><label>名前</label><div class="added-val">${name}</div></div>
-      <div class="field"><label>所属</label><div class="added-val">${role || '―'}</div></div>
-      <div class="field"><label>権限</label><div class="added-val">${roleLabel}</div></div>
-      <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="commitMemberEdit()">変更してログアウト</button></div>`);
-    return;
-  }
-  await commitMemberEdit({id,name,role,memberRole,password});
-}
-
-// ===== メンバー編集 combo =====
-let _meSelId = null; // 選択中のmember id
-
-function _renderMeSelList(q) {
-  const list = document.getElementById('me-sel-list');
-  if (!list) return;
-  const sorted = [...S.members].sort((a, b) => a.name.localeCompare(b.name, 'ja'));
-  const filtered = q
-    ? sorted.filter(m => m.name.toLowerCase().includes(q.toLowerCase()) || String(m.id).includes(q))
-    : sorted;
-  if (!filtered.length) {
-    list.innerHTML = '<div class="combo-option combo-empty">該当なし</div>';
-    return;
-  }
-  list.innerHTML = filtered.map(m =>
-    `<div class="combo-option${_meSelId === m.id ? ' selected' : ''}" onclick="selectMeSel(${m.id},'${m.name.replace(/'/g,"\\'")}')">
-      ${m.name}<span style="font-size:11px;color:var(--t3);margin-left:6px">ID:${m.id}</span>
-    </div>`
-  ).join('');
-}
-
-function toggleMeSelCombo() {
-  const dd = document.getElementById('me-sel-dropdown');
-  if (!dd) return;
-  const isOpen = dd.classList.contains('open');
-  dd.classList.toggle('open', !isOpen);
-  if (!isOpen) {
-    const s = document.getElementById('me-sel-search');
-    if (s) { s.value = ''; s.focus(); }
-    _renderMeSelList('');
-  }
-}
-
-function filterMeSelCombo(q) {
-  _renderMeSelList(q);
-}
-
-function selectMeSel(id, name) {
-  _meSelId = id;
-  const disp = document.getElementById('me-sel-display');
-  if (disp) disp.value = name;
-  const dd = document.getElementById('me-sel-dropdown');
-  if (dd) dd.classList.remove('open');
-  loadMemberEdit();
-}
-
-async function commitMemberEdit(pending){
-  const {id,name,role,memberRole,password} = pending || _pendingMemberEdit;
-  _pendingMemberEdit = null;
   showLoading();
   try {
-    const res = await fetch(`/api/members/${id}`,{
+    await fetch(`/api/members/${id}`,{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name,role,memberRole,password:password||undefined})
+      body:JSON.stringify({name,role})
     });
-    if(!res.ok){ throw new Error('保存失敗'); }
-    const data = await res.json();
-    // 自分自身のパスワードを変更した場合はセッションが無効になるため再ログインへ
-    if(password && id === currentMemberId){
-      closeModal();
-      toast('パスワードを変更しました。再度ログインしてください');
-      doLogout();
-      return;
-    }
-
     await load();
     closeModal();
-    const roleLabel = {user:'利用者','reinf-admin':'援軍管理者',admin:'管理者'}[data.memberRole] || data.memberRole;
-    openModal('member-updated',`<h3>メンバーを更新しました</h3>
-      <div class="field"><label>ID</label><div class="added-val">${data.id}</div></div>
-      ${data.updatedPassword ? `<div class="field"><label>パスワード</label><div class="added-val">${data.updatedPassword}</div></div>` : ''}
-      <div class="field"><label>名前</label><div class="added-val">${data.name}</div></div>
-      <div class="field"><label>所属</label><div class="added-val">${data.role || '―'}</div></div>
-      <div class="field"><label>権限</label><div class="added-val">${roleLabel}</div></div>
-      <div class="modal-acts"><button class="btn pri" onclick="closeModal()">閉じる</button></div>`);
-  } catch(err){
-    console.error(err);
-    toast('エラーが発生しました');
+    toast('更新しました');
   } finally {
     hideLoading();
   }
 }
 
 async function deleteMember(){
-  const id = _meSelId;
-  const name=(document.getElementById('me-name').value||'このメンバー').trim();
-  if(!confirm(`${name} を削除しますか？\n育成データもすべて削除されます。`)) return;
+  const id=parseInt(document.getElementById('me-sel').value);
   showLoading();
   try {
     await fetch(`/api/members/${id}`,{ method:'DELETE' });
@@ -2971,30 +2054,18 @@ async function deleteMember(){
 async function addMember(){
   const name=(document.getElementById('mm-name').value||'').trim();
   const role=(document.getElementById('mm-role').value||'').trim();
-  const memberRole=(document.getElementById('mm-member-role').value||'user');
-  const password=(document.getElementById('mm-pw').value||'').trim();
   if(!name)return;
-  if(password && password.length<4){toast('パスワードは4文字以上にしてください');return;}
   showLoading();
   try {
     const res = await fetch('/api/members', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, role, memberRole, password: password || undefined })
+      body: JSON.stringify({ name, role })
     });
     if(!res.ok){ throw new Error('保存失敗'); }
-    const data = await res.json();
     await load();
     closeModal();
-    // 追加完了ポップアップ
-    const roleLabel = {user:'利用者','reinf-admin':'援軍管理者',admin:'管理者'}[data.memberRole] || data.memberRole;
-    openModal('member-added',`<h3>メンバーを追加しました</h3>
-      <div class="field"><label>ID</label><div class="added-val">${data.id}</div></div>
-      <div class="field"><label>パスワード</label><div class="added-val">${data.initialPassword}</div></div>
-      <div class="field"><label>名前</label><div class="added-val">${data.name}</div></div>
-      <div class="field"><label>所属</label><div class="added-val">${data.role || '―'}</div></div>
-      <div class="field"><label>権限</label><div class="added-val">${roleLabel}</div></div>
-      <div class="modal-acts"><button class="btn pri" onclick="closeModal()">閉じる</button></div>`);
+    toast('追加しました');
   } catch(err){
     console.error(err);
     toast('エラーが発生しました');
@@ -3011,7 +2082,6 @@ function switchTab(tab,el){
   if(tab==='search'){renderFilters();renderSearch();}
   if(tab==='reinf')renderReinfTable();
   if(tab==='chars'){initCharNewForm();renderCharListDisplay();}
-  if(tab==='survey')initSurveyPage();
 }
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
@@ -3022,11 +2092,10 @@ function hideLoading(){document.getElementById('loading-overlay').classList.remo
 
 /* ========== ログイン ========== */
 let currentRole = null;
-let currentMemberId = null;
 
 async function manualReload(){
   const btn = document.getElementById('reload-btn');
-  if(btn){ btn.disabled = true; btn.textContent = '更新中'; }
+  if(btn){ btn.disabled = true; btn.textContent = '更新中...'; }
   try {
     await load();
     toast('最新データに更新しました');
@@ -3037,600 +2106,44 @@ async function manualReload(){
   }
 }
 
-/* ========== ④ アンケート ========== */
-// API: /api/surveys (GET/POST), /api/surveys?id=XX (GET/POST/DELETE)
-//      /api/surveys?action=vote (POST), /api/surveys?action=voters&id=XX (GET)
-
-let _surveys = [];           // キャッシュ
-let _activeSurveyId = null;  // 詳細表示中のアンケートID
-let _pendingVotes = new Set(); // 仮選択中のペアID（確定前）
-let _confirmedVotes = new Set(); // 確定済みペアID（サーバーと同期済み）
-
-function getSvMember(){
-  if(!currentMemberId) return null;
-  const m = S.members.find(x => x.id === currentMemberId);
-  return m ? { id: m.id, name: m.name } : null;
-}
-
-/* ---------- ユーティリティ ---------- */
-function formatDateTime(iso){
-  if(!iso) return '未設定';
-  const d = new Date(iso);
-  return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-}
-function pairName(p){ return `${p.main||'（なし）'} - ${p.sub||'（なし）'}`; }
-
-/* ---------- アンケート一覧 ---------- */
-async function initSurveyPage(){
-  if(_activeSurveyId){
-    await fetchAndRenderDetail(_activeSurveyId);
-  } else {
-    await fetchAndRenderList();
-  }
-}
-
-async function fetchAndRenderList(){
-  const el = document.getElementById('sv-list');
-  el.innerHTML = '<div class="empty">読み込み中...</div>';
-  try {
-    const member = getSvMember();
-    const qs = member ? `?memberId=${member.id}` : '';
-    const res = await fetch(`/api/surveys${qs}`);
-    if(!res.ok) throw new Error();
-    _surveys = await res.json();
-  } catch(e){
-    el.innerHTML = '<div class="empty">読み込みに失敗しました</div>';
-    return;
-  }
-  renderSurveyList();
-}
-
-function renderSurveyList(){
-  const el = document.getElementById('sv-list');
-  if(!_surveys.length){
-    el.innerHTML = '<div class="empty">アンケートがありません<br><span style="font-size:11px">「＋ 新規作成」で作成してください</span></div>';
-    return;
-  }
-  const now = Date.now();
-  const sorted = [..._surveys].sort((a,b) => {
-    const aOpen = new Date(a.deadline).getTime() > now;
-    const bOpen = new Date(b.deadline).getTime() > now;
-    if(aOpen !== bOpen) return aOpen ? -1 : 1;
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
-  el.innerHTML = sorted.map(sv => {
-    const isOpen = new Date(sv.deadline).getTime() > now;
-    const totalVotes = (sv.pairs||[]).reduce((s,p)=>s+(p.votes||0),0);
-    const tableLabel = sv.tableType === 'ransaki' ? '乱咲' : '蕾';
-    const myCount = (sv.myVotePairIds||[]).length;
-    return `<div class="sv-card" onclick="openSurveyDetail(${sv.id})">
-      <div class="sv-card-title">${sv.title}</div>
-      <div class="sv-card-meta">
-        <span class="sv-status ${isOpen?'open':'closed'}">${isOpen?'受付中':'終了'}</span>
-        <span>【${tableLabel}】</span>
-        <span>終了: ${formatDateTime(sv.deadline)}</span>
-        <span>総票数: ${totalVotes}</span>
-        ${myCount > 0 ? `<span style="color:#1D9E75;font-weight:500">✓ ${myCount}票投票済</span>` : ''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-/* ---------- アンケート作成 ---------- */
-function openCreateSurvey(){
-  const now = new Date();
-  now.setDate(now.getDate() + 7);
-  const defaultDeadline = new Date(now.getTime() - now.getTimezoneOffset()*60000).toISOString().slice(0,16);
-  openModal('create-survey', `<h3>アンケート作成</h3>
-    <div class="field"><label>タイトル</label><input type="text" id="sv-title-in" placeholder="例: 趙国編アンケート(乱咲)" style="font-size:16px"></div>
-    <div class="field"><label>所属</label>
-      <div style="display:flex;gap:6px;margin-top:4px">
-        <button id="sv-tbl-ransaki" class="sub-tab active" onclick="setSvTable('ransaki')">乱咲</button>
-        <button id="sv-tbl-tsubomi" class="sub-tab" onclick="setSvTable('tsubomi')">蕾</button>
-      </div>
-    </div>
-    <div class="field"><label>終了日時</label><input type="datetime-local" id="sv-deadline-in" value="${defaultDeadline}" style="font-size:16px"></div>
-    <div style="font-size:11px;color:var(--danger);min-height:14px" id="sv-create-err"></div>
-    <div class="modal-acts">
-      <button class="btn" onclick="closeModal()">キャンセル</button>
-      <button class="btn pri" id="sv-create-btn" onclick="doCreateSurvey()">作成</button>
-    </div>`);
-  window._svCreateTable = 'ransaki';
-}
-function setSvTable(t){
-  window._svCreateTable = t;
-  document.getElementById('sv-tbl-ransaki').classList.toggle('active', t==='ransaki');
-  document.getElementById('sv-tbl-tsubomi').classList.toggle('active', t==='tsubomi');
-}
-async function doCreateSurvey(){
-  const title = (document.getElementById('sv-title-in').value||'').trim();
-  const deadlineLocal = document.getElementById('sv-deadline-in').value;
-  const tableType = window._svCreateTable || 'ransaki';
-  const errEl = document.getElementById('sv-create-err');
-  const btn = document.getElementById('sv-create-btn');
-  if(!title){ errEl.textContent = 'タイトルを入力してください'; return; }
-  if(!deadlineLocal){ errEl.textContent = '終了日時を設定してください'; return; }
-  const deadline = new Date(deadlineLocal).toISOString();
-  if(new Date(deadline).getTime() <= Date.now()){ errEl.textContent = '終了日時は未来の日時を設定してください'; return; }
-  btn.disabled = true; btn.textContent = '作成中...';
-  try {
-    const res = await fetch('/api/surveys', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ title, tableType, deadline }),
-    });
-    const data = await res.json();
-    if(!res.ok){ errEl.textContent = data.error||'作成に失敗しました'; btn.disabled=false; btn.textContent='作成'; return; }
-    closeModal();
-    toast('アンケートを作成しました');
-    await fetchAndRenderList();
-  } catch(e){
-    errEl.textContent = 'エラーが発生しました'; btn.disabled=false; btn.textContent='作成';
-  }
-}
-
-/* ---------- アンケート詳細 ---------- */
-async function openSurveyDetail(svId){
-  _activeSurveyId = svId;
-  _pendingVotes = new Set();
-  document.getElementById('sv-list-view').style.display = 'none';
-  document.getElementById('sv-detail-view').style.display = 'block';
-  document.getElementById('sv-detail-title').textContent = '読み込み中...';
-  document.getElementById('sv-pairs-list').innerHTML = '<div class="empty">読み込み中...</div>';
-  document.getElementById('sv-add-pair-area').style.display = 'none';
-  document.getElementById('sv-vote-confirm-area').style.display = 'none';
-  await fetchAndRenderDetail(svId);
-}
-
-async function fetchAndRenderDetail(svId){
-  try {
-    const member = getSvMember();
-    const qs = member ? `&memberId=${member.id}` : '';
-    const res = await fetch(`/api/surveys?id=${svId}${qs}`);
-    if(!res.ok) throw new Error();
-    const sv = await res.json();
-    const idx = _surveys.findIndex(s => s.id === sv.id);
-    if(idx >= 0) _surveys[idx] = sv; else _surveys.push(sv);
-    // 確定済み票をサーバーから同期
-    _confirmedVotes = new Set(sv.myVotePairIds || []);
-    // ペンディングは確定済みで初期化
-    _pendingVotes = new Set(_confirmedVotes);
-    renderSurveyDetail(sv);
-  } catch(e){
-    console.error(e);
-    document.getElementById('sv-pairs-list').innerHTML = '<div class="empty">読み込みに失敗しました</div>';
-  }
-}
-
-function closeSurveyDetail(){
-  _activeSurveyId = null;
-  _pendingVotes = new Set();
-  _confirmedVotes = new Set();
-  document.getElementById('sv-list-view').style.display = 'block';
-  document.getElementById('sv-detail-view').style.display = 'none';
-  renderSurveyList();
-}
-
-function renderSurveyDetail(sv){
-  if(!sv) return;
-  const now = Date.now();
-  const isOpen = new Date(sv.deadline).getTime() > now;
-  const tableLabel = sv.tableType === 'ransaki' ? '乱咲' : '蕾';
-  const member = getSvMember();
-  const TABLE_ROLE = { ransaki: '乱咲', tsubomi: '蕾' };
-  const memberObj = S.members.find(x => x.id === currentMemberId);
-  const canInteract = isOpen && (memberObj?.role ?? '') === (TABLE_ROLE[sv.tableType] ?? '');
-
-  document.getElementById('sv-detail-title').textContent = sv.title;
-  document.getElementById('sv-detail-meta').innerHTML =
-    `<span class="sv-status ${isOpen?'open':'closed'}">${isOpen?'受付中':'終了'}</span>
-     <span style="margin-left:8px">【${tableLabel}】</span>
-     <span style="margin-left:8px">終了: ${formatDateTime(sv.deadline)}</span>`;
-
-  // メンバーバナー
-  const statusBar = document.getElementById('sv-detail-status-bar');
-  let bannerHtml = '';
-  if(member && isOpen){
-    bannerHtml = `<div class="sv-member-banner">
-      <span style="font-size:12px">投票者：</span>
-      <span class="sv-member-banner-name">${esc(member.name)}</span>
-    </div>`;
-  }
-  if(!isOpen){
-    bannerHtml += `<div style="background:#EEEDFE;color:#3C3489;border:1px solid #AFA9EC;border-radius:8px;padding:8px 12px;font-size:12px">
-      ⏹ このアンケートは終了しました。${(currentRole==='admin'||currentRole==='reinf-admin')?'結果を援軍表に反映できます。':''}</div>`;
-  }
-  statusBar.innerHTML = bannerHtml;
-
-  // ペア一覧（得票数順）- 同票は同順位
-  const sorted = [...(sv.pairs||[])].sort((a,b)=>(b.votes||0)-(a.votes||0));
-  // 同票同順位の計算
-  const rankOf = [];
-  for(let idx = 0; idx < sorted.length; idx++){
-    if(idx === 0){ rankOf.push(1); continue; }
-    const sameAsAbove = (sorted[idx].votes||0) === (sorted[idx-1].votes||0);
-    rankOf.push(sameAsAbove ? rankOf[idx-1] : idx+1);
-  }
-  const pairsList = document.getElementById('sv-pairs-list');
-
-  if(!sorted.length){
-    pairsList.innerHTML = '<div class="empty" style="padding:.75rem">まだペアがありません</div>';
-  } else {
-    pairsList.innerHTML = sorted.map((p, idx) => {
-      const rank = rankOf[idx];
-      const rankClass = rank===1?'rank1':rank===2?'rank2':rank===3?'rank3':'';
-      const isPending = _pendingVotes.has(p.id);
-      const isConfirmed = _confirmedVotes.has(p.id);
-      const isTop = idx===0 && (p.votes||0)>0;
-
-      // チェックアイコン
-      let checkHtml = '';
-      if(canInteract){
-        if(isConfirmed && isPending) checkHtml = `<div class="sv-check confirmed">✓</div>`;
-        else if(isPending) checkHtml = `<div class="sv-check on">✓</div>`;
-        else checkHtml = `<div class="sv-check"></div>`;
-      }
-
-      // 受付中はタップで仮選択、終了後はタップで投票者表示
-      const clickAction = canInteract
-        ? `togglePendingVote(${sv.id},${p.id})`
-        : !isOpen ? `showVotersPopup(${sv.id},${p.id})` : '';
-
-      return `<div class="sv-pair-item${isTop&&!isOpen?' top':''}${isPending?' pending':''}" onclick="${clickAction}">
-        <div class="sv-pair-rank ${rankClass}">${rank}位</div>
-        <div class="sv-pair-vote">
-          <div class="sv-pair-vote-num">${p.votes||0}</div>
-          <div class="sv-pair-vote-label">票</div>
-        </div>
-        <div class="sv-pair-names" style="font-size:13px;font-weight:500">${pairName(p)}</div>
-        ${isOpen ? checkHtml : `<span style="font-size:10px;color:var(--t3)">▶ 詳細</span>`}
-      </div>`;
-    }).join('');
-  }
-
-  // 投票確定ボタン（受付中 かつ 仮選択が確定済みと異なるときだけ表示）
-  const confirmArea = document.getElementById('sv-vote-confirm-area');
-  if(canInteract){
-    const hasChange = [..._pendingVotes].some(id => !_confirmedVotes.has(id)) ||
-                      [..._confirmedVotes].some(id => !_pendingVotes.has(id));
-    confirmArea.style.display = hasChange ? 'block' : 'none';
-  } else {
-    confirmArea.style.display = 'none';
-  }
-
-  document.getElementById('sv-add-pair-area').style.display = canInteract ? 'block' : 'none';
-
-  const applyArea = document.getElementById('sv-apply-area');
-  applyArea.style.display = (currentRole==='admin'||currentRole==='reinf-admin') ? 'block' : 'none';
-
-  // 投票者一覧（終了後のみ非同期で表示）
-  const existingSection = document.getElementById('sv-voters-section');
-  if(existingSection) existingSection.remove();
-  if(!isOpen){
-    fetchAndRenderVoters(sv.id);
-  }
-}
-
-/* ---------- 投票者一覧の取得・描画（終了後のみ呼ばれる） ---------- */
-async function fetchAndRenderVoters(svId){
-  try {
-    const res = await fetch(`/api/surveys?action=voters&id=${svId}`);
-    if(!res.ok) return;
-    const voters = await res.json();
-    renderVotersList(voters);
-  } catch(e){ /* silent */ }
-}
-
-function renderVotersList(voters){
-  let section = document.getElementById('sv-voters-section');
-  const detailView = document.getElementById('sv-detail-view');
-  if(!section){
-    section = document.createElement('div');
-    section.id = 'sv-voters-section';
-    section.className = 'sv-voters-section';
-    detailView.appendChild(section);
-  }
-  if(!voters || !voters.length){
-    section.innerHTML = `<div class="sv-voters-title">📋 投票者一覧</div>
-      <div class="empty" style="font-size:12px;padding:.5rem 0">まだ投票がありません</div>`;
-    return;
-  }
-  const rows = voters.map(v => {
-    return `<div class="sv-voter-row">
-      <div class="sv-voter-name">${esc(v.memberName)}</div>
-    </div>`;
-  }).join('');
-  section.innerHTML = `<div class="sv-voters-title">📋 投票者一覧 <span style="font-weight:400;color:var(--t3)">(${voters.length}名)</span></div>${rows}`;
-}
-
-/* ---------- 仮選択（LINEスタイル） ---------- */
-function togglePendingVote(svId, pairId){
-  const member = getSvMember();
-  if(!member){ toast('ログインしていません'); return; }
-  if(_pendingVotes.has(pairId)) _pendingVotes.delete(pairId);
-  else _pendingVotes.add(pairId);
-
-  const sv = _surveys.find(s => s.id === svId);
-  if(sv) renderSurveyDetail(sv);
-}
-
-/* ---------- 投票確定 ---------- */
-async function confirmVotes(){
-  const member = getSvMember();
-  if(!member){ toast('ログインしていません'); return; }
-  const sv = _surveys.find(s => s.id === _activeSurveyId);
-  if(!sv) return;
-
-  const isOpen = new Date(sv.deadline).getTime() > Date.now();
-  if(!isOpen){ toast('このアンケートは終了しています'); return; }
-
-  // 追加する票と削除する票を計算
-  const toAdd = [..._pendingVotes].filter(id => !_confirmedVotes.has(id));
-  const toRemove = [..._confirmedVotes].filter(id => !_pendingVotes.has(id));
-
-  if(toAdd.length === 0 && toRemove.length === 0){
-    toast('変更がありません'); return;
-  }
-
-  showLoading();
-  try {
-    // 追加
-    for(const pairId of toAdd){
-      await fetch('/api/surveys?action=vote', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ surveyId: sv.id, pairId, memberId: member.id, memberName: member.name }),
-      });
-    }
-    // 削除（同じペアに再投票→取消）
-    for(const pairId of toRemove){
-      await fetch('/api/surveys?action=vote', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ surveyId: sv.id, pairId, memberId: member.id, memberName: member.name }),
-      });
-    }
-    toast('投票しました');
-    await fetchAndRenderDetail(sv.id);
-  } catch(e){
-    toast('投票に失敗しました');
-  } finally {
-    hideLoading();
-  }
-}
-
-/* ---------- 投票者ポップアップ（ペアタップ時） ---------- */
-async function showVotersPopup(svId, pairId){
-  // オーバーレイ作成
-  const overlay = document.createElement('div');
-  overlay.className = 'sv-voters-overlay';
-  overlay.onclick = () => { overlay.remove(); popup.remove(); };
-  document.body.appendChild(overlay);
-
-  const popup = document.createElement('div');
-  popup.className = 'sv-voters-popup';
-  popup.innerHTML = '<div class="sv-voters-popup-title">読み込み中...</div>';
-  document.body.appendChild(popup);
-
-  try {
-    const res = await fetch(`/api/surveys?action=voters&id=${svId}`);
-    if(!res.ok) throw new Error();
-    const voters = await res.json();
-
-    const sv = _surveys.find(s => s.id === svId);
-    const pair = (sv?.pairs||[]).find(p => p.id === pairId);
-    const pairLabel = pair ? pairName(pair) : '';
-
-    const names = voters
-      .filter(v => (v.pairIds||[]).includes(pairId))
-      .map(v => v.memberName);
-
-    popup.innerHTML = `
-      <div class="sv-voters-popup-title">${pairLabel}</div>
-      <div class="sv-voters-popup-list">
-        ${names.length ? names.map(n=>`✓ ${n}`).join('<br>') : 'まだ投票がありません'}
-      </div>
-      <button class="sv-voters-popup-close" onclick="this.closest('.sv-voters-popup').remove();document.querySelector('.sv-voters-overlay').remove()">閉じる</button>`;
-  } catch(e){
-    popup.innerHTML = `<div class="sv-voters-popup-title">読み込み失敗</div>
-      <button class="sv-voters-popup-close" onclick="this.closest('.sv-voters-popup').remove();document.querySelector('.sv-voters-overlay').remove()">閉じる</button>`;
-  }
-}
-
-/* ---------- ペア追加 ---------- */
-function openAddPairModal(){
-  openModal('add-pair', `<h3>ペアを追加</h3>
-    <div class="field"><label>大将</label>${comboHtml('ap-main', S.chars, '', '（なし）')}</div>
-    <div class="field"><label>副将</label>${comboHtml('ap-sub', S.chars, '', '（なし）')}</div>
-    <div style="font-size:11px;color:var(--danger);min-height:14px" id="ap-err"></div>
-    <div class="modal-acts">
-      <button class="btn" onclick="closeModal()">キャンセル</button>
-      <button class="btn pri" id="ap-add-btn" onclick="doAddPair()">追加</button>
-    </div>`);
-  initCombo('ap-main', S.chars, '');
-  initCombo('ap-sub', S.chars, '');
-}
-async function doAddPair(){
-  const main = document.getElementById('ap-main')?.value || '';
-  const sub = document.getElementById('ap-sub')?.value || '';
-  const errEl = document.getElementById('ap-err');
-  const btn = document.getElementById('ap-add-btn');
-  if(!main && !sub){ errEl.textContent = '大将か副将を選択してください'; return; }
-  btn.disabled = true; btn.textContent = '追加中...';
-  try {
-    const res = await fetch(`/api/surveys?id=${_activeSurveyId}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ main: main||null, sub: sub||null }),
-    });
-    const data = await res.json();
-    if(!res.ok){ errEl.textContent = data.error||'追加に失敗しました'; btn.disabled=false; btn.textContent='追加'; return; }
-    closeModal();
-    toast('ペアを追加しました');
-    await fetchAndRenderDetail(_activeSurveyId);
-  } catch(e){
-    errEl.textContent = 'エラーが発生しました'; btn.disabled=false; btn.textContent='追加';
-  }
-}
-
-function openEditSurvey(){
-  const sv = _surveys.find(s => s.id === _activeSurveyId);
-  if(!sv) return;
-  const localDeadline = new Date(new Date(sv.deadline).getTime() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
-  openModal('sv-edit', `<h3>アンケート編集</h3>
-    <div class="field"><label>タイトル</label><input type="text" id="sv-edit-title" value="${esc(sv.title)}" style="font-size:16px"></div>
-    <div class="field"><label>終了日時</label><input type="datetime-local" id="sv-edit-deadline" value="${localDeadline}" style="font-size:16px"></div>
-    <div style="font-size:11px;color:var(--danger);min-height:14px" id="sv-edit-err"></div>
-    <div class="modal-acts">
-      <button class="btn" onclick="closeModal()">キャンセル</button>
-      <button class="btn pri" id="sv-edit-save-btn" onclick="doEditSurvey()">保存</button>
-    </div>`);
-}
-
-async function doEditSurvey(){
-  const title = (document.getElementById('sv-edit-title').value||'').trim();
-  const deadlineLocal = document.getElementById('sv-edit-deadline').value;
-  const errEl = document.getElementById('sv-edit-err');
-  const btn = document.getElementById('sv-edit-save-btn');
-  if(!title){ errEl.textContent = 'タイトルを入力してください'; return; }
-  if(!deadlineLocal){ errEl.textContent = '終了日時を設定してください'; return; }
-  const deadline = new Date(deadlineLocal).toISOString();
-  btn.disabled = true; btn.textContent = '保存中...';
-  try {
-    const res = await fetch(`/api/surveys?id=${_activeSurveyId}`, {
-      method: 'PUT',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ title, deadline }),
-    });
-    const data = await res.json();
-    if(!res.ok){ errEl.textContent = data.error||'保存に失敗しました'; btn.disabled=false; btn.textContent='保存'; return; }
-    const sv = _surveys.find(s => s.id === _activeSurveyId);
-    if(sv){ sv.title = title; sv.deadline = deadline; }
-    closeModal();
-    toast('アンケートを更新しました');
-    renderSurveyDetail(_surveys.find(s => s.id === _activeSurveyId));
-  } catch(e){
-    errEl.textContent = 'エラーが発生しました'; btn.disabled=false; btn.textContent='保存';
-  }
-}
-
-/* ---------- アンケート削除 ---------- */
-function deleteSurvey(){
-  openModal('sv-delete-confirm', `<h3>アンケートを削除</h3>
-    <div style="font-size:12px;margin-bottom:14px">このアンケートを削除します。<br>投票データも全て削除されます。元に戻せません。</div>
-    <div class="modal-acts">
-      <button class="btn" onclick="closeModal()">キャンセル</button>
-      <button class="btn danger" onclick="doDeleteSurvey()">削除する</button>
-    </div>`);
-}
-async function doDeleteSurvey(){
-  closeModal(); showLoading();
-  try {
-    const res = await fetch(`/api/surveys?id=${_activeSurveyId}`, { method: 'DELETE' });
-    if(!res.ok) throw new Error();
-    _surveys = _surveys.filter(s => s.id !== _activeSurveyId);
-    toast('アンケートを削除しました');
-    closeSurveyDetail();
-  } catch(e){ toast('削除に失敗しました'); }
-  finally { hideLoading(); }
-}
-
-/* ---------- 援軍表への反映 ---------- */
-function applySurveyToReinf(){
-  const sv = _surveys.find(s => s.id === _activeSurveyId);
-  if(!sv) return;
-  if(!sv.pairs||!sv.pairs.length){ toast('ペアがありません'); return; }
-  const isOpen = new Date(sv.deadline).getTime() > Date.now();
-
-  const sortedPairs = [...sv.pairs].sort((a,b)=>(b.votes||0)-(a.votes||0));
-  const tableType = sv.tableType;
-  const tableLabel = tableType === 'ransaki' ? '乱咲' : '蕾';
-  const existingRows = S.reinf.filter(r=>(r.tableType||'ransaki')===tableType);
-
-  const pairsPreview = sortedPairs.map((p,i)=>
-    `<div style="padding:3px 0;border-bottom:1px solid var(--border)">
-      ${i+1}行目：${pairName(p)}<span style="color:var(--t3);font-size:10px;margin-left:4px">${p.votes||0}票</span>
-    </div>`
-  ).join('');
-
-  openModal('apply-confirm', `<h3>援軍表に反映</h3>
-    <div style="font-size:12px;margin-bottom:12px">
-      ${isOpen ? '<div style="background:#FAEEDA;color:#633806;border:1px solid #FAC775;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11px">⚠️ まだ受付中です。このまま反映しますか？</div>' : ''}
-      【${tableLabel}】援軍表の<strong>全行を削除</strong>し、以下の${sortedPairs.length}行を新規作成します。<br><br>
-      <div style="margin:8px 0;max-height:200px;overflow-y:auto">${pairsPreview}</div>
-      ${existingRows.length>0?`<span style="color:var(--danger)">※ 既存の行が削除されます</span>`:''}
-    </div>
-    <div class="modal-acts">
-      <button class="btn" onclick="closeModal()">キャンセル</button>
-      <button class="btn pri" onclick="doApplySurvey('${tableType}')">反映する</button>
-    </div>`);
-}
-
-async function doApplySurvey(tableType){
-  closeModal();
-  const sv = _surveys.find(s => s.id === _activeSurveyId);
-  if(!sv) return;
-  const sortedPairs = [...sv.pairs].sort((a,b)=>(b.votes||0)-(a.votes||0));
-  showLoading();
-  try {
-    const targetRows = S.reinf.filter(r=>(r.tableType||'ransaki')===tableType);
-    await Promise.all(targetRows.map(r => fetch(`/api/reinf?id=${r.id}`, { method: 'DELETE' })));
-    for(const pair of sortedPairs){
-      const addRes = await fetch('/api/reinf', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ tableType }),
-      });
-      if(!addRes.ok) throw new Error();
-      const newRow = await addRes.json();
-      await fetch(`/api/reinf?id=${newRow.id}`, {
-        method: 'PUT', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ memberName:null, normalMain:pair.main||null, normalSub:pair.sub||null, castleMain:pair.main||null, castleSub:pair.sub||null }),
-      });
-    }
-    toast('援軍表に反映しました');
-    await load();
-  } catch(e){ toast('反映に失敗しました'); }
-  finally { hideLoading(); }
-}
-
+// セッション管理はhttpOnly Cookieで行うためsessionStorageは不要
 // roleのみメモリ上に保持してUI制御に使う
- (async function restoreSession(){
+
+(async function restoreSession(){
   try {
     const res = await fetch('/api/init');
     if(res.ok){
       const d = await res.json();
       currentRole = d.role;
-      currentMemberId = d.memberId || null;
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('main-wrap').style.display = '';
       applyRole();
       load();
     }
-  } catch(e) {
-  }
+  } catch(e) {}
 })();
 
 async function doLogin(){
-  const memberId = parseInt(document.getElementById('login-id').value);
   const pw = (document.getElementById('login-pw').value || '').trim();
   const errEl = document.getElementById('login-error');
   const btn = document.querySelector('#login-screen button');
-  if(!memberId){ errEl.textContent = 'IDを入力してください'; return; }
   if(!pw){ errEl.textContent = 'パスワードを入力してください'; return; }
-  btn.disabled = true; btn.textContent = '確認中...'; errEl.textContent = '';
+  btn.disabled = true;
+  btn.textContent = '確認中...';
+  errEl.textContent = '';
   try {
     const res = await fetch('/api/auth/verify', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ memberId, password: pw })
+      body: JSON.stringify({ password: pw })
     });
     const data = await res.json();
     if(!res.ok || !data.role){
       errEl.textContent = data.error || 'パスワードが違います';
       return;
     }
+    // JWTはhttpOnly CookieにセットされるのでJSから触らない
     currentRole = data.role;
-    currentMemberId = data.memberId;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('main-wrap').style.display = '';
     applyRole();
@@ -3644,10 +2157,9 @@ async function doLogin(){
 }
 
 async function doLogout(){
+  // サーバー側でCookieを破棄
   await fetch('/api/auth/logout', { method: 'POST' }).catch(()=>{});
   currentRole = null;
-  currentMemberId = null;
-  const idEl = document.getElementById('login-id'); if(idEl) idEl.value = '';
   document.getElementById('login-pw').value = '';
   document.getElementById('login-error').textContent = '';
   document.getElementById('main-wrap').style.display = 'none';
@@ -3674,11 +2186,6 @@ function applyRole(){
     el.style.display = (isAdmin || isReinfAdmin) ? '' : 'none';
   });
 
-  // 援軍表の編集操作（管理者 or 援軍管理者のみ）
-  document.querySelectorAll('.reinf-edit-only').forEach(el => {
-    el.style.display = (isAdmin || isReinfAdmin) ? '' : 'none';
-  });
-
   // ロールバッジ
   const badgeClass = isAdmin ? 'admin' : isReinfAdmin ? 'reinf-admin' : 'user';
   const badgeLabel = isAdmin ? '管理者' : isReinfAdmin ? '援軍管理者' : '利用者';
@@ -3686,7 +2193,27 @@ function applyRole(){
     `<span class="role-badge ${badgeClass}">${badgeLabel}</span>`;
 }
 
-
+/* ========== パスワード変更モーダル ========== */
+function openChangePwModal(){
+  openModal('change-pw', `<h3>パスワード変更</h3>
+    <div class="field"><label>変更対象</label>
+      <select id="cpw-role">
+        <option value="user">利用者</option>
+        <option value="reinf-admin">援軍管理者</option>
+      </select>
+    </div>
+    <div class="field"><label>新しいパスワード</label>
+      <input type="password" id="cpw-new" placeholder="新パスワード">
+    </div>
+    <div class="field"><label>確認（もう一度入力）</label>
+      <input type="password" id="cpw-confirm" placeholder="確認">
+    </div>
+    <div style="font-size:11px;color:var(--danger);min-height:14px;margin-bottom:4px" id="cpw-err"></div>
+    <div class="modal-acts">
+      <button class="btn" onclick="closeModal()">キャンセル</button>
+      <button class="btn pri" onclick="saveUserPassword()">変更</button>
+    </div>`);
+}
 
 async function saveUserPassword(){
   const role = document.getElementById('cpw-role').value;
