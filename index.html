@@ -2542,7 +2542,7 @@ async function addChar(){
   const sortedRanks=ALL_RANKS.filter(r=>cnSelRank.includes(r));
   showLoading();
   try {
-    await fetch('/api/chars',{
+    const res = await fetch('/api/chars',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -2555,8 +2555,14 @@ async function addChar(){
         img: _cnImg || null
       })
     });
+    if(!res.ok){
+      // 失敗時は入力内容を保持したまま、エラーのみ通知
+      toast('追加に失敗しました');
+      return;
+    }
     await load();
     toast('追加しました');
+    initCharNewForm();
     // 宿縁に？が残っているキャラのうち、新キャラが該当するかもしれないものを提示
     const candidates = S.chars.filter(cd => {
       if(cd.name === name) return false;
@@ -2586,6 +2592,9 @@ async function addChar(){
         </div>
         <div class="modal-acts"><button class="btn pri" onclick="closeModal()">閉じる</button></div>`);
     }
+  } catch(e){
+    // 通信エラー時も入力内容を保持したまま、エラーのみ通知
+    toast('追加に失敗しました');
   } finally {
     hideLoading();
   }
