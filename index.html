@@ -1059,6 +1059,9 @@ function toggleUntrainedFilter(){
   filterCharGrid();
 }
 function renderCharGridEdit(m){
+  console.log(
+    S.training.filter(x => x.char_name === "張印")
+  );
   const _grid=document.getElementById('char-grid-edit');
   const _panel=document.getElementById('lv-panel');
   if(_panel.parentNode===_grid){ _grid.parentNode.insertBefore(_panel,_grid.nextSibling); }
