@@ -496,7 +496,6 @@ body.touch-device .sub-tab.active:active {
       <button class="f-btn"   id="mf-ransaki" onclick="setMemberFilter('ransaki')">乱咲</button>
       <button class="f-btn"   id="mf-tsubomi" onclick="setMemberFilter('tsubomi')">蕾</button>
     </div>
-    <div id="member-count" style="font-size:11px;color:var(--t2);margin-bottom:6px"></div>
     <div class="grid-members" id="member-list"></div>
   </div>
   <div id="v-chars" style="display:none">
@@ -1006,19 +1005,13 @@ function renderMembers(){
   if(_memberFilter === 'ransaki') visible = visible.filter(m => m.role === '乱咲');
   if(_memberFilter === 'tsubomi') visible = visible.filter(m => m.role === '蕾');
 
-  // 表示中メンバー数の表示（フィルタに応じて内訳を出し分け）
-  const countEl = document.getElementById('member-count');
-  if(countEl){
-    const ransakiCount = S.members.filter(m => m.role === '乱咲').length;
-    const tsubomiCount = S.members.filter(m => m.role === '蕾').length;
-    if(_memberFilter === 'ransaki'){
-      countEl.textContent = `乱咲 ${ransakiCount}人`;
-    }else if(_memberFilter === 'tsubomi'){
-      countEl.textContent = `蕾 ${tsubomiCount}人`;
-    }else{
-      countEl.textContent = `乱咲 ${ransakiCount}人 / 蕾 ${tsubomiCount}人`;
-    }
-  }
+  // 表示中メンバー数（フィルタに応じて集計。「すべて」の場合は合計人数）
+  const ransakiCount = S.members.filter(m => m.role === '乱咲').length;
+  const tsubomiCount = S.members.filter(m => m.role === '蕾').length;
+  const memberCount = _memberFilter === 'ransaki' ? ransakiCount
+    : _memberFilter === 'tsubomi' ? tsubomiCount
+    : ransakiCount + tsubomiCount;
+  const memberCountLabel = `<div style="grid-column:1/-1;margin:4px 0 2px;font-size:11px;color:var(--t2);font-weight:500">メンバー：${memberCount}人</div>`;
 
   if(!visible.length){el.innerHTML='<div class="empty">メンバーがいません</div>';return;}
   // ログインメンバーのカードを先頭に固定表示
@@ -1032,8 +1025,10 @@ function renderMembers(){
       <div class="m-name">${loginMember.name}</div><div class="m-sub">${loginMember.role}</div>
       <div class="m-sub">${loginMember.chars.length}体育成中</div>
     </div>
-    <div style="grid-column:1/-1;margin:4px 0 2px;font-size:11px;color:var(--t2);font-weight:500">全メンバー</div>`;
+    ${memberCountLabel}`;
     visible = visible.filter(m => m.id !== loginMember.id);
+  }else{
+    html += memberCountLabel;
   }
   el.innerHTML=visible.map((m,i)=>{const a=av(S.members.indexOf(m));return`<div class="m-card" onclick="selectMember(${m.id})">
     <div class="avatar" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
