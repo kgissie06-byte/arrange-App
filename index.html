@@ -3491,6 +3491,17 @@ async function doAddPair(){
     closeModal();
     toast('ペアを追加しました');
     await fetchAndRenderDetail(_activeSurveyId);
+    // 追加したペアを自動で仮選択（チェック）状態にする
+    const sv = _surveys.find(s => s.id === _activeSurveyId);
+    if(sv){
+      const newPair = (data && data.id != null)
+        ? (sv.pairs||[]).find(p => p.id === data.id)
+        : [...(sv.pairs||[])].reverse().find(p => (p.main||'') === main && (p.sub||'') === sub);
+      if(newPair){
+        _pendingVotes.add(newPair.id);
+        renderSurveyDetail(sv);
+      }
+    }
   } catch(e){
     errEl.textContent = 'エラーが発生しました'; btn.disabled=false; btn.textContent='追加';
   }
