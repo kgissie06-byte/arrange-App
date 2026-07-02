@@ -968,6 +968,16 @@ async function load() {
       return;
     }
     const data = await res.json();
+    
+    console.log(
+      'init members',
+      data.members.flatMap(m =>
+        (m.chars || []).filter(c =>
+          c.name.includes('張')
+        )
+      )
+    );
+
     S = data;
     // アンケートキャッシュも更新
     if(Array.isArray(data.surveys)) _surveys = data.surveys;
