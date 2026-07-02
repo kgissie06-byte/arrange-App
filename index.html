@@ -496,6 +496,7 @@ body.touch-device .sub-tab.active:active {
       <button class="f-btn"   id="mf-ransaki" onclick="setMemberFilter('ransaki')">乱咲</button>
       <button class="f-btn"   id="mf-tsubomi" onclick="setMemberFilter('tsubomi')">蕾</button>
     </div>
+    <div id="member-count" style="font-size:11px;color:var(--t2);margin-bottom:6px"></div>
     <div class="grid-members" id="member-list"></div>
   </div>
   <div id="v-chars" style="display:none">
@@ -1004,6 +1005,21 @@ function renderMembers(){
   let visible = S.members.filter(m => m.role !== 'その他');
   if(_memberFilter === 'ransaki') visible = visible.filter(m => m.role === '乱咲');
   if(_memberFilter === 'tsubomi') visible = visible.filter(m => m.role === '蕾');
+
+  // 表示中メンバー数の表示（フィルタに応じて内訳を出し分け）
+  const countEl = document.getElementById('member-count');
+  if(countEl){
+    const ransakiCount = S.members.filter(m => m.role === '乱咲').length;
+    const tsubomiCount = S.members.filter(m => m.role === '蕾').length;
+    if(_memberFilter === 'ransaki'){
+      countEl.textContent = `乱咲 ${ransakiCount}人`;
+    }else if(_memberFilter === 'tsubomi'){
+      countEl.textContent = `蕾 ${tsubomiCount}人`;
+    }else{
+      countEl.textContent = `乱咲 ${ransakiCount}人 / 蕾 ${tsubomiCount}人`;
+    }
+  }
+
   if(!visible.length){el.innerHTML='<div class="empty">メンバーがいません</div>';return;}
   // ログインメンバーのカードを先頭に固定表示
   let html = '';
