@@ -969,17 +969,6 @@ async function load() {
     }
     const data = await res.json();
     S = data;
-
-    
-    console.log('=== 張印チェック ===');
-
-    S.members.forEach(m => {
-      const hit = (m.chars || []).find(c => c.name === '張印');
-      if (hit) {
-        console.log('見つかった', m.name, hit);
-      }
-    });
-
     // アンケートキャッシュも更新
     if(Array.isArray(data.surveys)) _surveys = data.surveys;
     renderAll();
@@ -1085,14 +1074,13 @@ function renderCharGridEdit(m){
     return set;
   })();
   _grid.innerHTML=sortByYomi(S.chars).map(cd=>{
-    if(cd.name === '張印'){
-      console.log('char master=', cd);
-      console.log(
-        'member char=',
-        m.chars.filter(x => x.name.includes('張'))
-      );
-    }
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
+
+    if(cd.name === '張印'){
+      console.log('cd.name=', cd.name);
+      console.log('c=', c);
+    }
+
     const imgHtml=cd.img
       ?`<img class="cc-img" src="${cd.img}" alt="">`
       :`<div class="cc-img empty"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--bm)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
@@ -1347,6 +1335,14 @@ async function saveTraining(){
       return;
     }
     await load();
+
+    const mm = S.members.find(x=>x.id===E.memberId);
+
+    console.log(
+      '保存後張印',
+      mm?.chars?.find(x=>x.name==='張印')
+    );
+
     toast('保存しました');
     E.charName=null; E.pendingRar=null; E.pendingRanks=[]; E.pendingEx=null;
     const cs=document.getElementById('cc-search');if(cs)cs.value='';
