@@ -1310,7 +1310,7 @@ async function saveTraining(){
   }
   showLoading();
   try{
-    await fetch('/api/training', {
+    const res = await fetch('/api/training', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -1321,6 +1321,13 @@ async function saveTraining(){
         ex:E.pendingEx||null
       })
     });
+    if(!res.ok){
+      let msg='保存に失敗しました';
+      try{ const data=await res.json(); if(data?.error) msg = typeof data.error==='string' ? data.error : (data.error.message||msg); }catch(_e){}
+      if(res.status===401){ msg='ログインが切れています。再度ログインしてください'; }
+      toast(msg);
+      return;
+    }
     await load();
     toast('保存しました');
     E.charName=null; E.pendingRar=null; E.pendingRanks=[]; E.pendingEx=null;
@@ -1342,11 +1349,18 @@ async function clearTraining(){
   if(!confirm(`${E.charName} の育成データを削除しますか？`)) return;
   showLoading();
   try{
-    await fetch('/api/training', {
+    const res = await fetch('/api/training', {
       method:'DELETE',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({memberId:E.memberId, charName:E.charName})
     });
+    if(!res.ok){
+      let msg='削除に失敗しました';
+      try{ const data=await res.json(); if(data?.error) msg = typeof data.error==='string' ? data.error : (data.error.message||msg); }catch(_e){}
+      if(res.status===401){ msg='ログインが切れています。再度ログインしてください'; }
+      toast(msg);
+      return;
+    }
     await load();
     toast('未入力に戻しました');
     E.pendingRar=null; E.pendingRanks=[];
