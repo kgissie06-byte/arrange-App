@@ -6,6 +6,26 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
+// PostgREST/Supabaseはデフォルトで1リクエスト最大1000行しか返さないため、
+// 1000件を超える場合に備えてページングしながら全件取得する
+const PAGE_SIZE = 1000
+
+async function fetchAllTraining() {
+  let all = []
+  let from = 0
+  while (true) {
+    const { data, error } = await supabase
+      .from('training')
+      .select('*')
+      .range(from, from + PAGE_SIZE - 1)
+    if (error) return null
+    all = all.concat(data || [])
+    if (!data || data.length < PAGE_SIZE) break
+    from += PAGE_SIZE
+  }
+  return all
+}
+
 export default async function handler(req, res) {
 
   // ログイン済みであれば誰でもOK
@@ -14,11 +34,8 @@ export default async function handler(req, res) {
 
   // 取得
   if (req.method === 'GET') {
-    const { data, error } = await supabase
-      .from('training')
-      .select('*')
-
-    if (error) return res.status(500).json({ error })
+    const data = await fetchAllTraining()
+    if (data === null) return res.status(500).json({ error: 'failed to fetch training data' })
 
     return res.json(data)
   }
