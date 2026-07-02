@@ -969,6 +969,17 @@ async function load() {
     }
     const data = await res.json();
     S = data;
+
+    
+    console.log('=== 張印チェック ===');
+
+    S.members.forEach(m => {
+      const hit = (m.chars || []).find(c => c.name === '張印');
+      if (hit) {
+        console.log('見つかった', m.name, hit);
+      }
+    });
+
     // アンケートキャッシュも更新
     if(Array.isArray(data.surveys)) _surveys = data.surveys;
     renderAll();
@@ -1074,6 +1085,13 @@ function renderCharGridEdit(m){
     return set;
   })();
   _grid.innerHTML=sortByYomi(S.chars).map(cd=>{
+    if(cd.name === '張印'){
+      console.log('char master=', cd);
+      console.log(
+        'member char=',
+        m.chars.filter(x => x.name.includes('張'))
+      );
+    }
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
     const imgHtml=cd.img
       ?`<img class="cc-img" src="${cd.img}" alt="">`
