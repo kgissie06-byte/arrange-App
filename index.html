@@ -179,7 +179,9 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .field{margin-bottom:9px}
 .field label{display:block;font-size:11px;color:var(--t2);margin-bottom:3px}
 .field input,.field select{width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit}
-.field input[type=datetime-local]{max-width:100%;min-width:0}
+.field-row{display:flex;gap:8px}
+.field-row .field{flex:1;min-width:0;margin-bottom:0}
+.field-row input{width:100%;min-width:0}
 
 /* モーダル */
 .overlay{position:fixed;inset:0;background:rgba(44,34,24,.42);display:flex;align-items:flex-start;justify-content:center;padding-top:48px;z-index:300;overflow-y:auto}
@@ -3144,6 +3146,7 @@ function openCreateSurvey(){
   const now = new Date();
   now.setDate(now.getDate() + 7);
   const defaultDeadline = new Date(now.getTime() - now.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  const [defaultDate, defaultTime] = defaultDeadline.split('T');
   openModal('create-survey', `<h3>アンケート作成</h3>
     <div class="field"><label>タイトル</label><input type="text" id="sv-title-in" placeholder="例: 趙国編アンケート(乱咲)" style="font-size:16px"></div>
     <div class="field"><label>所属</label>
@@ -3152,7 +3155,11 @@ function openCreateSurvey(){
         <button id="sv-tbl-tsubomi" class="sub-tab" onclick="setSvTable('tsubomi')">蕾</button>
       </div>
     </div>
-    <div class="field"><label>終了日時</label><input type="datetime-local" id="sv-deadline-in" value="${defaultDeadline}" style="font-size:16px"></div>
+    <label style="display:block;font-size:11px;color:var(--t2);margin-bottom:3px">終了日時</label>
+    <div class="field-row" style="margin-bottom:9px">
+      <div class="field"><input type="date" id="sv-deadline-date-in" value="${defaultDate}" style="font-size:16px"></div>
+      <div class="field"><input type="time" id="sv-deadline-time-in" value="${defaultTime}" style="font-size:16px"></div>
+    </div>
     <div style="font-size:11px;color:var(--danger);min-height:14px" id="sv-create-err"></div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
@@ -3167,7 +3174,9 @@ function setSvTable(t){
 }
 async function doCreateSurvey(){
   const title = (document.getElementById('sv-title-in').value||'').trim();
-  const deadlineLocal = document.getElementById('sv-deadline-in').value;
+  const dateVal = document.getElementById('sv-deadline-date-in').value;
+  const timeVal = document.getElementById('sv-deadline-time-in').value;
+  const deadlineLocal = dateVal && timeVal ? `${dateVal}T${timeVal}` : '';
   const tableType = window._svCreateTable || 'ransaki';
   const errEl = document.getElementById('sv-create-err');
   const btn = document.getElementById('sv-create-btn');
@@ -3500,9 +3509,14 @@ function openEditSurvey(){
   const sv = _surveys.find(s => s.id === _activeSurveyId);
   if(!sv) return;
   const localDeadline = new Date(new Date(sv.deadline).getTime() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
+  const [localDate, localTime] = localDeadline.split('T');
   openModal('sv-edit', `<h3>アンケート編集</h3>
     <div class="field"><label>タイトル</label><input type="text" id="sv-edit-title" value="${esc(sv.title)}" style="font-size:16px"></div>
-    <div class="field"><label>終了日時</label><input type="datetime-local" id="sv-edit-deadline" value="${localDeadline}" style="font-size:16px"></div>
+    <label style="display:block;font-size:11px;color:var(--t2);margin-bottom:3px">終了日時</label>
+    <div class="field-row" style="margin-bottom:9px">
+      <div class="field"><input type="date" id="sv-edit-deadline-date" value="${localDate}" style="font-size:16px"></div>
+      <div class="field"><input type="time" id="sv-edit-deadline-time" value="${localTime}" style="font-size:16px"></div>
+    </div>
     <div style="font-size:11px;color:var(--danger);min-height:14px" id="sv-edit-err"></div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
@@ -3512,7 +3526,9 @@ function openEditSurvey(){
 
 async function doEditSurvey(){
   const title = (document.getElementById('sv-edit-title').value||'').trim();
-  const deadlineLocal = document.getElementById('sv-edit-deadline').value;
+  const dateVal = document.getElementById('sv-edit-deadline-date').value;
+  const timeVal = document.getElementById('sv-edit-deadline-time').value;
+  const deadlineLocal = dateVal && timeVal ? `${dateVal}T${timeVal}` : '';
   const errEl = document.getElementById('sv-edit-err');
   const btn = document.getElementById('sv-edit-save-btn');
   if(!title){ errEl.textContent = 'タイトルを入力してください'; return; }
