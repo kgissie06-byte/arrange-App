@@ -43,7 +43,26 @@ export default async function handler(req, res) {
   const { data: trainingRaw, error: trainingErr } = await supabase
     .from('training')
     .select('*')
+  
+  console.log(
+    'trainingRaw 張系',
+    (trainingRaw || [])
+      .filter(t => t.char_name?.includes('張'))
+  )
+
   if (trainingErr) return res.status(500).json({ error: trainingErr })
+  
+  console.log(
+    'trainingRaw 張印',
+    (trainingRaw || [])
+      .filter(t => t.char_name === '張印')
+  )
+
+  console.log(
+    'trainingRaw 張唐',
+    (trainingRaw || [])
+      .filter(t => t.char_name === '張唐')
+  )
 
   const members = (membersRaw || []).map(m => ({
     id: m.id,
@@ -51,13 +70,25 @@ export default async function handler(req, res) {
     role: m.role || '',
     memberRole: m.auth_role?.role || 'user',
     chars: (trainingRaw || [])
-      .filter(t => t.member_id === m.id)
-      .map(t => ({
+    .filter(t => t.member_id === m.id)
+    .map(t => {
+
+      if (t.char_name.includes('張')) {
+        console.log(
+          'member',
+          m.name,
+          'char',
+          t.char_name
+        )
+      }
+
+      return {
         name: t.char_name,
         rar: t.rarity,
         ranks: t.ranks || [],
         ex: t.ex || null,
-      })),
+      }
+    }),
   }))
 
   // 援軍表

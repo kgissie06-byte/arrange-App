@@ -969,15 +969,6 @@ async function load() {
     }
     const data = await res.json();
     S = data;
-
-    console.log(
-      '全キャラ',
-      S.members
-        .flatMap(m => m.chars || [])
-        .map(x => x.name)
-        .filter(n => n.includes('張'))
-    );
-    
     // アンケートキャッシュも更新
     if(Array.isArray(data.surveys)) _surveys = data.surveys;
     renderAll();
