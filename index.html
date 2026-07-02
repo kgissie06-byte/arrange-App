@@ -179,9 +179,9 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .field{margin-bottom:9px}
 .field label{display:block;font-size:11px;color:var(--t2);margin-bottom:3px}
 .field input,.field select{width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit}
-.field-row{display:flex;gap:8px}
-.field-row .field{flex:1;min-width:0;margin-bottom:0}
-.field-row input{width:100%;min-width:0}
+.dt-row{display:flex;align-items:center;gap:3px}
+.dt-row select{flex:1 1 0;min-width:0;width:auto;padding:7px 2px;font-size:15px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;text-align:center}
+.dt-suffix{flex:0 0 auto;font-size:12px;color:var(--t2);padding:0 1px}
 
 /* モーダル */
 .overlay{position:fixed;inset:0;background:rgba(44,34,24,.42);display:flex;align-items:flex-start;justify-content:center;padding-top:48px;z-index:300;overflow-y:auto}
@@ -3141,6 +3141,40 @@ function renderSurveyList(){
   }).join('');
 }
 
+/* ---------- 終了日時ピッカー（select方式：iOSのdatetime-localのはみ出し対策） ---------- */
+function buildDateTimePicker(prefix, dateStr, timeStr){
+  const [dy, dm, dd] = dateStr.split('-').map(Number)
+  const [dh, dmin] = timeStr.split(':').map(Number)
+  const yearStart = new Date().getFullYear()
+  const years = []
+  for(let y = yearStart; y <= Math.max(yearStart + 2, dy); y++) years.push(y)
+  const opt = (v, sel, label) => `<option value="${v}"${v===sel?' selected':''}>${label!==undefined?label:v}</option>`
+  const yearOpts = years.map(y => opt(y, dy, y)).join('')
+  const monthOpts = Array.from({length:12}, (_,i)=>i+1).map(m => opt(m, dm)).join('')
+  const dayOpts = Array.from({length:31}, (_,i)=>i+1).map(d => opt(d, dd)).join('')
+  const hourOpts = Array.from({length:24}, (_,i)=>i).map(h => opt(h, dh, String(h).padStart(2,'0'))).join('')
+  const minOpts = Array.from({length:60}, (_,i)=>i).map(mi => opt(mi, dmin, String(mi).padStart(2,'0'))).join('')
+  return `
+    <div class="dt-row">
+      <select id="${prefix}-y">${yearOpts}</select><span class="dt-suffix">年</span>
+      <select id="${prefix}-mo">${monthOpts}</select><span class="dt-suffix">月</span>
+      <select id="${prefix}-d">${dayOpts}</select><span class="dt-suffix">日</span>
+    </div>
+    <div class="dt-row" style="margin-top:6px">
+      <select id="${prefix}-h">${hourOpts}</select><span class="dt-suffix">:</span>
+      <select id="${prefix}-mi">${minOpts}</select><span class="dt-suffix">分</span>
+    </div>`
+}
+function readDateTimePicker(prefix){
+  const y = document.getElementById(`${prefix}-y`)?.value
+  const mo = document.getElementById(`${prefix}-mo`)?.value
+  const d = document.getElementById(`${prefix}-d`)?.value
+  const h = document.getElementById(`${prefix}-h`)?.value
+  const mi = document.getElementById(`${prefix}-mi`)?.value
+  if(!y || !mo || !d || h === undefined || mi === undefined) return ''
+  return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}T${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}`
+}
+
 /* ---------- アンケート作成 ---------- */
 function openCreateSurvey(){
   const now = new Date();
@@ -3155,11 +3189,7 @@ function openCreateSurvey(){
         <button id="sv-tbl-tsubomi" class="sub-tab" onclick="setSvTable('tsubomi')">蕾</button>
       </div>
     </div>
-    <label style="display:block;font-size:11px;color:var(--t2);margin-bottom:3px">終了日時</label>
-    <div class="field-row" style="margin-bottom:9px">
-      <div class="field"><input type="date" id="sv-deadline-date-in" value="${defaultDate}" style="font-size:16px"></div>
-      <div class="field"><input type="time" id="sv-deadline-time-in" value="${defaultTime}" style="font-size:16px"></div>
-    </div>
+    <div class="field"><label>終了日時</label>${buildDateTimePicker('sv-deadline-in', defaultDate, defaultTime)}</div>
     <div style="font-size:11px;color:var(--danger);min-height:14px" id="sv-create-err"></div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
@@ -3174,9 +3204,7 @@ function setSvTable(t){
 }
 async function doCreateSurvey(){
   const title = (document.getElementById('sv-title-in').value||'').trim();
-  const dateVal = document.getElementById('sv-deadline-date-in').value;
-  const timeVal = document.getElementById('sv-deadline-time-in').value;
-  const deadlineLocal = dateVal && timeVal ? `${dateVal}T${timeVal}` : '';
+  const deadlineLocal = readDateTimePicker('sv-deadline-in');
   const tableType = window._svCreateTable || 'ransaki';
   const errEl = document.getElementById('sv-create-err');
   const btn = document.getElementById('sv-create-btn');
@@ -3512,11 +3540,7 @@ function openEditSurvey(){
   const [localDate, localTime] = localDeadline.split('T');
   openModal('sv-edit', `<h3>アンケート編集</h3>
     <div class="field"><label>タイトル</label><input type="text" id="sv-edit-title" value="${esc(sv.title)}" style="font-size:16px"></div>
-    <label style="display:block;font-size:11px;color:var(--t2);margin-bottom:3px">終了日時</label>
-    <div class="field-row" style="margin-bottom:9px">
-      <div class="field"><input type="date" id="sv-edit-deadline-date" value="${localDate}" style="font-size:16px"></div>
-      <div class="field"><input type="time" id="sv-edit-deadline-time" value="${localTime}" style="font-size:16px"></div>
-    </div>
+    <div class="field"><label>終了日時</label>${buildDateTimePicker('sv-edit-deadline', localDate, localTime)}</div>
     <div style="font-size:11px;color:var(--danger);min-height:14px" id="sv-edit-err"></div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
@@ -3526,9 +3550,7 @@ function openEditSurvey(){
 
 async function doEditSurvey(){
   const title = (document.getElementById('sv-edit-title').value||'').trim();
-  const dateVal = document.getElementById('sv-edit-deadline-date').value;
-  const timeVal = document.getElementById('sv-edit-deadline-time').value;
-  const deadlineLocal = dateVal && timeVal ? `${dateVal}T${timeVal}` : '';
+  const deadlineLocal = readDateTimePicker('sv-edit-deadline');
   const errEl = document.getElementById('sv-edit-err');
   const btn = document.getElementById('sv-edit-save-btn');
   if(!title){ errEl.textContent = 'タイトルを入力してください'; return; }
