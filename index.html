@@ -3227,6 +3227,25 @@ async function initSurveyPage(){
   }
 }
 
+/* ---------- 受付中/終了ステータスの自動更新 ---------- */
+let _svStatusWatcherId = null;
+function startSurveyStatusWatcher(){
+  if(_svStatusWatcherId) return;
+  _svStatusWatcherId = setInterval(()=>{
+    const page = document.getElementById('page-survey');
+    if(!page || !page.classList.contains('active')) return;
+    const listView = document.getElementById('sv-list-view');
+    const detailView = document.getElementById('sv-detail-view');
+    if(listView && listView.style.display !== 'none' && _surveys.length){
+      renderSurveyList();
+    }
+    if(detailView && detailView.style.display !== 'none' && _activeSurveyId != null){
+      const sv = _surveys.find(s => s.id === _activeSurveyId);
+      if(sv) renderSurveyDetail(sv);
+    }
+  }, 15000);
+}
+
 async function fetchAndRenderList(){
   const el = document.getElementById('sv-list');
   el.innerHTML = '<div class="empty">読み込み中...</div>';
@@ -3804,6 +3823,7 @@ async function doApplySurvey(tableType){
       document.getElementById('main-wrap').style.display = '';
       applyRole();
       load();
+      startSurveyStatusWatcher();
     }
   } catch(e) {
   }
@@ -3834,6 +3854,7 @@ async function doLogin(){
     document.getElementById('main-wrap').style.display = '';
     applyRole();
     load();
+    startSurveyStatusWatcher();
   } catch(e) {
     errEl.textContent = 'エラーが発生しました';
   } finally {
