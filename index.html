@@ -552,8 +552,13 @@ body.touch-device .sub-tab.active:active {
 <div id="page-reinf" class="page">
   <div class="sec-head">
     <h2>援軍表</h2>
-    <button class="btn reinf-edit-only" onclick="addReinfRow()">+ 行追加</button>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn" onclick="copyReinfTable()">📋 コピー</button>
+      <button class="btn" onclick="printReinfTable()">🖨 印刷</button>
+      <button class="btn reinf-edit-only" onclick="addReinfRow()">+ 行追加</button>
+    </div>
   </div>
+
   <!-- ▼ テーブル切り替えタブ -->
   <div class="sub-tabs" style="margin-bottom:.875rem">
     <button class="sub-tab active" id="reinf-tab-ransaki" onclick="switchReinfTable('ransaki',this)">乱咲</button>
@@ -828,6 +833,7 @@ body.touch-device .sub-tab.active:active {
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 (function(){
   function onFirstTouch(){
@@ -1553,6 +1559,89 @@ function renderReinfTable(){
   });
   html+='</tbody>';
   tbl.innerHTML=html;
+}
+
+/* ---------- 援軍表の印刷（画像保存） ---------- */
+async function printReinfTable(){
+  const tbl = document.getElementById('reinf-table');
+  if(!tbl || !tbl.querySelector('tbody tr')){ toast('保存する行がありません'); return; }
+  if(typeof html2canvas === 'undefined'){ toast('画像生成ライブラリの読み込みに失敗しました。通信環境を確認してください'); return; }
+  showLoading();
+  try{
+    const canvas = await html2canvas(tbl, { backgroundColor:'#FFFDF9', scale:2 });
+    await new Promise(resolve=>{
+      canvas.toBlob(blob=>{
+        if(!blob){ resolve(); return; }
+        const url = URL.createObjectURL(blob);
+        const label = _activeReinfTable === 'ransaki' ? '乱咲' : '蕾';
+        const d = new Date();
+        const pad = n => String(n).padStart(2,'0');
+        const fname = `援軍表_${label}_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;
+        const a = document.createElement('a');
+        a.href = url; a.download = fname;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(()=>URL.revokeObjectURL(url), 3000);
+        resolve();
+      }, 'image/png');
+    });
+    toast('画像として保存しました');
+  } catch(err){
+    console.error(err);
+    toast('画像の生成に失敗しました');
+  } finally {
+    hideLoading();
+  }
+}
+
+/* ---------- 援軍表のコピー（スプレッドシート/Excel貼り付け用） ---------- */
+async function copyReinfTable(){
+  const rows = S.reinf.filter(r => (r.tableType || 'ransaki') === _activeReinfTable);
+  if(!rows.length){ toast('コピーする行がありません'); return; }
+
+  const escapeHtmlCell = s => String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const pairText = (main,sub) => {
+    if(!main && !sub) return '';
+    return sub ? `${main}-${sub}` : main;
+  };
+
+  const header = ['name','通常','城'];
+  const dataRows = rows.map(row => [
+    row.memberName || '',
+    pairText(row.normalMain, row.normalSub),
+    pairText(row.castleMain, row.castleSub)
+  ]);
+
+  const tsvText = [header, ...dataRows].map(r => r.join('\t')).join('\n');
+
+  let htmlTable = '<table><thead><tr>' +
+    header.map(h => `<th>${escapeHtmlCell(h)}</th>`).join('') +
+    '</tr></thead><tbody>';
+  dataRows.forEach(r => {
+    htmlTable += '<tr>' + r.map(v => `<td>${escapeHtmlCell(v)}</td>`).join('') + '</tr>';
+  });
+  htmlTable += '</tbody></table>';
+
+  try{
+    if(navigator.clipboard && window.ClipboardItem){
+      const item = new ClipboardItem({
+        'text/plain': new Blob([tsvText], { type:'text/plain' }),
+        'text/html': new Blob([htmlTable], { type:'text/html' })
+      });
+      await navigator.clipboard.write([item]);
+    } else {
+      await navigator.clipboard.writeText(tsvText);
+    }
+    toast('コピーしました（スプレッドシート等に貼り付け可能です）');
+  } catch(err){
+    console.error(err);
+    try{
+      await navigator.clipboard.writeText(tsvText);
+      toast('コピーしました');
+    } catch(err2){
+      toast('コピーに失敗しました');
+    }
+  }
 }
 
 function switchReinfTable(type, btn){
