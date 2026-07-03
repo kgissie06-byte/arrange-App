@@ -1007,8 +1007,8 @@ function renderMembers(){
   if(_memberFilter === 'tsubomi') visible = visible.filter(m => m.role === '蕾');
 
   // 表示中メンバー数（フィルタに応じて集計。「すべて」の場合は合計人数）
-  const ransakiCount = S.members.filter(m => m.role === '乱咲').length;
-  const tsubomiCount = S.members.filter(m => m.role === '蕾').length;
+  const ransakiCount = S.members.filter(m => m.role === '乱咲' && m.status !== '無効').length;
+  const tsubomiCount = S.members.filter(m => m.role === '蕾' && m.status !== '無効').length;
   const memberCount = _memberFilter === 'ransaki' ? ransakiCount
     : _memberFilter === 'tsubomi' ? tsubomiCount
     : ransakiCount + tsubomiCount;
