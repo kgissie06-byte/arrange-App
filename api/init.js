@@ -72,6 +72,7 @@ export default async function handler(req, res) {
     id: m.id,
     name: m.name,
     role: m.role || '',
+    status: m.status || '有効',
     memberRole: m.auth_role?.role || 'user',
     chars: (trainingRaw || [])
       .filter(t => t.member_id === m.id)

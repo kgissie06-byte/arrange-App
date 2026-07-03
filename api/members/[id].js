@@ -19,16 +19,24 @@ export default async function handler(req, res) {
 
   // メンバー更新
   if (req.method === 'PUT') {
-    const { name, role, memberRole, password } = req.body
+    const { name, role, status, memberRole, password } = req.body
+
+    if (status !== undefined && !['有効', '無効'].includes(status)) {
+      return res.status(400).json({ error: 'status は 有効 か 無効 で指定してください' })
+    }
+
+    const memberUpdates = { name, role: role || '' }
+    if (status !== undefined) memberUpdates.status = status
 
      const { error } = await supabase
        .from('members')
-       .update({ name, role: role || '' })
+       .update(memberUpdates)
        .eq('id', memberId)
 
      if (error) return res.status(500).json({ error })
 
-    if (memberRole || password) {
+    // 状態を「無効」にする場合は、既にログイン中のセッションも無効化してログイン不可・操作不可にする
+    if (memberRole || password || status === '無効') {
       const updates = {}
       if (memberRole) updates.role = memberRole
       if (password) {
@@ -49,6 +57,7 @@ export default async function handler(req, res) {
       id: memberId,
       name,
       role: role || '',
+      status: status || undefined,
       memberRole: memberRole || undefined,
       updatedPassword: password || null,
     })

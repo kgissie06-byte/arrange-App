@@ -32,14 +32,14 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'IDまたはパスワードが違います' })
   }
 
-  // その他メンバーはログイン不可
+  // 状態が「無効」のメンバーはログイン不可
   const { data: member } = await supabase
     .from('members')
-    .select('role')
+    .select('status')
     .eq('id', row.member_id)
     .single()
 
-  if (member?.role === 'その他') {
+  if (member?.status === '無効') {
     return res.status(403).json({ error: 'ログインできません' })
   }
 

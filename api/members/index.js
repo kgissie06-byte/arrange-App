@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   if (!auth) return
 
   if (req.method === 'POST') {
-    const { name, role, memberRole, password } = req.body
+    const { name, role, status, memberRole, password } = req.body
 
     if (!name) return res.status(400).json({ error: 'name is required' })
     if (!memberRole) return res.status(400).json({ error: 'memberRole is required' })
@@ -22,10 +22,13 @@ export default async function handler(req, res) {
     if (password && password.length < 4) {
       return res.status(400).json({ error: '4文字以上のパスワードを設定してください' })
     }
+    if (status && !['有効', '無効'].includes(status)) {
+      return res.status(400).json({ error: 'status は 有効 か 無効 で指定してください' })
+    }
 
     const { data, error } = await supabase
       .from('members')
-      .insert({ name, role: role || '' })
+      .insert({ name, role: role || '', status: status || '有効' })
       .select()
       .single()
 

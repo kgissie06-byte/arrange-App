@@ -1001,8 +1001,8 @@ function setMemberFilter(f){
 }
 function renderMembers(){
   const el=document.getElementById('member-list');
-  // 全ロールで「その他」は非表示（編集モーダルでは別途全件表示）
-  let visible = S.members.filter(m => m.role !== 'その他');
+  // 状態が「無効」のメンバーは非表示（編集モーダルでは別途全件表示）
+  let visible = S.members.filter(m => m.status !== '無効');
   if(_memberFilter === 'ransaki') visible = visible.filter(m => m.role === '乱咲');
   if(_memberFilter === 'tsubomi') visible = visible.filter(m => m.role === '蕾');
 
@@ -1082,6 +1082,7 @@ function renderCharGridEdit(m){
     const hasShukuen=shukuenMemberSet.has(cd.name);
     return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}" data-trained="${c?'1':'0'}">
       ${hasShukuen?`<div class="shukuen-icon" onclick="showShukuenPopup(event,'${esc(cd.name)}')">!</div>`:''}
+      ${isRecent?`<div class="shukuen-icon" style="left:auto;right:2px;background:var(--tab)">新</div>`:''}
       ${imgHtml}
       <div class="cc-info">
         <div class="cc-name" title="${cd.name}">${cd.name}</div>
@@ -1465,7 +1466,7 @@ function renderSearch(alreadyNames){
   if(!matched.length){el.innerHTML='<div class="empty">該当キャラが見つかりません</div>';return;}
   let rows=[];
   matched.forEach(cd=>{S.members.forEach((m,mi)=>{
-    if(m.role==='その他')return;
+    if(m.status==='無効')return;
     const c=m.chars.find(x=>x.name===cd.name);if(!c)return;
     if(!rarMatchesFilter(c.rar, S.filRar))return;
     if(S.filRank.length&&!S.filRank.every(fr=>c.ranks&&c.ranks.includes(fr)))return;
@@ -1918,7 +1919,7 @@ function setRSSort(mode){
 function renderRSResults(){
   const row=S.reinf.find(r=>r.id===RS.rowId);if(!row)return;
   const alreadyNames=new Set(S.reinf.filter(r=>r.memberName).map(r=>r.memberName));
-  const results=S.members.filter(m=>m.role!=='その他'&&memberPassesRS(m,row));
+  const results=S.members.filter(m=>m.status!=='無効'&&memberPassesRS(m,row));
   const mainCd=S.chars.find(c=>c.name===row.normalMain);
   const subCd=S.chars.find(c=>c.name===row.normalSub);
   const castleMainCd=RS.dualMode?S.chars.find(c=>c.name===row.castleMain):null;
@@ -2839,11 +2840,16 @@ const ROLE_OPTIONS=['乱咲','蕾','その他'];
 function roleSelect(id,val=''){
   return`<select id="${id}">${ROLE_OPTIONS.map(r=>`<option value="${r}"${r===val?' selected':''}>${r}</option>`).join('')}</select>`;
 }
+const STATUS_OPTIONS=['有効','無効'];
+function statusSelect(id,val='有効'){
+  return`<select id="${id}">${STATUS_OPTIONS.map(s=>`<option value="${s}"${s===val?' selected':''}>${s}</option>`).join('')}</select>`;
+}
 function openMemberModal(mode){
   if(mode==='add'){
     openModal('member-add',`<h3>メンバー追加</h3>
       <div class="field"><label>名前</label><input type="text" id="mm-name" placeholder=""></div>
       <div class="field"><label>所属</label>${roleSelect('mm-role')}</div>
+      <div class="field"><label>状態</label>${statusSelect('mm-status')}</div>
       <div class="field"><label>権限</label><select id="mm-member-role">
         <option value="user">利用者</option>
         <option value="reinf-admin">援軍管理者</option>
@@ -2869,6 +2875,7 @@ function openMemberModal(mode){
         <div class="field"><label>ID</label><span id="me-id-label"></span></div>
         <div class="field"><label>名前</label><input type="text" id="me-name"></div>
         <div class="field"><label>所属</label>${roleSelect('me-role')}</div>
+        <div class="field"><label>状態</label>${statusSelect('me-status')}</div>
         <div class="field"><label>権限</label><select id="me-member-role">
           <option value="user">利用者</option>
           <option value="reinf-admin">援軍管理者</option>
@@ -2891,6 +2898,8 @@ function loadMemberEdit(){
   document.getElementById('me-name').value=m.name;
   const roleEl=document.getElementById('me-role');
   roleEl.value=ROLE_OPTIONS.includes(m.role)?m.role:'その他';
+  const statusEl=document.getElementById('me-status');
+  if(statusEl) statusEl.value=STATUS_OPTIONS.includes(m.status)?m.status:'有効';
   // auth_roleの現在の権限をセット（メンバーデータにあればそれを使う）
   const mrEl=document.getElementById('me-member-role');
   if(mrEl) mrEl.value=(m.memberRole||m.auth_role||'user');
@@ -2905,12 +2914,13 @@ async function saveMemberEdit(){
   const id = _meSelId;
   const name=document.getElementById('me-name').value;
   const role=document.getElementById('me-role').value;
+  const status=document.getElementById('me-status').value;
   const memberRole=document.getElementById('me-member-role').value;
   const password=(document.getElementById('me-pw').value||'').trim();
   if(password && password.length<4){toast('パスワードは4文字以上にしてください');return;}
 
   if(password && id === currentMemberId){
-    _pendingMemberEdit = {id,name,role,memberRole,password};
+    _pendingMemberEdit = {id,name,role,status,memberRole,password};
     const roleLabel = {user:'利用者','reinf-admin':'援軍管理者',admin:'管理者'}[memberRole] || memberRole;
     openModal('member-edit-confirm',`<h3>パスワードを変更しますか？</h3>
       <p style="font-size:13px;color:var(--t2);margin:0 0 8px">変更すると自動的にログアウトされ、新しいパスワードで再度ログインが必要になります。</p>
@@ -2918,11 +2928,12 @@ async function saveMemberEdit(){
       <div class="field"><label>パスワード</label><div class="added-val">${password}</div></div>
       <div class="field"><label>名前</label><div class="added-val">${name}</div></div>
       <div class="field"><label>所属</label><div class="added-val">${role || '―'}</div></div>
+      <div class="field"><label>状態</label><div class="added-val">${status}</div></div>
       <div class="field"><label>権限</label><div class="added-val">${roleLabel}</div></div>
       <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" onclick="commitMemberEdit()">変更してログアウト</button></div>`);
     return;
   }
-  await commitMemberEdit({id,name,role,memberRole,password});
+  await commitMemberEdit({id,name,role,status,memberRole,password});
 }
 
 // ===== メンバー編集 combo =====
@@ -2941,7 +2952,7 @@ function _renderMeSelList(q) {
   }
   list.innerHTML = filtered.map(m =>
     `<div class="combo-option${_meSelId === m.id ? ' selected' : ''}" onclick="selectMeSel(${m.id},'${m.name.replace(/'/g,"\\'")}')">
-      ${m.name}<span style="font-size:11px;color:var(--t3);margin-left:6px">ID:${m.id}</span>
+      ${m.name}<span style="font-size:11px;color:var(--t3);margin-left:6px">ID:${m.id}</span>${m.status==='無効'?'<span style="font-size:10px;color:var(--danger);margin-left:6px">無効</span>':''}
     </div>`
   ).join('');
 }
@@ -2972,14 +2983,14 @@ function selectMeSel(id, name) {
 }
 
 async function commitMemberEdit(pending){
-  const {id,name,role,memberRole,password} = pending || _pendingMemberEdit;
+  const {id,name,role,status,memberRole,password} = pending || _pendingMemberEdit;
   _pendingMemberEdit = null;
   showLoading();
   try {
     const res = await fetch(`/api/members/${id}`,{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name,role,memberRole,password:password||undefined})
+      body:JSON.stringify({name,role,status,memberRole,password:password||undefined})
     });
     if(!res.ok){ throw new Error('保存失敗'); }
     const data = await res.json();
@@ -2999,6 +3010,7 @@ async function commitMemberEdit(pending){
       ${data.updatedPassword ? `<div class="field"><label>パスワード</label><div class="added-val">${data.updatedPassword}</div></div>` : ''}
       <div class="field"><label>名前</label><div class="added-val">${data.name}</div></div>
       <div class="field"><label>所属</label><div class="added-val">${data.role || '―'}</div></div>
+      <div class="field"><label>状態</label><div class="added-val">${data.status || '有効'}</div></div>
       <div class="field"><label>権限</label><div class="added-val">${roleLabel}</div></div>
       <div class="modal-acts"><button class="btn pri" onclick="closeModal()">閉じる</button></div>`);
   } catch(err){
@@ -3027,6 +3039,7 @@ async function deleteMember(){
 async function addMember(){
   const name=(document.getElementById('mm-name').value||'').trim();
   const role=(document.getElementById('mm-role').value||'').trim();
+  const status=(document.getElementById('mm-status').value||'有効');
   const memberRole=(document.getElementById('mm-member-role').value||'user');
   const password=(document.getElementById('mm-pw').value||'').trim();
   if(!name)return;
@@ -3036,7 +3049,7 @@ async function addMember(){
     const res = await fetch('/api/members', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, role, memberRole, password: password || undefined })
+      body: JSON.stringify({ name, role, status, memberRole, password: password || undefined })
     });
     if(!res.ok){ throw new Error('保存失敗'); }
     const data = await res.json();
@@ -3049,6 +3062,7 @@ async function addMember(){
       <div class="field"><label>パスワード</label><div class="added-val">${data.initialPassword}</div></div>
       <div class="field"><label>名前</label><div class="added-val">${data.name}</div></div>
       <div class="field"><label>所属</label><div class="added-val">${data.role || '―'}</div></div>
+      <div class="field"><label>状態</label><div class="added-val">${data.status || '有効'}</div></div>
       <div class="field"><label>権限</label><div class="added-val">${roleLabel}</div></div>
       <div class="modal-acts"><button class="btn pri" onclick="closeModal()">閉じる</button></div>`);
   } catch(err){
