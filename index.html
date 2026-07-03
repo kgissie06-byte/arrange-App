@@ -553,8 +553,8 @@ body.touch-device .sub-tab.active:active {
   <div class="sec-head">
     <h2>援軍表</h2>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button class="btn" onclick="copyReinfTable()">📋 コピー</button>
-      <button class="btn" onclick="printReinfTable()">🖨 印刷</button>
+      <button class="btn reinf-edit-only" onclick="copyReinfTable()">コピー</button>
+      <button class="btn reinf-edit-only" onclick="printReinfTable()">印刷</button>
       <button class="btn reinf-edit-only" onclick="addReinfRow()">+ 行追加</button>
     </div>
   </div>
@@ -3615,6 +3615,10 @@ async function doAddPair(){
   const btn = document.getElementById('ap-add-btn');
   if(!main && !sub){ errEl.textContent = '大将か副将を選択してください'; return; }
   btn.disabled = true; btn.textContent = '追加中...';
+  // ペア追加前の仮選択（未確定チェック）状態を保持しておく
+  // ※ fetchAndRenderDetail() はサーバーの確定済み投票だけで _pendingVotes を
+  //   再初期化してしまうため、そのままだと未確定のチェックが消えてしまう
+  const prevPending = new Set(_pendingVotes);
   try {
     const res = await fetch(`/api/surveys?id=${_activeSurveyId}`, {
       method: 'POST',
@@ -3626,16 +3630,19 @@ async function doAddPair(){
     closeModal();
     toast('ペアを追加しました');
     await fetchAndRenderDetail(_activeSurveyId);
-    // 追加したペアを自動で仮選択（チェック）状態にする
     const sv = _surveys.find(s => s.id === _activeSurveyId);
     if(sv){
+      // 追加前に仮選択していたペア（現在も存在するもの）を復元
+      const validIds = new Set((sv.pairs||[]).map(p => p.id));
+      prevPending.forEach(id => { if(validIds.has(id)) _pendingVotes.add(id); });
+      // 追加したペアを自動で仮選択（チェック）状態にする
       const newPair = (data && data.id != null)
         ? (sv.pairs||[]).find(p => p.id === data.id)
         : [...(sv.pairs||[])].reverse().find(p => (p.main||'') === main && (p.sub||'') === sub);
       if(newPair){
         _pendingVotes.add(newPair.id);
-        renderSurveyDetail(sv);
       }
+      renderSurveyDetail(sv);
     }
   } catch(e){
     errEl.textContent = 'エラーが発生しました'; btn.disabled=false; btn.textContent='追加';
