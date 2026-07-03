@@ -1073,7 +1073,8 @@ function renderCharGridEdit(m){
     });
     return set;
   })();
-  _grid.innerHTML=sortByYomi(S.chars).map(cd=>{
+  const orderedChars=orderCharsWithRecentPickup(S.chars,5);
+  const renderCc=(cd,isRecent)=>{
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
     const imgHtml=cd.img
       ?`<img class="cc-img" src="${cd.img}" alt="">`
@@ -1081,6 +1082,7 @@ function renderCharGridEdit(m){
     const hasShukuen=shukuenMemberSet.has(cd.name);
     return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}" data-trained="${c?'1':'0'}">
       ${hasShukuen?`<div class="shukuen-icon" onclick="showShukuenPopup(event,'${esc(cd.name)}')">!</div>`:''}
+      ${isRecent?`<div class="shukuen-icon" style="left:auto;right:2px;background:var(--tab)">新</div>`:''}
       ${imgHtml}
       <div class="cc-info">
         <div class="cc-name" title="${cd.name}">${cd.name}</div>
@@ -1089,8 +1091,26 @@ function renderCharGridEdit(m){
         ${!c?'<span style="font-size:10px;color:var(--t3)">未育成</span>':''}</div>
       </div>
     </div>`;
-  }).join('');
+  };
+  let html='';
+  if(orderedChars.recent.length){
+    html+=`<div style="grid-column:1/-1;margin-bottom:4px;font-size:11px;color:var(--t2);font-weight:500">最近更新されたキャラ</div>`;
+    html+=orderedChars.recent.map(cd=>renderCc(cd,true)).join('');
+    html+=`<div style="grid-column:1/-1;margin:8px 0 4px;font-size:11px;color:var(--t2);font-weight:500">キャラ一覧</div>`;
+  }
+  html+=orderedChars.rest.map(cd=>renderCc(cd,false)).join('');
+  _grid.innerHTML=html;
   filterCharGrid();
+}
+// 直近5件の更新（新規追加・編集）キャラを先頭にピックアップし、残りは読み仮名順で返す
+function orderCharsWithRecentPickup(arr,n){
+  const withDate=arr.filter(c=>c.updatedAt);
+  const recent=[...withDate]
+    .sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt))
+    .slice(0,n);
+  const recentNames=new Set(recent.map(c=>c.name));
+  const rest=sortByYomi(arr.filter(c=>!recentNames.has(c.name)));
+  return{recent,rest};
 }
 
 function romaToHira(s){

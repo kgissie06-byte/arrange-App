@@ -28,6 +28,7 @@ export default async function handler(req, res) {
     else if (shukuen !== undefined) updates.shukuen = shukuen
     if (img !== undefined) updates.img = img || null
     if (exSotsui !== undefined) updates.ex_sotsui = exSotsui
+    updates.updated_at = new Date().toISOString()
 
     // rarsが更新される場合、SR以下→UR以上への変更かチェックして技極系ranksを削除
     if (rars !== undefined) {

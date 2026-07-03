@@ -50,6 +50,7 @@ export default async function handler(req, res) {
     shukuens: c.shukuens || (c.shukuen ? [c.shukuen, {enabled:false,members:[]}] : [{enabled:false,members:[]},{enabled:false,members:[]}]),
     img: c.img || null,
     exSotsui: c.ex_sotsui || false,
+    updatedAt: c.updated_at || c.created_at || null,
   }))
 
   // メンバー一覧（auth_roleをJOINして権限も取得）
