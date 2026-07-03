@@ -1082,7 +1082,6 @@ function renderCharGridEdit(m){
     const hasShukuen=shukuenMemberSet.has(cd.name);
     return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}" data-trained="${c?'1':'0'}">
       ${hasShukuen?`<div class="shukuen-icon" onclick="showShukuenPopup(event,'${esc(cd.name)}')">!</div>`:''}
-      ${isRecent?`<div class="shukuen-icon" style="left:auto;right:2px;background:var(--tab)">新</div>`:''}
       ${imgHtml}
       <div class="cc-info">
         <div class="cc-name" title="${cd.name}">${cd.name}</div>
