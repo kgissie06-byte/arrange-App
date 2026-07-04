@@ -3205,8 +3205,8 @@ async function manualReload(){
    Settings → API で確認できる値をここに設定してください。
    anon key は「公開して問題ない鍵」です（SELECT専用ポリシーしか付与していないため）。
 */
-const SUPABASE_URL = 'YOUR_SUPABASE_PROJECT_URL';      // 例: https://xxxxx.supabase.co
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';    // Settings → API → anon public
+const SUPABASE_URL = 'https://movhdunyesfscutphpcf.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdmhkdW55ZXNmc2N1dHBocGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NTg1NjIsImV4cCI6MjA5MzAzNDU2Mn0.Af014z6apQOdDFUdL99FLdjGMzpl4Wh-n796iK8Hch0';
 
 const _sbClient = (typeof window.supabase !== 'undefined' && SUPABASE_URL.startsWith('http'))
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
