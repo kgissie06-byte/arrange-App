@@ -30,17 +30,22 @@ export default async function handler(req, res) {
     if (exSotsui !== undefined) updates.ex_sotsui = exSotsui
     updates.updated_at = new Date().toISOString()
 
+    // rars/imgチェック用に現在のキャラ情報を取得（rars変更判定・古い画像削除の両方で使う）
+    let currentChar = null
+    if (rars !== undefined || img !== undefined) {
+      const { data } = await supabase
+        .from('chars')
+        .select('rars, img')
+        .eq('name', name)
+        .single()
+      currentChar = data
+    }
+
     // rarsが更新される場合、SR以下→UR以上への変更かチェックして技極系ranksを削除
     if (rars !== undefined) {
       const UR_OR_ABOVE = ['UR', 'LG', 'LG1', 'LG2', 'LG3']
       const SR_OR_BELOW = ['SR', 'R', 'N']
       const GIKOKU_RANKS = ['技極', '裏技極', '全技極']
-
-      const { data: currentChar } = await supabase
-        .from('chars')
-        .select('rars')
-        .eq('name', name)
-        .single()
 
       const currentRars = currentChar?.rars || []
       const wasOnlySrOrBelow = currentRars.length > 0 &&
@@ -75,6 +80,15 @@ export default async function handler(req, res) {
       .eq('name', name)
 
     if (error) return res.status(500).json({ error })
+
+    // 画像が変更・削除された場合は古い画像をStorageから削除する
+    if (img !== undefined) {
+      const oldImg = currentChar?.img
+      if (oldImg && oldImg !== img) {
+        const oldFileName = oldImg.split('/').pop()
+        await supabase.storage.from('char-images').remove([oldFileName])
+      }
+    }
 
     if (newName && newName !== name) {
       const { error: trainingErr } = await supabase
