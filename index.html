@@ -3263,7 +3263,6 @@ function reinfRowFromDb(r){
 }
 
 function handleReinfRowChange(payload){
-  console.log('[reinf realtime] event received:', payload); // ←デバッグ用に追加
   const { eventType, new: n, old: o } = payload;
   if(eventType === 'INSERT'){
     if(!n || S.reinf.find(r => r.id === n.id)) return;
@@ -3282,6 +3281,11 @@ function handleReinfRowChange(payload){
   const page = document.getElementById('page-reinf');
   if(page && page.classList.contains('active')){
     renderReinfTable();
+  }
+  // 援軍検索を開いている時は「表に登録済み」表示も更新する
+  const overlay = document.getElementById('reinf-search-overlay');
+  if(overlay && overlay.style.display === 'flex'){
+    renderRSResults();
   }
 }
 
