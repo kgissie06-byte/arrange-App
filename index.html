@@ -3238,7 +3238,7 @@ function startReinfRealtime(){
   _reinfRealtimeChannel = _sbClient
     .channel('reinf-sync')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'reinf' }, handleReinfRowChange)
-    .subscribe((status, err) => console.log('reinf realtime status:', status, err));
+    .subscribe();
 }
 
 // 援軍表タブを離れる・ログアウト時に切断する
@@ -3263,6 +3263,7 @@ function reinfRowFromDb(r){
 }
 
 function handleReinfRowChange(payload){
+  console.log('[reinf realtime] event received:', payload); // ←デバッグ用に追加
   const { eventType, new: n, old: o } = payload;
   if(eventType === 'INSERT'){
     if(!n || S.reinf.find(r => r.id === n.id)) return;
