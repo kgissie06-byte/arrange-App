@@ -10,20 +10,14 @@ const supabase = createClient(
 // 1000件を超える場合に備えてページングしながら全件取得する
 const PAGE_SIZE = 1000
 
-// memberIds を渡すとそのメンバーのみ取得する（無効メンバー分は取得しない）
-async function fetchAllTraining(memberIds) {
-  if (memberIds && memberIds.length === 0) return []
-
+async function fetchAllTraining() {
   let all = []
   let from = 0
   while (true) {
-    let query = supabase
+    const { data, error } = await supabase
       .from('training')
       .select('*')
-      .order('id', { ascending: true })
       .range(from, from + PAGE_SIZE - 1)
-    if (memberIds) query = query.in('member_id', memberIds)
-    const { data, error } = await query
     if (error) throw error
     all = all.concat(data || [])
     if (!data || data.length < PAGE_SIZE) break
@@ -66,14 +60,10 @@ export default async function handler(req, res) {
     .order('created_at', { ascending: true })
   if (membersErr) return res.status(500).json({ error: membersErr })
 
-  // 育成データ（無効メンバーはどの画面にも表示されないため、有効メンバー分のみ取得する）
-  const activeMemberIds = (membersRaw || [])
-    .filter(m => (m.status || '有効') !== '無効')
-    .map(m => m.id)
-
+  // 育成データ
   let trainingRaw
   try {
-    trainingRaw = await fetchAllTraining(activeMemberIds)
+    trainingRaw = await fetchAllTraining()
   } catch (trainingErr) {
     return res.status(500).json({ error: trainingErr })
   }
