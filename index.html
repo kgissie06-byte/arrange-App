@@ -3168,7 +3168,8 @@ function switchTab(tab,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   if(tab==='search'){renderFilters();renderSearch();}
-  if(tab==='reinf')renderReinfTable();
+  if(tab==='reinf'){renderReinfTable();startReinfRealtime();}
+  else{stopReinfRealtime();}
   if(tab==='chars'){initCharNewForm();renderCharListDisplay();}
   if(tab==='survey'){initSurveyPage();startSurveyRealtime();}
   else{stopSurveyRealtime();}
@@ -3227,13 +3228,61 @@ function stopSurveyRealtime(){
   }
 }
 
-/* ----- サーバーに問い合わせず、Realtimeで届いた行データを直接ローカルに反映する -----
-   ※ 以前は変更を検知するたびに /api/surveys を再取得していたが、
-     ・取得のタイムラグで反映が抜ける
-     ・再取得のたびに投票の仮選択状態がリセットされる
-     という副作用があったため、届いたデータをその場で反映する方式に変更した。
-     DELETE時に外部キー(survey_id/pair_id)を受け取るため、対象テーブルは
-     REPLICA IDENTITY FULL に設定しておく必要がある。 */
+/* ---------- 援軍表のRealtime（他ユーザーの変更をリアルタイム反映） ---------- */
+let _reinfRealtimeChannel = null;
+
+// 援軍表タブを開いている間だけ接続する
+function startReinfRealtime(){
+  if(!_sbClient) return;
+  if(_reinfRealtimeChannel) return;
+  _reinfRealtimeChannel = _sbClient
+    .channel('reinf-sync')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'reinf' }, handleReinfRowChange)
+    .subscribe();
+}
+
+// 援軍表タブを離れる・ログアウト時に切断する
+function stopReinfRealtime(){
+  if(_reinfRealtimeChannel && _sbClient){
+    _sbClient.removeChannel(_reinfRealtimeChannel);
+    _reinfRealtimeChannel = null;
+  }
+}
+
+function reinfRowFromDb(r){
+  return {
+    id: r.id,
+    memberName: r.member_name || null,
+    normalMain: r.normal_main || null,
+    normalSub: r.normal_sub || null,
+    castleMain: r.castle_main || null,
+    castleSub: r.castle_sub || null,
+    sortOrder: r.sort_order || 0,
+    tableType: r.table_type || 'ransaki',
+  };
+}
+
+function handleReinfRowChange(payload){
+  const { eventType, new: n, old: o } = payload;
+  if(eventType === 'INSERT'){
+    if(!n || S.reinf.find(r => r.id === n.id)) return;
+    S.reinf.push(reinfRowFromDb(n));
+  } else if(eventType === 'UPDATE'){
+    if(!n) return;
+    const idx = S.reinf.findIndex(r => r.id === n.id);
+    if(idx >= 0) S.reinf[idx] = reinfRowFromDb(n);
+    else S.reinf.push(reinfRowFromDb(n));
+  } else if(eventType === 'DELETE'){
+    const delId = o?.id;
+    if(delId == null) return;
+    S.reinf = S.reinf.filter(r => r.id !== delId);
+  }
+  // 援軍表タブを見ている時だけ再描画する
+  const page = document.getElementById('page-reinf');
+  if(page && page.classList.contains('active')){
+    renderReinfTable();
+  }
+}
 
 function handleSurveysRowChange(payload){
   const { eventType, new: n, old: o } = payload;
@@ -3975,6 +4024,7 @@ async function doLogin(){
 
 async function doLogout(){
   stopSurveyRealtime();
+  stopReinfRealtime();
   await fetch('/api/auth/logout', { method: 'POST' }).catch(()=>{});
   currentRole = null;
   currentMemberId = null;
