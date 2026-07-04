@@ -553,8 +553,8 @@ body.touch-device .sub-tab.active:active {
   <div class="sec-head">
     <h2>援軍表</h2>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button class="btn reinf-edit-only" onclick="copyReinfTable()">コピー</button>
-      <button class="btn reinf-edit-only" onclick="printReinfTable()">印刷</button>
+      <button class="btn reinf-edit-only" onclick="copyReinfTable()">📋 コピー</button>
+      <button class="btn reinf-edit-only" onclick="printReinfTable()">🖨 印刷</button>
       <button class="btn reinf-edit-only" onclick="addReinfRow()">+ 行追加</button>
     </div>
   </div>
@@ -833,6 +833,7 @@ body.touch-device .sub-tab.active:active {
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 (function(){
@@ -3169,7 +3170,8 @@ function switchTab(tab,el){
   if(tab==='search'){renderFilters();renderSearch();}
   if(tab==='reinf')renderReinfTable();
   if(tab==='chars'){initCharNewForm();renderCharListDisplay();}
-  if(tab==='survey')initSurveyPage();
+  if(tab==='survey'){initSurveyPage();startSurveyRealtime();}
+  else{stopSurveyRealtime();}
 }
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
@@ -3199,6 +3201,55 @@ async function manualReload(){
 // API: /api/surveys (GET/POST), /api/surveys?id=XX (GET/POST/DELETE)
 //      /api/surveys?action=vote (POST), /api/surveys?action=voters&id=XX (GET)
 
+/* ---------- Supabase Realtime（他ユーザーの変更をリアルタイム反映） ----------
+   Settings → API で確認できる値をここに設定してください。
+   anon key は「公開して問題ない鍵」です（SELECT専用ポリシーしか付与していないため）。
+*/
+const SUPABASE_URL = 'YOUR_SUPABASE_PROJECT_URL';      // 例: https://xxxxx.supabase.co
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';    // Settings → API → anon public
+
+const _sbClient = (typeof window.supabase !== 'undefined' && SUPABASE_URL.startsWith('http'))
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+let _svRealtimeChannel = null;
+let _svRealtimeDebounceTimer = null;
+
+// アンケート画面を開いている間だけ接続する（同時接続数を抑えるため）
+function startSurveyRealtime(){
+  if(!_sbClient){ console.warn('Supabase Realtime: URL/ANON_KEYが未設定です'); return; }
+  if(_svRealtimeChannel) return; // 既に接続済み
+  _svRealtimeChannel = _sbClient
+    .channel('survey-sync')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'surveys' }, onSurveyRealtimeChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'survey_pairs' }, onSurveyRealtimeChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'survey_votes' }, onSurveyRealtimeChange)
+    .subscribe();
+}
+
+// アンケート画面を離れる・ログアウト時に切断する
+function stopSurveyRealtime(){
+  if(_svRealtimeChannel && _sbClient){
+    _sbClient.removeChannel(_svRealtimeChannel);
+    _svRealtimeChannel = null;
+  }
+  clearTimeout(_svRealtimeDebounceTimer);
+}
+
+// 短時間に複数の変更通知が来ても、まとめて1回だけ再取得する
+function onSurveyRealtimeChange(){
+  clearTimeout(_svRealtimeDebounceTimer);
+  _svRealtimeDebounceTimer = setTimeout(async ()=>{
+    const page = document.getElementById('page-survey');
+    if(!page || !page.classList.contains('active')) return; // 見ていない画面は更新しない
+    if(_activeSurveyId != null){
+      await fetchAndRenderDetail(_activeSurveyId);
+    } else {
+      await fetchAndRenderList();
+    }
+  }, 500);
+}
+
 let _surveys = [];           // キャッシュ
 let _activeSurveyId = null;  // 詳細表示中のアンケートID
 let _pendingVotes = new Set(); // 仮選択中のペアID（確定前）
@@ -3225,6 +3276,28 @@ async function initSurveyPage(){
   } else {
     await fetchAndRenderList();
   }
+}
+
+/* ---------- 受付中/終了ステータスの自動更新 ---------- */
+// 締切時刻を過ぎても、画面操作やタブ移動をしない限り「受付中」表示のまま
+// になってしまうのを防ぐため、一定間隔でステータス表示だけを再計算する
+// （サーバーへの再取得は行わず、Date.now() と締切の比較のみ再描画する）
+let _svStatusWatcherId = null;
+function startSurveyStatusWatcher(){
+  if(_svStatusWatcherId) return;
+  _svStatusWatcherId = setInterval(()=>{
+    const page = document.getElementById('page-survey');
+    if(!page || !page.classList.contains('active')) return;
+    const listView = document.getElementById('sv-list-view');
+    const detailView = document.getElementById('sv-detail-view');
+    if(listView && listView.style.display !== 'none' && _surveys.length){
+      renderSurveyList();
+    }
+    if(detailView && detailView.style.display !== 'none' && _activeSurveyId != null){
+      const sv = _surveys.find(s => s.id === _activeSurveyId);
+      if(sv) renderSurveyDetail(sv);
+    }
+  }, 15000);
 }
 
 async function fetchAndRenderList(){
@@ -3804,6 +3877,7 @@ async function doApplySurvey(tableType){
       document.getElementById('main-wrap').style.display = '';
       applyRole();
       load();
+      startSurveyStatusWatcher();
     }
   } catch(e) {
   }
@@ -3834,6 +3908,7 @@ async function doLogin(){
     document.getElementById('main-wrap').style.display = '';
     applyRole();
     load();
+    startSurveyStatusWatcher();
   } catch(e) {
     errEl.textContent = 'エラーが発生しました';
   } finally {
@@ -3843,6 +3918,7 @@ async function doLogin(){
 }
 
 async function doLogout(){
+  stopSurveyRealtime();
   await fetch('/api/auth/logout', { method: 'POST' }).catch(()=>{});
   currentRole = null;
   currentMemberId = null;
