@@ -3198,13 +3198,6 @@ async function manualReload(){
 }
 
 /* ========== ④ アンケート ========== */
-// API: /api/surveys (GET/POST), /api/surveys?id=XX (GET/POST/DELETE)
-//      /api/surveys?action=vote (POST), /api/surveys?action=voters&id=XX (GET)
-
-/* ---------- Supabase Realtime（他ユーザーの変更をリアルタイム反映） ----------
-   Settings → API で確認できる値をここに設定してください。
-   anon key は「公開して問題ない鍵」です（SELECT専用ポリシーしか付与していないため）。
-*/
 const SUPABASE_URL = 'https://movhdunyesfscutphpcf.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vdmhkdW55ZXNmc2N1dHBocGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NTg1NjIsImV4cCI6MjA5MzAzNDU2Mn0.Af014z6apQOdDFUdL99FLdjGMzpl4Wh-n796iK8Hch0';
 
@@ -3418,6 +3411,13 @@ async function fetchAndRenderDetail(svId){
     const member = getSvMember();
     const qs = member ? `&memberId=${member.id}` : '';
     const res = await fetch(`/api/surveys?id=${svId}${qs}`);
+    if(res.status === 404){
+      // 閲覧中に他の人が削除した場合 → 一覧に戻す
+      _surveys = _surveys.filter(s => s.id !== svId);
+      toast('このアンケートは削除されました');
+      closeSurveyDetail();
+      return;
+    }
     if(!res.ok) throw new Error();
     const sv = await res.json();
     const idx = _surveys.findIndex(s => s.id === sv.id);
