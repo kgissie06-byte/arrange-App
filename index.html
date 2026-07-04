@@ -3238,7 +3238,7 @@ function startReinfRealtime(){
   _reinfRealtimeChannel = _sbClient
     .channel('reinf-sync')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'reinf' }, handleReinfRowChange)
-    .subscribe();
+    .subscribe((status, err) => console.log('reinf realtime status:', status, err));
 }
 
 // 援軍表タブを離れる・ログアウト時に切断する
