@@ -65,6 +65,8 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .tab{padding:11px 15px;font-size:12px;cursor:pointer;border:none;background:none;color:var(--t2);border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;transition:color .15s;font-family:inherit}
 .tab.active{color:var(--tab);border-bottom-color:var(--tab);font-weight:500}
 .tab:hover:not(.active){color:var(--t);background:var(--acc-bg)}
+.tab{position:relative}
+.tab-badge{position:absolute;top:4px;right:2px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:#E0483E;color:#fff;font-size:10px;font-weight:700;line-height:15px;text-align:center;box-shadow:0 0 0 1.5px var(--card)}
 .content{padding:1.125rem 1rem;max-width:920px;margin:0 auto;position:relative}
 .page{display:none}.page.active{display:block}
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
@@ -472,7 +474,7 @@ body.touch-device .sub-tab.active:active {
   <div class="tabs">
     <button class="tab active" onclick="switchTab('input',this)">育成入力</button>
     <button class="tab" onclick="switchTab('search',this)">育成検索</button>
-    <button class="tab" onclick="switchTab('survey',this)">アンケート</button>
+    <button class="tab" onclick="switchTab('survey',this)">アンケート<span id="sv-tab-badge" class="tab-badge" style="display:none">0</span></button>
     <button class="tab" onclick="switchTab('reinf',this)">援軍表</button>
     <button class="tab admin-only" onclick="switchTab('chars',this)">キャラ管理</button>
   </div>
@@ -3171,7 +3173,7 @@ function switchTab(tab,el){
   if(tab==='reinf'){renderReinfTable();startReinfRealtime();}
   else{stopReinfRealtime();}
   if(tab==='chars'){initCharNewForm();renderCharListDisplay();}
-  if(tab==='survey'){initSurveyPage();startSurveyRealtime();}
+  if(tab==='survey'){initSurveyPage();startSurveyRealtime();clearSurveyBadge();}
   else{stopSurveyRealtime();}
 }
 
@@ -3184,6 +3186,20 @@ function hideLoading(){document.getElementById('loading-overlay').classList.remo
 /* ========== ログイン ========== */
 let currentRole = null;
 let currentMemberId = null;
+
+// アンケートのtableTypeとメンバーの所属（m.role: '乱咲'/'蕾'）の対応。surveys.jsのTABLE_TYPE_ROLE_MAPと同じ内容。
+const SV_TABLE_TYPE_ROLE_MAP = { ransaki: '乱咲', tsubomi: '蕾' };
+
+// このアンケートが自分に関係あるか（バッジ・通知の対象か）を判定する。
+// 管理者・援軍管理者は両方の所属を管理するため、常に対象とする。
+function surveyAppliesToMe(survey){
+  if(currentRole === 'admin' || currentRole === 'reinf-admin') return true;
+  const requiredRole = SV_TABLE_TYPE_ROLE_MAP[survey.tableType || survey.table_type];
+  if(!requiredRole) return true; // 対応表にない種別は念のため対象にする
+  const me = (S && S.members) ? S.members.find(m => m.id === currentMemberId) : null;
+  if(!me) return true; // 所属が分からない場合は対象にする（見落とし防止）
+  return me.role === requiredRole;
+}
 
 async function manualReload(){
   const btn = document.getElementById('reload-btn');
@@ -3205,6 +3221,110 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const _sbClient = (typeof window.supabase !== 'undefined' && SUPABASE_URL.startsWith('http'))
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
+
+/* ---------- アンケート新着バッジ ---------- */
+// ログインしている間ずっと監視する軽量チャンネル（新規作成の通知専用）。
+// 一覧全体・投票状況などの同期は startSurveyRealtime 側（タブを開いている間だけ）が担当する。
+let _svNotifyChannel = null;
+let _svUnreadCount = 0;
+
+// 既読状態はサーバー（既存の /api/surveys に action=seen/markSeen として相乗り）に保存する。
+// Vercelの関数数を増やさずに済むよう、新規エンドポイントは作らない。
+async function getSvLastSeen(){
+  try {
+    const res = await fetch('/api/surveys?action=seen');
+    if(!res.ok) return null;
+    const data = await res.json();
+    return data.lastSeen || null;
+  } catch(e){ return null; }
+}
+async function markSvSeen(){
+  try { await fetch('/api/surveys?action=markSeen', { method: 'POST' }); } catch(e){ /* 失敗しても致命的ではない */ }
+}
+
+function updateSurveyBadge(){
+  const el = document.getElementById('sv-tab-badge');
+  if(!el) return;
+  if(_svUnreadCount > 0){
+    el.textContent = _svUnreadCount > 9 ? '9+' : String(_svUnreadCount);
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// アンケートタブを開いた時に呼ぶ：バッジを消し、その時刻をサーバーに既読済みとして保存する
+function clearSurveyBadge(){
+  _svUnreadCount = 0;
+  updateSurveyBadge();
+  markSvSeen();
+}
+
+// ログイン直後・セッション復元直後に呼ぶ：サーバーの全件と既読時刻を突き合わせて未読件数を復元する
+async function initSurveyBadgeFromServer(){
+  const lastSeen = await getSvLastSeen();
+  if(!lastSeen){
+    // 初回はさかのぼって未読扱いにせず、「今」を既読時刻として保存するだけにする
+    await markSvSeen();
+    return;
+  }
+  try {
+    const res = await fetch('/api/surveys');
+    if(!res.ok) return;
+    const list = await res.json();
+    if(Array.isArray(list)) {
+      // キャッシュにも反映（未取得のまま新着通知が来た場合の一覧遷移用）
+      list.forEach(s => { if(!_surveys.find(x => x.id === s.id)) _surveys.push(s); });
+      const lastSeenTime = new Date(lastSeen).getTime();
+      _svUnreadCount = list.filter(s => surveyAppliesToMe(s) && new Date(s.createdAt).getTime() > lastSeenTime).length;
+      updateSurveyBadge();
+    }
+  } catch(e) { /* 取得失敗時はバッジ0のままにしておく */ }
+}
+
+function startSurveyNotifyChannel(){
+  if(!_sbClient) return;
+  if(_svNotifyChannel) return; // 既に接続済み
+  _svNotifyChannel = _sbClient
+    .channel('survey-notify')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'surveys' }, handleSurveyNotify)
+    .subscribe();
+}
+
+function stopSurveyNotifyChannel(){
+  if(_svNotifyChannel && _sbClient){
+    _sbClient.removeChannel(_svNotifyChannel);
+    _svNotifyChannel = null;
+  }
+  _svUnreadCount = 0;
+}
+
+function handleSurveyNotify(payload){
+  const n = payload.new;
+  if(!n) return;
+  if(!surveyAppliesToMe({ tableType: n.table_type })) return; // 所属が違うアンケートは通知しない
+
+  const page = document.getElementById('page-survey');
+  const isViewingList = !!(page && page.classList.contains('active') && !_activeSurveyId);
+
+  if(isViewingList){
+    // 一覧を見ている間はバッジを出さない（survey-syncチャンネル側が一覧に即時反映する）
+    return;
+  }
+
+  // アンケート画面を開いていない/詳細を見ている場合はキャッシュにも足しておく
+  if(!_surveys.find(s => s.id === n.id)){
+    _surveys.unshift({
+      id: n.id, title: n.title, tableType: n.table_type,
+      deadline: n.deadline, createdAt: n.created_at,
+      pairs: [], myVotePairIds: [],
+    });
+  }
+
+  _svUnreadCount++;
+  updateSurveyBadge();
+  toast(`新しいアンケートが追加されました：${n.title}`);
+}
 
 let _svRealtimeChannel = null;
 
@@ -3986,8 +4106,9 @@ async function doApplySurvey(tableType){
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('main-wrap').style.display = '';
       applyRole();
-      load();
+      load().then(initSurveyBadgeFromServer); // 所属フィルタにS.membersが必要なのでload完了後に実行する
       startSurveyStatusWatcher();
+      startSurveyNotifyChannel();
     }
   } catch(e) {
   }
@@ -4017,8 +4138,9 @@ async function doLogin(){
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('main-wrap').style.display = '';
     applyRole();
-    load();
+    load().then(initSurveyBadgeFromServer); // 所属フィルタにS.membersが必要なのでload完了後に実行する
     startSurveyStatusWatcher();
+    startSurveyNotifyChannel();
   } catch(e) {
     errEl.textContent = 'エラーが発生しました';
   } finally {
@@ -4030,6 +4152,8 @@ async function doLogin(){
 async function doLogout(){
   stopSurveyRealtime();
   stopReinfRealtime();
+  stopSurveyNotifyChannel();
+  updateSurveyBadge();
   await fetch('/api/auth/logout', { method: 'POST' }).catch(()=>{});
   currentRole = null;
   currentMemberId = null;

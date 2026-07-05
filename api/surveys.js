@@ -27,6 +27,20 @@ export default async function handler(req, res) {
   const { id, action } = req.query
   const surveyId = id ? parseInt(id) : null
 
+  // ----- 既読状態（アンケートタブの未読バッジ用。新規Functionを増やさず既存のこのエンドポイントに相乗り） -----
+  if (action === 'seen') {
+    if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+    return await getSeen(res, auth)
+  }
+  if (action === 'markSeen') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+    return await markSeen(res, auth)
+  }
+
   // ----- 投票 -----
   if (action === 'vote') {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -310,6 +324,29 @@ async function deleteSurvey(res, surveyId) {
   const { error } = await supabase.from('surveys').delete().eq('id', surveyId)
   if (error) return res.status(500).json({ error: error.message })
   return res.json({ ok: true })
+}
+
+/* ===== アンケート既読状態（バッジ用） ===== */
+async function getSeen(res, auth) {
+  if (!auth.memberId) return res.json({ lastSeen: null })
+  const { data, error } = await supabase
+    .from('auth_role')
+    .select('survey_last_seen')
+    .eq('member_id', auth.memberId)
+    .single()
+  if (error) return res.status(500).json({ error: error.message })
+  return res.json({ lastSeen: data?.survey_last_seen || null })
+}
+
+async function markSeen(res, auth) {
+  if (!auth.memberId) return res.json({ ok: true, lastSeen: null })
+  const now = new Date().toISOString()
+  const { error } = await supabase
+    .from('auth_role')
+    .update({ survey_last_seen: now })
+    .eq('member_id', auth.memberId)
+  if (error) return res.status(500).json({ error: error.message })
+  return res.json({ ok: true, lastSeen: now })
 }
 
 /* ===== 投票・取消（複数ペア対応） ===== */
