@@ -3295,13 +3295,17 @@ function startSurveyNotifyChannel(){
     .subscribe();
 }
 
-function stopSurveyNotifyChannel(){
+// resetState=false の場合は接続だけ切って、バッジの既読状態は保持する
+// （バックグラウンド時の一時切断用。ログアウト時はtrueのまま呼ぶ）
+function stopSurveyNotifyChannel(resetState = true){
   if(_svNotifyChannel && _sbClient){
     _sbClient.removeChannel(_svNotifyChannel);
     _svNotifyChannel = null;
   }
-  _svHasUnread = false;
-  _svLastSeenCache = null;
+  if(resetState){
+    _svHasUnread = false;
+    _svLastSeenCache = null;
+  }
 }
 
 function handleSurveyNotify(payload){
@@ -4178,6 +4182,47 @@ async function doLogout(){
   document.querySelectorAll('.tab').forEach((t,i) => { t.classList.toggle('active', i===0); });
   document.querySelectorAll('.page').forEach((p,i) => { p.classList.toggle('active', i===0); });
 }
+
+/* ---------- バックグラウンド時にRealtime接続を切る（同時接続数を抑えるため） ---------- */
+// タブが非表示（他アプリに切り替えた・画面ロック等）になったらRealtimeを全部切断し、
+// 前面に戻ってきたら再接続する。ログイン状態やバッジの既読状態はそのまま保持する。
+let _svHiddenSince = null;
+
+function handleAppVisibilityChange(){
+  if(document.hidden){
+    _svHiddenSince = Date.now();
+    stopSurveyNotifyChannel(false); // false = バッジの既読状態はリセットしない
+    stopSurveyRealtime();
+    stopReinfRealtime();
+    return;
+  }
+
+  // 前面に戻ってきた
+  const hiddenMs = _svHiddenSince ? (Date.now() - _svHiddenSince) : 0;
+  _svHiddenSince = null;
+  if(currentRole == null) return; // 未ログインなら何もしない
+
+  // 切断していた間の変更を取りこぼしている可能性があるので、
+  // 十分な時間バックグラウンドにいた場合だけ最新状態も取り直す
+  const shouldRefetch = hiddenMs > 10000;
+
+  startSurveyNotifyChannel();
+  initSurveyBadgeFromServer();
+
+  const surveyPage = document.getElementById('page-survey');
+  if(surveyPage && surveyPage.classList.contains('active')){
+    startSurveyRealtime();
+    if(shouldRefetch) initSurveyPage();
+  }
+
+  const reinfPage = document.getElementById('page-reinf');
+  if(reinfPage && reinfPage.classList.contains('active')){
+    startReinfRealtime();
+    if(shouldRefetch) load();
+  }
+}
+
+document.addEventListener('visibilitychange', handleAppVisibilityChange);
 
 function applyRole(){
   const isAdmin      = currentRole === 'admin';
