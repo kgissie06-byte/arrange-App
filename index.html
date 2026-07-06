@@ -3552,6 +3552,17 @@ async function fetchAndRenderList(){
     return;
   }
   renderSurveyList();
+  // 各アンケートの投票人数（ユニーク投票者数）を非同期で取得し、届き次第再描画
+  await Promise.all(_surveys.map(async sv => {
+    try {
+      const r = await fetch(`/api/surveys?action=voters&id=${sv.id}`);
+      if(r.ok){
+        const voters = await r.json();
+        sv._voterCount = (voters||[]).length;
+      }
+    } catch(e){ /* 取得失敗時は表示をスキップ */ }
+  }));
+  renderSurveyList();
 }
 
 function renderSurveyList(){
@@ -3569,7 +3580,6 @@ function renderSurveyList(){
   });
   el.innerHTML = sorted.map(sv => {
     const isOpen = new Date(sv.deadline).getTime() > now;
-    const totalVotes = (sv.pairs||[]).reduce((s,p)=>s+(p.votes||0),0);
     const tableLabel = sv.tableType === 'ransaki' ? '乱咲' : '蕾';
     const myCount = (sv.myVotePairIds||[]).length;
     return `<div class="sv-card" onclick="openSurveyDetail(${sv.id})">
@@ -3578,7 +3588,7 @@ function renderSurveyList(){
         <span class="sv-status ${isOpen?'open':'closed'}">${isOpen?'受付中':'終了'}</span>
         <span>【${tableLabel}】</span>
         <span>終了: ${formatDateTime(sv.deadline)}</span>
-        <span>総票数: ${totalVotes}</span>
+        <span>投票人数: ${sv._voterCount != null ? sv._voterCount+'人' : '-'}</span>
         ${myCount > 0 ? `<span style="color:#1D9E75;font-weight:500">✓ ${myCount}票投票済</span>` : ''}
       </div>
     </div>`;
@@ -3747,10 +3757,10 @@ function renderSurveyDetail(sv){
         else checkHtml = `<div class="sv-check"></div>`;
       }
 
-      // 受付中はタップで仮選択、終了後はタップで投票者表示
+      // 投票可能な人はタップで仮選択、それ以外は受付中・終了後を問わずタップで投票者表示
       const clickAction = canInteract
         ? `togglePendingVote(${sv.id},${p.id})`
-        : !isOpen ? `showVotersPopup(${sv.id},${p.id})` : '';
+        : `showVotersPopup(${sv.id},${p.id})`;
 
       return `<div class="sv-pair-item${isTop&&!isOpen?' top':''}${isPending?' pending':''}" onclick="${clickAction}">
         <div class="sv-pair-rank ${rankClass}">${rank}位</div>
@@ -3759,7 +3769,7 @@ function renderSurveyDetail(sv){
           <div class="sv-pair-vote-label">票</div>
         </div>
         <div class="sv-pair-names" style="font-size:13px;font-weight:500">${pairName(p)}</div>
-        ${isOpen ? checkHtml : `<span style="font-size:10px;color:var(--t3)">▶ 詳細</span>`}
+        ${canInteract ? checkHtml : `<span style="font-size:10px;color:var(--t3)">▶ 詳細</span>`}
       </div>`;
     }).join('');
   }
@@ -3779,15 +3789,13 @@ function renderSurveyDetail(sv){
   const applyArea = document.getElementById('sv-apply-area');
   applyArea.style.display = (currentRole==='admin'||currentRole==='reinf-admin') ? 'block' : 'none';
 
-  // 投票者一覧（終了後のみ非同期で表示）
+  // 投票者一覧（受付中・終了後どちらも非同期で表示）
   const existingSection = document.getElementById('sv-voters-section');
   if(existingSection) existingSection.remove();
-  if(!isOpen){
-    fetchAndRenderVoters(sv.id);
-  }
+  fetchAndRenderVoters(sv.id);
 }
 
-/* ---------- 投票者一覧の取得・描画（終了後のみ呼ばれる） ---------- */
+/* ---------- 投票者一覧の取得・描画（受付中・終了後どちらでも呼ばれる） ---------- */
 async function fetchAndRenderVoters(svId){
   try {
     const res = await fetch(`/api/surveys?action=voters&id=${svId}`);
