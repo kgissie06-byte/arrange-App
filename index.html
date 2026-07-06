@@ -3549,6 +3549,17 @@ async function fetchAndRenderList(){
     return;
   }
   renderSurveyList();
+  // 各アンケートの投票人数（ユニーク投票者数）を非同期で取得し、届き次第再描画
+  await Promise.all(_surveys.map(async sv => {
+    try {
+      const r = await fetch(`/api/surveys?action=voters&id=${sv.id}`);
+      if(r.ok){
+        const voters = await r.json();
+        sv._voterCount = (voters||[]).length;
+      }
+    } catch(e){ /* 取得失敗時は表示をスキップ */ }
+  }));
+  renderSurveyList();
 }
 
 function renderSurveyList(){
