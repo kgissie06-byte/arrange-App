@@ -3769,10 +3769,9 @@ function renderSurveyDetail(sv){
         ${leftHtml}
         <div class="sv-pair-vote">
           <div class="sv-pair-vote-num">${p.votes||0}</div>
-          <div class="sv-pair-vote-label">票</div>
         </div>
         <div class="sv-pair-names" style="font-size:13px;font-weight:500">${pairName(p)}</div>
-        <span style="font-size:10px;color:var(--t3)">▶ 詳細</span>
+        <span style="font-size:10px;color:var(--t3)" onclick="event.stopPropagation();showVotersPopup(${sv.id},${p.id})">▶ 詳細</span>
       </div>`;
     }).join('');
   }
