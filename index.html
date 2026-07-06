@@ -3755,19 +3755,24 @@ function renderSurveyDetail(sv){
         else checkHtml = `<div class="sv-check"></div>`;
       }
 
+      // 左端：受付中はチェックマーク（対象外の場合は空スペーサーで幅を揃える）、終了後は順位
+      const leftHtml = isOpen
+        ? (checkHtml || `<div style="width:22px;height:22px;flex-shrink:0"></div>`)
+        : `<div class="sv-pair-rank ${rankClass}">${rank}位</div>`;
+
       // 受付中はタップで仮選択、終了後はタップで投票者表示
       const clickAction = canInteract
         ? `togglePendingVote(${sv.id},${p.id})`
         : !isOpen ? `showVotersPopup(${sv.id},${p.id})` : '';
 
       return `<div class="sv-pair-item${isTop&&!isOpen?' top':''}${isPending?' pending':''}" onclick="${clickAction}">
-        <div class="sv-pair-rank ${rankClass}">${rank}位</div>
+        ${leftHtml}
         <div class="sv-pair-vote">
           <div class="sv-pair-vote-num">${p.votes||0}</div>
           <div class="sv-pair-vote-label">票</div>
         </div>
         <div class="sv-pair-names" style="font-size:13px;font-weight:500">${pairName(p)}</div>
-        ${isOpen ? checkHtml : `<span style="font-size:10px;color:var(--t3)">▶ 詳細</span>`}
+        <span style="font-size:10px;color:var(--t3)">▶ 詳細</span>
       </div>`;
     }).join('');
   }
