@@ -228,6 +228,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 /* ===== トップへ戻るボタン ===== */
 #scroll-top-btn{position:fixed;bottom:24px;right:16px;width:40px;height:40px;border-radius:50%;background:var(--acc);color:#FFF8F0;border:none;cursor:pointer;font-size:18px;line-height:40px;text-align:center;z-index:150;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:0 2px 8px rgba(0,0,0,.22)}
 #scroll-top-btn.show{opacity:1;pointer-events:auto}
+#rs-scroll-top-btn{position:fixed;bottom:24px;right:16px;width:40px;height:40px;border-radius:50%;background:var(--acc);color:#FFF8F0;border:none;cursor:pointer;font-size:18px;line-height:40px;text-align:center;z-index:450;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:0 2px 8px rgba(0,0,0,.22)}
+#rs-scroll-top-btn.show{opacity:1;pointer-events:auto}
 
 /* ===== アンケート ===== */
 .sv-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,background .15s}
@@ -792,6 +794,7 @@ body.touch-device .sub-tab.active:active {
     <div style="font-size:11px;color:var(--t2);margin-bottom:8px" id="rs-result-count"></div>
     <div class="reinf-results-list" id="rs-results"></div>
   </div>
+  <button id="rs-scroll-top-btn" onclick="document.getElementById('reinf-search-overlay').scrollTo({top:0,behavior:'smooth'})" title="トップへ戻る">↑</button>
 </div>
 </div>
 
@@ -860,6 +863,16 @@ document.addEventListener('touchend', () => {
   const btn=document.getElementById('scroll-top-btn');
   window.addEventListener('scroll',function(){
     btn.classList.toggle('show', window.scrollY > 200);
+  },{passive:true});
+})();
+
+// 援軍検索オーバーレイ内のトップへ戻るボタン（オーバーレイ自身がスクロールコンテナのため個別に監視）
+(function(){
+  const overlay=document.getElementById('reinf-search-overlay');
+  const btn=document.getElementById('rs-scroll-top-btn');
+  if(!overlay||!btn)return;
+  overlay.addEventListener('scroll',function(){
+    btn.classList.toggle('show', overlay.scrollTop > 200);
   },{passive:true});
 })();
 
@@ -1882,6 +1895,7 @@ function openReinfSearch(rowId){
     renderRSFilterBtns('rs-sub-rank',subCd?subCd.ranks:ALL_RANKS,RS.subRank,'sub-rank');
   }
   document.getElementById('reinf-search-overlay').style.display='flex';
+  document.getElementById('reinf-search-overlay').scrollTop=0;
   renderRSResults();
 }
 
@@ -2095,8 +2109,13 @@ async function setReinfMember(rowId,name){
     console.error(err);
   }
   renderReinfTable();
-  if(name)toast(name+'を追加しました');else toast('解除しました');
-  renderRSResults();
+  if(name){
+    toast(name+'を追加しました');
+    closeReinfSearch();
+  } else {
+    toast('解除しました');
+    renderRSResults();
+  }
 }
 
 function closeReinfSearch(){document.getElementById('reinf-search-overlay').style.display='none';}
@@ -3599,7 +3618,7 @@ function openCreateSurvey(){
   now.setDate(now.getDate() + 7);
   const defaultDeadline = new Date(now.getTime() - now.getTimezoneOffset()*60000).toISOString().slice(0,16);
   openModal('create-survey', `<h3>アンケート作成</h3>
-    <div class="field"><label>タイトル</label><input type="text" id="sv-title-in" placeholder="例: 趙国編アンケート(乱咲)" style="font-size:16px"></div>
+    <div class="field"><label>タイトル</label><input type="text" id="sv-title-in" placeholder="例: 趙国 援軍アンケート(乱咲)" style="font-size:16px"></div>
     <div class="field"><label>所属</label>
       <div style="display:flex;gap:6px;margin-top:4px">
         <button id="sv-tbl-ransaki" class="sub-tab active" onclick="setSvTable('ransaki')">乱咲</button>
@@ -3820,7 +3839,7 @@ function renderVotersList(voters){
     detailView.appendChild(section);
   }
   if(!voters || !voters.length){
-    section.innerHTML = `<div class="sv-voters-title">📋 投票者一覧</div>
+    section.innerHTML = `<div class="sv-voters-title">投票者一覧</div>
       <div class="empty" style="font-size:12px;padding:.5rem 0">まだ投票がありません</div>`;
     return;
   }
@@ -3829,7 +3848,7 @@ function renderVotersList(voters){
       <div class="sv-voter-name">${esc(v.memberName)}</div>
     </div>`;
   }).join('');
-  section.innerHTML = `<div class="sv-voters-title">📋 投票者一覧 <span style="font-weight:400;color:var(--t3)">(${voters.length}名)</span></div>${rows}`;
+  section.innerHTML = `<div class="sv-voters-title">投票者一覧 <span style="font-weight:400;color:var(--t3)">(${voters.length}名)</span></div>${rows}`;
 }
 
 /* ---------- 仮選択（LINEスタイル） ---------- */
