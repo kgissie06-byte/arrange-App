@@ -2212,6 +2212,18 @@ function closeRsConfirm(){
   document.getElementById('rs-confirm-overlay').style.display = 'none';
 }
 
+// 現在のテーブル内で、指定ペア（通常 or 城）が既に何行に設定されているかを数える
+function countRowsWithPair(pair){
+  const mainName = pair.main || null, subName = pair.sub || null;
+  if(!mainName && !subName) return 0;
+  return S.reinf.filter(r => {
+    if((r.tableType || 'ransaki') !== _activeReinfTable) return false;
+    const normalMatch = (r.normalMain || null) === mainName && (r.normalSub || null) === subName;
+    const castleMatch = (r.castleMain || null) === mainName && (r.castleSub || null) === subName;
+    return normalMatch || castleMatch;
+  }).length;
+}
+
 /* ---------- 援軍表：投票済みメンバーを表に追加 ---------- */
 let _pendingReinfAdd = null; // {rowId, name, pair}
 
@@ -2220,6 +2232,11 @@ async function handleAddToReinfTable(rowId, name){
   if(!row) return;
   const votedPair = getMemberVotedRowPair(name, row);
   if(!votedPair){
+    await setReinfMember(rowId, name);
+    return;
+  }
+  // 既に同じペアの行が2つ以上あれば、互いの援軍を使い合えるため追加提案は不要
+  if(countRowsWithPair(votedPair) >= 2){
     await setReinfMember(rowId, name);
     return;
   }
