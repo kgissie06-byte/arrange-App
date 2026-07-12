@@ -2068,7 +2068,7 @@ function renderRSResults(){
     const normalBadges=`${mainC?`<span style="font-size:10px;color:var(--t2)">通常 ${row.normalMain}：</span>${rarBdg(mainC.rar)}${summarizeRanks(mainC.ranks).map(rankBdg).join('')}`:''}${subC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${row.normalSub}：</span>${rarBdg(subC.rar)}${summarizeRanks(subC.ranks).map(rankBdg).join('')}`:''}`;
     const castleBadges=RS.dualMode?`${castleMainC?`<span style="font-size:10px;color:var(--t2)">城 ${row.castleMain}：</span>${rarBdg(castleMainC.rar)}${summarizeRanks(castleMainC.ranks).map(rankBdg).join('')}`:''}${castleSubC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${row.castleSub}：</span>${rarBdg(castleSubC.rar)}${summarizeRanks(castleSubC.ranks).map(rankBdg).join('')}`:''}` :'';
     const votedPair=getMemberVotedRowPair(m.name,row);
-    const votedMarkHtml=votedPair?`<span class="rs-voted-mark" title="${esc(pairName(votedPair))}">投票済</span>`:'';
+    const votedMarkHtml=votedPair?`<span class="rs-voted-mark" title="${esc(pairName(votedPair))}">投票中</span>`:'';
     return`<div class="reinf-res-card${isAlready?' already':''}">
       ${votedMarkHtml}
       <div class="av2" style="background:${a.bg};color:${a.c};flex-shrink:0">${ini(m.name)}</div>
@@ -2162,7 +2162,7 @@ function renderReinfSurveySelect(){
   const opts = ['<option value="">参照しない</option>']
     .concat(list.map(s => `<option value="${s.id}"${String(s.id)===String(selectedId)?' selected':''}>${esc(s.title)}</option>`));
   wrap.innerHTML = `
-    <label>アンケート参照<span style="font-weight:400;color:var(--t3)">（援軍検索に投票済みマークを表示）</span></label>
+    <label>アンケート参照<span style="font-weight:400;color:var(--t3)">（援軍検索に投票中マークを表示）</span></label>
     <select onchange="onReinfSurveySelect(this.value)">${opts.join('')}</select>
   `;
 }
@@ -2224,7 +2224,7 @@ function countRowsWithPair(pair){
   }).length;
 }
 
-/* ---------- 援軍表：投票済みメンバーを表に追加 ---------- */
+/* ---------- 援軍表：投票中メンバーを表に追加 ---------- */
 let _pendingReinfAdd = null; // {rowId, name, pair}
 
 async function handleAddToReinfTable(rowId, name){
@@ -2241,7 +2241,7 @@ async function handleAddToReinfTable(rowId, name){
     return;
   }
   _pendingReinfAdd = { rowId, name, pair: votedPair };
-  openRsConfirm(`<h3>投票済みペアを追加しますか？</h3>
+  openRsConfirm(`<h3>投票中のペアを追加しますか？</h3>
     <div style="font-size:12px;margin-bottom:14px">
       ${esc(name)}さんは<strong>${esc(pairName(votedPair))}</strong>に投票しています。<br>
       追加した行の下に、同じ援軍ペアの新規行を追加しますか？
