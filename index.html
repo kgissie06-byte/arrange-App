@@ -203,7 +203,6 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .rs-voted-mark{position:absolute;top:6px;right:8px;font-size:9px;padding:2px 7px;border-radius:20px;background:#FFF0D6;color:#8A5A00;border:.5px solid #E8B85C;font-weight:600;white-space:nowrap;cursor:default;z-index:1}
 .reinf-survey-ref{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:.875rem}
 .reinf-survey-ref label{display:block;font-size:11px;color:var(--t2);margin-bottom:5px}
-.reinf-survey-ref select{width:100%;padding:7px 10px;font-size:14px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;box-sizing:border-box}
 .add-to-table-btn{margin-left:auto;flex-shrink:0;padding:5px 11px;font-size:11px;border:1px solid var(--bm);border-radius:7px;background:var(--card);cursor:pointer;color:var(--acc);font-weight:500;font-family:inherit;white-space:nowrap;transition:all .15s}
 .add-to-table-btn:hover:not(:disabled){background:var(--acc-bg)}
 .add-to-table-btn:disabled{opacity:.4;cursor:default}
@@ -2159,12 +2158,54 @@ function renderReinfSurveySelect(){
     .filter(s => (s.tableType || 'ransaki') === tableType)
     .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const selectedId = _reinfRefSurveyId[tableType] || '';
-  const opts = ['<option value="">参照しない</option>']
-    .concat(list.map(s => `<option value="${s.id}"${String(s.id)===String(selectedId)?' selected':''}>${esc(s.title)}</option>`));
+  const selected = list.find(s => String(s.id) === String(selectedId));
+  const label = selected ? selected.title : '参照しない';
+
   wrap.innerHTML = `
     <label>アンケート参照<span style="font-weight:400;color:var(--t3)">（援軍検索に投票中マークを表示）</span></label>
-    <select onchange="onReinfSurveySelect(this.value)">${opts.join('')}</select>
+    <div class="combo-wrap" id="reinf-survey-combo-wrap">
+      <div class="combo-input" id="reinf-survey-combo-display" onclick="toggleReinfSurveyCombo()">${esc(label)}</div>
+      <span class="combo-arrow">▼</span>
+      <div class="combo-dropdown" id="reinf-survey-combo-dropdown">
+        <div class="combo-list">${renderReinfSurveyOptions(list, selectedId)}</div>
+      </div>
+    </div>
   `;
+}
+
+function renderReinfSurveyOptions(list, selectedId){
+  const items = [{ value: '', label: '参照しない' }]
+    .concat(list.map(s => ({ value: String(s.id), label: s.title })));
+  return items.map(o =>
+    `<div class="combo-option${o.value===String(selectedId||'')?' selected':''}" onclick="pickReinfSurvey('${o.value}')">${esc(o.label)}</div>`
+  ).join('');
+}
+
+function toggleReinfSurveyCombo(){
+  const dd = document.getElementById('reinf-survey-combo-dropdown');
+  if(!dd) return;
+  const isOpen = dd.classList.contains('open');
+  // 他のコンボが開いていれば閉じる
+  document.querySelectorAll('.combo-dropdown.open').forEach(el => el.classList.remove('open'));
+  if(!isOpen){
+    dd.classList.add('open');
+    setTimeout(() => {
+      document.addEventListener('click', function closeReinfSurveyCombo(e){
+        const w = document.getElementById('reinf-survey-combo-wrap');
+        if(w && !w.contains(e.target)){
+          const ddEl = document.getElementById('reinf-survey-combo-dropdown');
+          if(ddEl) ddEl.classList.remove('open');
+        }
+        document.removeEventListener('click', closeReinfSurveyCombo);
+      });
+    }, 0);
+  }
+}
+
+function pickReinfSurvey(val){
+  const dd = document.getElementById('reinf-survey-combo-dropdown');
+  if(dd) dd.classList.remove('open');
+  onReinfSurveySelect(val);
 }
 
 async function onReinfSurveySelect(val){
@@ -2172,6 +2213,7 @@ async function onReinfSurveySelect(val){
   const id = val ? parseInt(val) : null;
   _reinfRefSurveyId[tableType] = id;
   _reinfSurveyVoters[tableType] = null;
+  renderReinfSurveySelect(); // 選択直後に表示ラベルとチェック状態を更新
   if(id){
     try{
       const res = await fetch(`/api/surveys?action=voters&id=${id}`);
