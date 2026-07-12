@@ -203,7 +203,9 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .rs-voted-mark{position:absolute;top:6px;right:8px;font-size:9px;padding:2px 7px;border-radius:20px;background:#FFF0D6;color:#8A5A00;border:.5px solid #E8B85C;font-weight:600;white-space:nowrap;cursor:default;z-index:1}
 .reinf-survey-ref{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:.875rem}
 .reinf-survey-ref label{display:block;font-size:11px;color:var(--t2);margin-bottom:5px}
-.reinf-survey-ref select{width:100%;padding:7px 10px;font-size:14px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;box-sizing:border-box}
+.reinf-survey-ref .rs-select-wrap{position:relative}
+.reinf-survey-ref select{width:100%;padding:7px 32px 7px 10px;font-size:14px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;box-sizing:border-box;-webkit-appearance:none;-moz-appearance:none;appearance:none}
+.reinf-survey-ref .rs-select-wrap::after{content:'';position:absolute;top:50%;right:13px;width:7px;height:7px;border-right:2px solid var(--t2);border-bottom:2px solid var(--t2);transform:translateY(-65%) rotate(45deg);pointer-events:none}
 .add-to-table-btn{margin-left:auto;flex-shrink:0;padding:5px 11px;font-size:11px;border:1px solid var(--bm);border-radius:7px;background:var(--card);cursor:pointer;color:var(--acc);font-weight:500;font-family:inherit;white-space:nowrap;transition:all .15s}
 .add-to-table-btn:hover:not(:disabled){background:var(--acc-bg)}
 .add-to-table-btn:disabled{opacity:.4;cursor:default}
@@ -2163,7 +2165,9 @@ function renderReinfSurveySelect(){
     .concat(list.map(s => `<option value="${s.id}"${String(s.id)===String(selectedId)?' selected':''}>${esc(s.title)}</option>`));
   wrap.innerHTML = `
     <label>アンケート参照<span style="font-weight:400;color:var(--t3)">（援軍検索に投票中マークを表示）</span></label>
-    <select onchange="onReinfSurveySelect(this.value)">${opts.join('')}</select>
+    <div class="rs-select-wrap">
+      <select onchange="onReinfSurveySelect(this.value)">${opts.join('')}</select>
+    </div>
   `;
 }
 
