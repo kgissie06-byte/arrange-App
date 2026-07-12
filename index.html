@@ -197,8 +197,12 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .reinf-search-filters{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:.875rem}
 .filter-group-title{font-size:11px;font-weight:500;color:var(--acc);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
 .reinf-results-list{display:flex;flex-direction:column;gap:6px}
-.reinf-res-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 11px;display:flex;align-items:center;gap:9px}
+.reinf-res-card{position:relative;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 11px;display:flex;align-items:center;gap:9px}
 .reinf-res-card.already{background:var(--bg);border-color:var(--border);opacity:.6}
+.rs-voted-mark{position:absolute;top:6px;right:8px;font-size:9px;padding:2px 7px;border-radius:20px;background:#FFF0D6;color:#8A5A00;border:.5px solid #E8B85C;font-weight:600;white-space:nowrap;cursor:default;z-index:1}
+.reinf-survey-ref{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:.875rem}
+.reinf-survey-ref label{display:block;font-size:11px;color:var(--t2);margin-bottom:5px}
+.reinf-survey-ref select{width:100%;padding:7px 10px;font-size:14px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;box-sizing:border-box}
 .add-to-table-btn{margin-left:auto;flex-shrink:0;padding:5px 11px;font-size:11px;border:1px solid var(--bm);border-radius:7px;background:var(--card);cursor:pointer;color:var(--acc);font-weight:500;font-family:inherit;white-space:nowrap;transition:all .15s}
 .add-to-table-btn:hover:not(:disabled){background:var(--acc-bg)}
 .add-to-table-btn:disabled{opacity:.4;cursor:default}
@@ -568,6 +572,7 @@ body.touch-device .sub-tab.active:active {
     <button class="sub-tab active" id="reinf-tab-ransaki" onclick="switchReinfTable('ransaki',this)">乱咲</button>
     <button class="sub-tab" id="reinf-tab-tsubomi" onclick="switchReinfTable('tsubomi',this)">蕾</button>
   </div>
+  <div class="reinf-survey-ref" id="reinf-survey-ref"></div>
   <div class="reinf-wrap">
     <table class="reinf-table" id="reinf-table"></table>
   </div>
@@ -947,6 +952,8 @@ let S={
   filRar:[],filRank:[],filRole:[],
 };
 let _activeReinfTable = 'ransaki';
+let _reinfRefSurveyId = { ransaki: null, tsubomi: null };   // 援軍表で参照中のアンケートID（テーブル種別ごと）
+let _reinfSurveyVoters = { ransaki: null, tsubomi: null };  // 参照中アンケートの投票者一覧キャッシュ（テーブル種別ごと）
 let E={memberId:null,charName:null,pendingRar:null,pendingRanks:[],pendingEx:null};
 let cnSelRar=[],cnSelRank=[],cuSelRar=[],cuSelRank=[];
 let cnExSotsui=false, cuExSotsui=false;
@@ -1665,6 +1672,7 @@ function switchReinfTable(type, btn){
   document.querySelectorAll('#page-reinf .sub-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderReinfTable();
+  renderReinfSurveySelect();
 }
 
 async function deleteReinfRow(id){
@@ -2053,7 +2061,10 @@ function renderRSResults(){
     const castleSubShBadge=castleSubCd?shukuenBadgeHtml(m,castleSubCd):'';
     const normalBadges=`${mainC?`<span style="font-size:10px;color:var(--t2)">通常 ${row.normalMain}：</span>${rarBdg(mainC.rar)}${summarizeRanks(mainC.ranks).map(rankBdg).join('')}`:''}${subC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${row.normalSub}：</span>${rarBdg(subC.rar)}${summarizeRanks(subC.ranks).map(rankBdg).join('')}`:''}`;
     const castleBadges=RS.dualMode?`${castleMainC?`<span style="font-size:10px;color:var(--t2)">城 ${row.castleMain}：</span>${rarBdg(castleMainC.rar)}${summarizeRanks(castleMainC.ranks).map(rankBdg).join('')}`:''}${castleSubC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${row.castleSub}：</span>${rarBdg(castleSubC.rar)}${summarizeRanks(castleSubC.ranks).map(rankBdg).join('')}`:''}` :'';
+    const votedPairs=getMemberVotedPairs(m.name);
+    const votedMarkHtml=votedPairs.length?`<span class="rs-voted-mark" title="${esc(votedPairs.map(p=>pairName(p)).join(' / '))}">投票済</span>`:'';
     return`<div class="reinf-res-card${isAlready?' already':''}">
+      ${votedMarkHtml}
       <div class="av2" style="background:${a.bg};color:${a.c};flex-shrink:0">${ini(m.name)}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:500">${m.name}
@@ -2072,14 +2083,14 @@ function renderRSResults(){
       </div>
       ${isCurrentRow
         ?`<button class="add-to-table-btn" style="color:#791F1F;border-color:#F09595" onclick="setReinfMember(${RS.rowId},'')">解除</button>`
-        :`<button class="add-to-table-btn" onclick="setReinfMember(${RS.rowId},'${esc(m.name)}')" ${isAlready?'style="opacity:.5"':''}>表に追加</button>`
+        :`<button class="add-to-table-btn" onclick="handleAddToReinfTable(${RS.rowId},'${esc(m.name)}')" ${isAlready?'style="opacity:.5"':''}>表に追加</button>`
       }
     </div>`;
   }).join('');
 }
 
 // 変更後
-async function setReinfMember(rowId,name){
+async function setReinfMemberCore(rowId,name){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
 
   // 同じtableType内で既に同名の行があればローカルもnullにする
@@ -2092,19 +2103,23 @@ async function setReinfMember(rowId,name){
   }
 
   row.memberName=name||null;
+  await fetch(`/api/reinf?id=${rowId}`, {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      memberName: row.memberName,
+      normalMain: row.normalMain,
+      normalSub: row.normalSub,
+      castleMain: row.castleMain,
+      castleSub: row.castleSub,
+      tableType: row.tableType||'ransaki',
+    })
+  });
+}
+
+async function setReinfMember(rowId,name){
   try {
-    await fetch(`/api/reinf?id=${rowId}`, {
-      method: 'PUT',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        memberName: row.memberName,
-        normalMain: row.normalMain,
-        normalSub: row.normalSub,
-        castleMain: row.castleMain,
-        castleSub: row.castleSub,
-        tableType: row.tableType||'ransaki',
-      })
-    });
+    await setReinfMemberCore(rowId,name);
   } catch(err) {
     console.error(err);
   }
@@ -2119,6 +2134,122 @@ async function setReinfMember(rowId,name){
 }
 
 function closeReinfSearch(){document.getElementById('reinf-search-overlay').style.display='none';}
+
+/* ---------- 援軍表：参照アンケート選択 ---------- */
+// アンケート一覧が未取得なら取得する（アンケートタブを開いていなくても選択肢に出すため）
+async function ensureReinfSurveyListLoaded(){
+  if(_surveys.length) return;
+  try{
+    const res = await fetch('/api/surveys');
+    if(res.ok) _surveys = await res.json();
+  } catch(e){ /* 取得失敗時はドロップダウンが空のまま（再度タブを開けば再試行される） */ }
+}
+
+function renderReinfSurveySelect(){
+  const wrap = document.getElementById('reinf-survey-ref');
+  if(!wrap) return;
+  const tableType = _activeReinfTable;
+  const list = _surveys
+    .filter(s => (s.tableType || 'ransaki') === tableType)
+    .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const selectedId = _reinfRefSurveyId[tableType] || '';
+  const opts = ['<option value="">参照しない</option>']
+    .concat(list.map(s => `<option value="${s.id}"${String(s.id)===String(selectedId)?' selected':''}>${esc(s.title)}</option>`));
+  wrap.innerHTML = `
+    <label>アンケート参照<span style="font-weight:400;color:var(--t3)">（援軍検索に投票済みマークを表示）</span></label>
+    <select onchange="onReinfSurveySelect(this.value)">${opts.join('')}</select>
+  `;
+}
+
+async function onReinfSurveySelect(val){
+  const tableType = _activeReinfTable;
+  const id = val ? parseInt(val) : null;
+  _reinfRefSurveyId[tableType] = id;
+  _reinfSurveyVoters[tableType] = null;
+  if(id){
+    try{
+      const res = await fetch(`/api/surveys?action=voters&id=${id}`);
+      if(res.ok) _reinfSurveyVoters[tableType] = await res.json();
+    } catch(e){
+      toast('投票者情報の取得に失敗しました');
+    }
+  }
+  // 援軍検索を開いている最中であれば、マーク表示を反映するため再描画する
+  const overlay = document.getElementById('reinf-search-overlay');
+  if(overlay && overlay.style.display === 'flex') renderRSResults();
+}
+
+// 指定メンバーが、現在参照中のアンケートで投票したペア一覧を返す（[{main,sub}, ...]）
+function getMemberVotedPairs(memberName){
+  const voters = _reinfSurveyVoters[_activeReinfTable];
+  if(!voters) return [];
+  const v = voters.find(x => x.memberName === memberName);
+  return v ? (v.votes || []) : [];
+}
+
+/* ---------- 援軍表：投票済みメンバーを表に追加 ---------- */
+async function handleAddToReinfTable(rowId, name){
+  const votedPairs = getMemberVotedPairs(name);
+  if(!votedPairs.length){
+    await setReinfMember(rowId, name);
+    return;
+  }
+  openVotedPairConfirmModal(rowId, name, votedPairs);
+}
+
+function openVotedPairConfirmModal(rowId, name, votedPairs){
+  const multi = votedPairs.length > 1;
+  const pairsHtml = votedPairs.map(p =>
+    `<div style="padding:3px 0;border-bottom:1px solid var(--border)">${esc(pairName(p))}</div>`
+  ).join('');
+  openModal('voted-pair-confirm', `<h3>投票済みペアを追加しますか？</h3>
+    <div style="font-size:12px;margin-bottom:12px">
+      ${esc(name)}さんは以下のペアに投票しています。<br>
+      <div style="margin:8px 0">${pairsHtml}</div>
+      追加した行の下に、同じ援軍ペア${multi?'を全て':''}新規追加しますか？
+    </div>
+    <div class="modal-acts">
+      <button class="btn" onclick="finishAddToReinfTable(${rowId},'${esc(name)}',false)">追加しない</button>
+      <button class="btn pri" onclick="finishAddToReinfTable(${rowId},'${esc(name)}',true)">追加する</button>
+    </div>`);
+}
+
+async function finishAddToReinfTable(rowId, name, addPairRows){
+  closeModal();
+  showLoading();
+  try {
+    await setReinfMemberCore(rowId, name);
+    if(addPairRows){
+      const votedPairs = getMemberVotedPairs(name);
+      let afterId = rowId;
+      for(const p of votedPairs){
+        const addRes = await fetch('/api/reinf', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ tableType: _activeReinfTable, afterId })
+        });
+        if(!addRes.ok) throw new Error();
+        const newRow = await addRes.json();
+        await fetch(`/api/reinf?id=${newRow.id}`, {
+          method: 'PUT', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            normalMain: p.main || null, normalSub: p.sub || null,
+            castleMain: p.main || null, castleSub: p.sub || null,
+            tableType: _activeReinfTable,
+          })
+        });
+        afterId = newRow.id; // 複数ペアの場合は続けて下に並べる
+      }
+    }
+    toast(name+'を追加しました');
+  } catch(e){
+    console.error(e);
+    toast('追加に失敗しました');
+  } finally {
+    await load();
+    hideLoading();
+    closeReinfSearch();
+  }
+}
 
 /* ========== キャラ管理 ========== */
 // 入力補助モード（キャラ管理用、デフォルトON）
@@ -3189,7 +3320,7 @@ function switchTab(tab,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   if(tab==='search'){renderFilters();renderSearch();}
-  if(tab==='reinf'){renderReinfTable();startReinfRealtime();}
+  if(tab==='reinf'){renderReinfTable();startReinfRealtime();ensureReinfSurveyListLoaded().then(renderReinfSurveySelect);}
   else{stopReinfRealtime();}
   if(tab==='chars'){initCharNewForm();renderCharListDisplay();}
   if(tab==='survey'){initSurveyPage();startSurveyRealtime();clearSurveyBadge();}

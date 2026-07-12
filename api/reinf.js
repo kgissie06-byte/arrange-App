@@ -70,17 +70,50 @@ export default async function handler(req, res) {
 
   // id なし → 新規行追加
   if (req.method === 'POST') {
-    const { tableType } = req.body
-    const { data: existing } = await supabase
-      .from('reinf')
-      .select('sort_order')
-      .eq('table_type', tableType || 'ransaki')
-      .order('sort_order', { ascending: false })
-      .limit(1)
+    const { tableType, afterId } = req.body
+    const tt = tableType || 'ransaki'
+    let nextOrder
 
-    const nextOrder = existing && existing.length > 0
-      ? existing[0].sort_order + 1
-      : 0
+    if (afterId) {
+      // afterId行の直後に挿入する（アンケート投票済みペアの追加用）
+      const { data: afterRow, error: afterErr } = await supabase
+        .from('reinf')
+        .select('sort_order')
+        .eq('id', afterId)
+        .eq('table_type', tt)
+        .single()
+      if (afterErr || !afterRow) return res.status(400).json({ error: 'invalid afterId' })
+
+      // afterRowより後ろの行を1つずつ後ろにずらして隙間を作る（後ろから順に更新して重複を避ける）
+      const { data: laterRows, error: laterErr } = await supabase
+        .from('reinf')
+        .select('id, sort_order')
+        .eq('table_type', tt)
+        .gt('sort_order', afterRow.sort_order)
+        .order('sort_order', { ascending: false })
+      if (laterErr) return res.status(500).json({ error: laterErr })
+
+      for (const r of (laterRows || [])) {
+        const { error: shiftErr } = await supabase
+          .from('reinf')
+          .update({ sort_order: r.sort_order + 1 })
+          .eq('id', r.id)
+        if (shiftErr) return res.status(500).json({ error: shiftErr })
+      }
+
+      nextOrder = afterRow.sort_order + 1
+    } else {
+      const { data: existing } = await supabase
+        .from('reinf')
+        .select('sort_order')
+        .eq('table_type', tt)
+        .order('sort_order', { ascending: false })
+        .limit(1)
+
+      nextOrder = existing && existing.length > 0
+        ? existing[0].sort_order + 1
+        : 0
+    }
 
     const { data, error } = await supabase
       .from('reinf')
@@ -91,7 +124,7 @@ export default async function handler(req, res) {
         castle_main: null,
         castle_sub: null,
         sort_order: nextOrder,
-        table_type: tableType || 'ransaki',
+        table_type: tt,
       })
       .select()
       .single()
