@@ -185,6 +185,7 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 
 /* モーダル */
 .overlay{position:fixed;inset:0;background:rgba(44,34,24,.42);display:flex;align-items:flex-start;justify-content:center;padding-top:48px;z-index:300;overflow-y:auto}
+.rs-confirm-overlay{z-index:500}
 .modal{background:var(--card);border:1px solid var(--bm);border-radius:14px;padding:1.125rem;width:calc(100% - 2rem);max-width:480px;margin-bottom:48px}
 .modal h3{font-size:14px;font-weight:500;margin-bottom:12px}
 .modal-acts{display:flex;gap:7px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
@@ -801,6 +802,11 @@ body.touch-device .sub-tab.active:active {
   </div>
   <button id="rs-scroll-top-btn" onclick="document.getElementById('reinf-search-overlay').scrollTo({top:0,behavior:'smooth'})" title="トップへ戻る">↑</button>
 </div>
+</div>
+
+<!-- 援軍検索内の確認ポップアップ（reinf-search-overlayより手前・z-indexを高くして表示） -->
+<div class="overlay rs-confirm-overlay" id="rs-confirm-overlay" style="display:none" onclick="if(event.target===this)cancelAddToReinfTable()">
+  <div class="modal" id="rs-confirm-box"></div>
 </div>
 
 <!-- 画像クロッパーモーダル -->
@@ -2061,8 +2067,8 @@ function renderRSResults(){
     const castleSubShBadge=castleSubCd?shukuenBadgeHtml(m,castleSubCd):'';
     const normalBadges=`${mainC?`<span style="font-size:10px;color:var(--t2)">通常 ${row.normalMain}：</span>${rarBdg(mainC.rar)}${summarizeRanks(mainC.ranks).map(rankBdg).join('')}`:''}${subC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${row.normalSub}：</span>${rarBdg(subC.rar)}${summarizeRanks(subC.ranks).map(rankBdg).join('')}`:''}`;
     const castleBadges=RS.dualMode?`${castleMainC?`<span style="font-size:10px;color:var(--t2)">城 ${row.castleMain}：</span>${rarBdg(castleMainC.rar)}${summarizeRanks(castleMainC.ranks).map(rankBdg).join('')}`:''}${castleSubC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${row.castleSub}：</span>${rarBdg(castleSubC.rar)}${summarizeRanks(castleSubC.ranks).map(rankBdg).join('')}`:''}` :'';
-    const votedPairs=getMemberVotedPairs(m.name);
-    const votedMarkHtml=votedPairs.length?`<span class="rs-voted-mark" title="${esc(votedPairs.map(p=>pairName(p)).join(' / '))}">投票済</span>`:'';
+    const votedPair=getMemberVotedRowPair(m.name,row);
+    const votedMarkHtml=votedPair?`<span class="rs-voted-mark" title="${esc(pairName(votedPair))}">投票済</span>`:'';
     return`<div class="reinf-res-card${isAlready?' already':''}">
       ${votedMarkHtml}
       <div class="av2" style="background:${a.bg};color:${a.c};flex-shrink:0">${ini(m.name)}</div>
@@ -2179,77 +2185,100 @@ async function onReinfSurveySelect(val){
   if(overlay && overlay.style.display === 'flex') renderRSResults();
 }
 
-// 指定メンバーが、現在参照中のアンケートで投票したペア一覧を返す（[{main,sub}, ...]）
-function getMemberVotedPairs(memberName){
+// 指定メンバーが、現在参照中のアンケートで「この行の対象ペア」に投票しているかを調べる
+// （メンバーの投票全件ではなく、検索中の行に設定されているペアと一致するものだけを見る）
+function getMemberVotedRowPair(memberName, row){
   const voters = _reinfSurveyVoters[_activeReinfTable];
-  if(!voters) return [];
+  if(!voters) return null;
   const v = voters.find(x => x.memberName === memberName);
-  return v ? (v.votes || []) : [];
+  if(!v) return null;
+  const votes = v.votes || [];
+  const targets = [{ main: row.normalMain || null, sub: row.normalSub || null }];
+  if(RS.dualMode) targets.push({ main: row.castleMain || null, sub: row.castleSub || null });
+  for(const t of targets){
+    if(!t.main && !t.sub) continue;
+    const hit = votes.find(p => (p.main || null) === t.main && (p.sub || null) === t.sub);
+    if(hit) return hit;
+  }
+  return null;
+}
+
+/* ---------- 援軍検索内の確認ポップアップ（reinf-search-overlayより手前に表示） ---------- */
+function openRsConfirm(html){
+  document.getElementById('rs-confirm-box').innerHTML = html;
+  document.getElementById('rs-confirm-overlay').style.display = 'flex';
+}
+function closeRsConfirm(){
+  document.getElementById('rs-confirm-overlay').style.display = 'none';
 }
 
 /* ---------- 援軍表：投票済みメンバーを表に追加 ---------- */
+let _pendingReinfAdd = null; // {rowId, name, pair}
+
 async function handleAddToReinfTable(rowId, name){
-  const votedPairs = getMemberVotedPairs(name);
-  if(!votedPairs.length){
+  const row = S.reinf.find(r => r.id === rowId);
+  if(!row) return;
+  const votedPair = getMemberVotedRowPair(name, row);
+  if(!votedPair){
     await setReinfMember(rowId, name);
     return;
   }
-  openVotedPairConfirmModal(rowId, name, votedPairs);
-}
-
-function openVotedPairConfirmModal(rowId, name, votedPairs){
-  const multi = votedPairs.length > 1;
-  const pairsHtml = votedPairs.map(p =>
-    `<div style="padding:3px 0;border-bottom:1px solid var(--border)">${esc(pairName(p))}</div>`
-  ).join('');
-  openModal('voted-pair-confirm', `<h3>投票済みペアを追加しますか？</h3>
-    <div style="font-size:12px;margin-bottom:12px">
-      ${esc(name)}さんは以下のペアに投票しています。<br>
-      <div style="margin:8px 0">${pairsHtml}</div>
-      追加した行の下に、同じ援軍ペア${multi?'を全て':''}新規追加しますか？
+  _pendingReinfAdd = { rowId, name, pair: votedPair };
+  openRsConfirm(`<h3>投票済みペアを追加しますか？</h3>
+    <div style="font-size:12px;margin-bottom:14px">
+      ${esc(name)}さんは<strong>${esc(pairName(votedPair))}</strong>に投票しています。<br>
+      追加した行の下に、同じ援軍ペアの新規行を追加しますか？
     </div>
     <div class="modal-acts">
-      <button class="btn" onclick="finishAddToReinfTable(${rowId},'${esc(name)}',false)">追加しない</button>
-      <button class="btn pri" onclick="finishAddToReinfTable(${rowId},'${esc(name)}',true)">追加する</button>
+      <button class="btn" onclick="cancelAddToReinfTable()">キャンセル</button>
+      <button class="btn pri" onclick="confirmAddToReinfTable()">追加する</button>
     </div>`);
 }
 
-async function finishAddToReinfTable(rowId, name, addPairRows){
-  closeModal();
+// キャンセル：何も変更せずポップアップを閉じ、援軍検索の結果画面に戻すだけ
+function cancelAddToReinfTable(){
+  _pendingReinfAdd = null;
+  closeRsConfirm();
+}
+
+// 追加する：メンバーをこの行に設定し、その直下に同じペアの新規行を確実に追加する
+async function confirmAddToReinfTable(){
+  const pending = _pendingReinfAdd;
+  if(!pending) return;
+  _pendingReinfAdd = null;
+  closeRsConfirm();
   showLoading();
   try {
-    await setReinfMemberCore(rowId, name);
-    if(addPairRows){
-      const votedPairs = getMemberVotedPairs(name);
-      let afterId = rowId;
-      for(const p of votedPairs){
-        const addRes = await fetch('/api/reinf', {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ tableType: _activeReinfTable, afterId })
-        });
-        if(!addRes.ok) throw new Error();
-        const newRow = await addRes.json();
-        await fetch(`/api/reinf?id=${newRow.id}`, {
-          method: 'PUT', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({
-            normalMain: p.main || null, normalSub: p.sub || null,
-            castleMain: p.main || null, castleSub: p.sub || null,
-            tableType: _activeReinfTable,
-          })
-        });
-        afterId = newRow.id; // 複数ペアの場合は続けて下に並べる
-      }
-    }
-    toast(name+'を追加しました');
+    await setReinfMemberCore(pending.rowId, pending.name);
+
+    const addRes = await fetch('/api/reinf', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ tableType: _activeReinfTable, afterId: pending.rowId })
+    });
+    if(!addRes.ok) throw new Error('行の追加に失敗しました');
+    const newRow = await addRes.json();
+
+    const putRes = await fetch(`/api/reinf?id=${newRow.id}`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        normalMain: pending.pair.main || null, normalSub: pending.pair.sub || null,
+        castleMain: pending.pair.main || null, castleSub: pending.pair.sub || null,
+        tableType: _activeReinfTable,
+      })
+    });
+    if(!putRes.ok) throw new Error('新規行へのペア設定に失敗しました');
+
+    await load();
+    toast(pending.name+'を追加し、同じペアの行も追加しました');
+    closeReinfSearch();
   } catch(e){
     console.error(e);
     toast('追加に失敗しました');
   } finally {
-    await load();
     hideLoading();
-    closeReinfSearch();
   }
 }
+
 
 /* ========== キャラ管理 ========== */
 // 入力補助モード（キャラ管理用、デフォルトON）
