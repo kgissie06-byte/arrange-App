@@ -4464,33 +4464,6 @@ function applyRole(){
 }
 
 
-
-async function saveUserPassword(){
-  const role = document.getElementById('cpw-role').value;
-  const nw = (document.getElementById('cpw-new').value || '').trim();
-  const cf = (document.getElementById('cpw-confirm').value || '').trim();
-  const errEl = document.getElementById('cpw-err');
-  if(!nw){ errEl.textContent = 'パスワードを入力してください'; return; }
-  if(nw !== cf){ errEl.textContent = '確認パスワードが一致しません'; return; }
-  if(nw.length < 4){ errEl.textContent = '4文字以上で設定してください'; return; }
-  showLoading();
-  try {
-    const res = await fetch('/api/auth/change-password', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ role, password: nw })
-    });
-    const data = await res.json();
-    if(!res.ok){ errEl.textContent = data.error || '変更に失敗しました'; return; }
-    closeModal();
-    const label = role === 'reinf-admin' ? '援軍管理者' : '利用者';
-    toast(`${label}パスワードを変更しました`);
-  } catch(e) {
-    errEl.textContent = 'エラーが発生しました';
-  } finally {
-    hideLoading();
-  }
-}
 </script>
 </body>
 </html>

@@ -22,9 +22,9 @@ export default async function handler(req, res) {
   if (!auth) return
 
   const form = formidable({ maxFileSize: 5 * 1024 * 1024 })
-  let fields, files
+  let files
   try {
-    [fields, files] = await form.parse(req)
+    [, files] = await form.parse(req)
   } catch (e) {
     return res.status(400).json({ error: 'Failed to parse form' })
   }
