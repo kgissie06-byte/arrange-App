@@ -3353,13 +3353,20 @@ async function commitMemberEdit(pending){
 async function deleteMember(){
   const id = _meSelId;
   const name=(document.getElementById('me-name').value||'このメンバー').trim();
-  if(!confirm(`${name} を削除しますか？\n育成データもすべて削除されます。`)) return;
+  if(!confirm(`${name} を削除しますか？\n育成データ・アンケートの投票・援軍表の記載もすべて削除されます。`)) return;
   showLoading();
   try {
-    await fetch(`/api/members/${id}`,{ method:'DELETE' });
-    await load();
+    const res = await fetch(`/api/members/${id}`,{ method:'DELETE' });
+    const data = await res.json().catch(()=>({}));
     closeModal();
-    toast('削除しました');
+    if(data.loggedOut){
+      // 自分自身を削除した場合はサーバー側でセッションが破棄されているので、クライアント側の状態もログアウト画面にリセットする
+      toast('削除しました。ログアウトします');
+      await doLogout();
+    } else {
+      await load();
+      toast('削除しました');
+    }
   } finally {
     hideLoading();
   }

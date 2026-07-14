@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { createClient } from '@supabase/supabase-js'
-import { requireAuth } from '../../lib/auth.js'
+import { requireAuth, clearSession } from '../../lib/auth.js'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -63,14 +63,41 @@ export default async function handler(req, res) {
     })
   }
 
-  // メンバー削除（関連する育成データも削除）
+  // メンバー削除（関連する育成データ・アンケート投票・援軍表の記載も削除）
   if (req.method === 'DELETE') {
+    // 援軍表はmember_name（文字列）で紐づいているため、削除前に名前を取得しておく
+    const { data: memberData, error: memberFetchErr } = await supabase
+      .from('members')
+      .select('name')
+      .eq('id', memberId)
+      .single()
+
+    if (memberFetchErr) return res.status(500).json({ error: memberFetchErr })
+
     const { error: trainingErr } = await supabase
       .from('training')
       .delete()
       .eq('member_id', memberId)
 
     if (trainingErr) return res.status(500).json({ error: trainingErr })
+
+    // アンケートの投票を削除
+    const { error: voteErr } = await supabase
+      .from('survey_votes')
+      .delete()
+      .eq('member_id', memberId)
+
+    if (voteErr) return res.status(500).json({ error: voteErr })
+
+    // 援軍表の該当行をクリア（行自体は残し、member_nameのみnullにする）
+    if (memberData?.name) {
+      const { error: reinfErr } = await supabase
+        .from('reinf')
+        .update({ member_name: null })
+        .eq('member_name', memberData.name)
+
+      if (reinfErr) return res.status(500).json({ error: reinfErr })
+    }
 
     const { error } = await supabase
       .from('members')
@@ -79,7 +106,13 @@ export default async function handler(req, res) {
 
     if (error) return res.status(500).json({ error })
 
-    return res.json({ ok: true })
+    // 自分自身を削除した場合はセッションを破棄してログアウトさせる
+    const selfDelete = auth.memberId === memberId
+    if (selfDelete) {
+      clearSession(res)
+    }
+
+    return res.json({ ok: true, loggedOut: selfDelete })
   }
 
   return res.status(405).json({ error: 'Method not allowed' })
