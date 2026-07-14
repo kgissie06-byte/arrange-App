@@ -99,6 +99,14 @@ export default async function handler(req, res) {
       if (reinfErr) return res.status(500).json({ error: reinfErr })
     }
 
+    // auth_role行も削除する（残っているとrequireAuthが「削除済み判定」できない）
+    const { error: authRoleErr } = await supabase
+      .from('auth_role')
+      .delete()
+      .eq('member_id', memberId)
+
+    if (authRoleErr) return res.status(500).json({ error: authRoleErr })
+
     const { error } = await supabase
       .from('members')
       .delete()

@@ -3583,6 +3583,35 @@ function handleSurveyNotify(payload){
   updateSurveyBadge();
 }
 
+/* ---------- 自分が削除された場合の即時強制ログアウト ---------- */
+// ログインしている間ずっと監視する軽量チャンネル。管理者が自分を削除したら即座にログアウトさせる。
+// サーバー側（requireAuth）でも次回のAPIアクセス時に弾かれるが、こちらは開きっぱなしの画面を即座に反応させるためのもの。
+let _memberNotifyChannel = null;
+
+function startMemberNotifyChannel(){
+  if(!_sbClient) return;
+  if(_memberNotifyChannel) return; // 既に接続済み
+  _memberNotifyChannel = _sbClient
+    .channel('member-notify')
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'members' }, handleMemberDeleteNotify)
+    .subscribe();
+}
+
+function stopMemberNotifyChannel(){
+  if(_memberNotifyChannel && _sbClient){
+    _sbClient.removeChannel(_memberNotifyChannel);
+    _memberNotifyChannel = null;
+  }
+}
+
+async function handleMemberDeleteNotify(payload){
+  const deletedId = payload.old?.id;
+  if(deletedId == null || currentMemberId == null || deletedId !== currentMemberId) return;
+  // 自分自身が（他の管理者や別端末から）削除された → 即座にログアウトする
+  toast('アカウントが削除されました');
+  await doLogout();
+}
+
 let _svRealtimeChannel = null;
 
 // アンケート画面を開いている間だけ接続する（同時接続数を抑えるため）
@@ -4383,6 +4412,7 @@ async function doApplySurvey(tableType){
       load().then(initSurveyBadgeFromServer); // 所属フィルタにS.membersが必要なのでload完了後に実行する
       startSurveyStatusWatcher();
       startSurveyNotifyChannel();
+      startMemberNotifyChannel();
     }
   } catch(e) {
   }
@@ -4415,6 +4445,7 @@ async function doLogin(){
     load().then(initSurveyBadgeFromServer); // 所属フィルタにS.membersが必要なのでload完了後に実行する
     startSurveyStatusWatcher();
     startSurveyNotifyChannel();
+    startMemberNotifyChannel();
   } catch(e) {
     errEl.textContent = 'エラーが発生しました';
   } finally {
@@ -4427,6 +4458,7 @@ async function doLogout(){
   stopSurveyRealtime();
   stopReinfRealtime();
   stopSurveyNotifyChannel();
+  stopMemberNotifyChannel();
   updateSurveyBadge();
   await fetch('/api/auth/logout', { method: 'POST' }).catch(()=>{});
   currentRole = null;
