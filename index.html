@@ -40,9 +40,16 @@
 body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(--bg)}
 
 /* ===== ログイン画面 ===== */
-#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto;transition:padding-top .15s ease}
+#login-screen,.auth-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto;transition:padding-top .15s ease}
 /* キーボード表示時：中央寄せをやめて上寄せにし、入力欄がキーボードに隠れないようにする */
 #login-screen.kb-open{align-items:flex-start;padding-top:max(24px, env(safe-area-inset-top))}
+.login-link{display:inline-block;margin-top:14px;font-size:12px;color:var(--t2);text-decoration:underline;cursor:pointer;background:none;border:none;font-family:inherit;padding:0}
+.login-link:hover{opacity:.8}
+.idcheck-item{border:1px solid var(--bm);border-radius:10px;padding:10px 12px;margin-bottom:8px;text-align:left}
+.idcheck-item .idcheck-name{font-weight:600;font-size:13px;color:var(--t)}
+.idcheck-item .idcheck-meta{font-size:11px;color:var(--t2);margin-top:2px}
+.idcheck-item .idcheck-pw{font-size:12px;margin-top:5px;font-family:monospace;letter-spacing:1px}
+.idcheck-list{max-height:56vh;overflow-y:auto;margin:14px 0;text-align:left}
 .login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem 1.75rem;width:calc(100% - 2rem);max-width:340px;text-align:center}
 .login-box h1{font-size:16px;font-weight:600;margin-bottom:6px;color:var(--t)}
 .login-box p{font-size:12px;color:var(--t2);margin-bottom:1.5rem}
@@ -467,6 +474,29 @@ body.touch-device .sub-tab.active:active {
     <input type="password" id="login-pw" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()">
     <button onclick="doLogin()">ログイン</button>
     <div class="login-error" id="login-error"></div>
+    <button type="button" class="login-link" onclick="openIdCheck()">IDを確認する</button>
+  </div>
+</div>
+
+<!-- ID確認：合言葉入力画面 -->
+<div id="idcheck-code-screen" class="auth-screen" style="display:none">
+  <div class="login-box">
+    <h1>ID確認</h1>
+    <p>確認コードを入力してください</p>
+    <input type="text" id="idcheck-code-input" placeholder="確認コード" autocomplete="off" autocapitalize="off" onkeydown="if(event.key==='Enter')submitIdCheckCode()">
+    <button onclick="submitIdCheckCode()">確認</button>
+    <div class="login-error" id="idcheck-code-error"></div>
+    <button type="button" class="login-link" onclick="closeIdCheck()">ログイン画面に戻る</button>
+  </div>
+</div>
+
+<!-- ID確認：一覧画面 -->
+<div id="idcheck-list-screen" class="auth-screen" style="display:none">
+  <div class="login-box" style="max-width:380px">
+    <h1>ID確認</h1>
+    <p>有効なメンバーの情報です</p>
+    <div class="idcheck-list" id="idcheck-list-body"></div>
+    <button type="button" onclick="closeIdCheck()">閉じる</button>
   </div>
 </div>
 
@@ -4452,6 +4482,68 @@ async function doLogin(){
     btn.disabled = false;
     btn.textContent = 'ログイン';
   }
+}
+
+function escHtml(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function openIdCheck(){
+  document.getElementById('idcheck-code-input').value = '';
+  document.getElementById('idcheck-code-error').textContent = '';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('idcheck-list-screen').style.display = 'none';
+  document.getElementById('idcheck-code-screen').style.display = 'flex';
+}
+
+function closeIdCheck(){
+  document.getElementById('idcheck-code-screen').style.display = 'none';
+  document.getElementById('idcheck-list-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+async function submitIdCheckCode(){
+  const codeEl = document.getElementById('idcheck-code-input');
+  const errEl = document.getElementById('idcheck-code-error');
+  const btn = document.querySelector('#idcheck-code-screen button');
+  const code = (codeEl.value || '').trim();
+  if(!code){ errEl.textContent = 'コードを入力してください'; return; }
+  btn.disabled = true; errEl.textContent = '';
+  try {
+    const res = await fetch('/api/id-check', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if(!res.ok){
+      errEl.textContent = data.error || 'コードが違います';
+      return;
+    }
+    renderIdCheckList(data.members || []);
+    document.getElementById('idcheck-code-screen').style.display = 'none';
+    document.getElementById('idcheck-list-screen').style.display = 'flex';
+  } catch(e) {
+    errEl.textContent = 'エラーが発生しました';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderIdCheckList(members){
+  const body = document.getElementById('idcheck-list-body');
+  if(!members.length){
+    body.innerHTML = '<p style="font-size:12px;color:var(--t2);text-align:center">対象メンバーがいません</p>';
+    return;
+  }
+  body.innerHTML = members.map(m => `
+    <div class="idcheck-item">
+      <div class="idcheck-name">${escHtml(m.name)}</div>
+      <div class="idcheck-meta">ID：${escHtml(m.id)}　所属：${escHtml(m.role || '-')}</div>
+      <div class="idcheck-pw">パスワード：${escHtml(m.password)}</div>
+    </div>
+  `).join('');
 }
 
 async function doLogout(){

@@ -44,6 +44,9 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: '4文字以上のパスワードを設定してください' })
         }
         updates.password = await bcrypt.hash(password, 10)
+        // 初期パスワードから変更されたので、ID確認画面では以後マスク表示にする
+        updates.is_initial_password = false
+        updates.initial_password_plain = null
       }
       updates.invalidate_before = new Date().toISOString()
       const { error: authErr } = await supabase

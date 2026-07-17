@@ -43,7 +43,14 @@ export default async function handler(req, res) {
     const hashed = await bcrypt.hash(finalPassword, 10)
     const { error: authErr } = await supabase
       .from('auth_role')
-      .insert({ member_id: data.id, role: memberRole, password: hashed })
+      .insert({
+        member_id: data.id,
+        role: memberRole,
+        password: hashed,
+        // ID確認画面で「初期パスワードのまま」の場合のみ平文を表示するため保持する
+        initial_password_plain: finalPassword,
+        is_initial_password: true,
+      })
     if (authErr) return res.status(500).json({ error: authErr })
 
     // 完了後、ポップアップ表示用に平文パスワードも返す
