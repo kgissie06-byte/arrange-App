@@ -3248,6 +3248,8 @@ function openMemberModal(mode){
 }
 function closeModal(){document.getElementById('modal-overlay').style.display='none';}
 
+let _meOriginalMemberRole = 'user';
+
 function loadMemberEdit(){
   const id = _meSelId;
   const m=S.members.find(x=>x.id===id);
@@ -3261,7 +3263,8 @@ function loadMemberEdit(){
   if(statusEl) statusEl.value=STATUS_OPTIONS.includes(m.status)?m.status:'有効';
   // auth_roleの現在の権限をセット（メンバーデータにあればそれを使う）
   const mrEl=document.getElementById('me-member-role');
-  if(mrEl) mrEl.value=(m.memberRole||m.auth_role||'user');
+  _meOriginalMemberRole = (m.memberRole||m.auth_role||'user');
+  if(mrEl) mrEl.value=_meOriginalMemberRole;
   const pwEl=document.getElementById('me-pw');
   if(pwEl) pwEl.value='';
   document.getElementById('me-detail').style.display='block';
@@ -3276,6 +3279,7 @@ async function saveMemberEdit(){
   const status=document.getElementById('me-status').value;
   const memberRole=document.getElementById('me-member-role').value;
   const password=(document.getElementById('me-pw').value||'').trim();
+  if(memberRole==='admin' && _meOriginalMemberRole!=='admin' && !password){toast('管理者権限にはパスワードの設定が必須です');return;}
   if(password && password.length<4){toast('パスワードは4文字以上にしてください');return;}
 
   if(password && id === currentMemberId){
@@ -3409,6 +3413,7 @@ async function addMember(){
   const memberRole=(document.getElementById('mm-member-role').value||'user');
   const password=(document.getElementById('mm-pw').value||'').trim();
   if(!name)return;
+  if(memberRole==='admin' && !password){toast('管理者権限にはパスワードの設定が必須です');return;}
   if(password && password.length<4){toast('パスワードは4文字以上にしてください');return;}
   showLoading();
   try {
