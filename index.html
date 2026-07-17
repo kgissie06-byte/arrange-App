@@ -43,7 +43,7 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 #login-screen,.auth-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto;transition:padding-top .15s ease}
 /* キーボード表示時：中央寄せをやめて上寄せにし、入力欄がキーボードに隠れないようにする */
 #login-screen.kb-open{align-items:flex-start;padding-top:max(24px, env(safe-area-inset-top))}
-.login-link{display:inline-block;margin-top:14px;font-size:12px;color:var(--t2);text-decoration:underline;cursor:pointer;background:none;border:none;font-family:inherit;padding:0}
+.login-box .login-link{display:inline-block;width:auto;margin-top:14px;font-size:12px;color:var(--t2);text-decoration:underline;cursor:pointer;background:none;border:none;border-radius:0;font-family:inherit;font-weight:normal;padding:0}
 .login-link:hover{opacity:.8}
 .idcheck-item{border:1px solid var(--bm);border-radius:10px;padding:10px 12px;margin-bottom:8px;text-align:left}
 .idcheck-item .idcheck-name{font-weight:600;font-size:13px;color:var(--t)}
@@ -486,7 +486,7 @@ body.touch-device .sub-tab.active:active {
     <input type="text" id="idcheck-code-input" placeholder="確認コード" autocomplete="off" autocapitalize="off" onkeydown="if(event.key==='Enter')submitIdCheckCode()">
     <button onclick="submitIdCheckCode()">確認</button>
     <div class="login-error" id="idcheck-code-error"></div>
-    <button type="button" class="login-link" onclick="closeIdCheck()">ログイン画面に戻る</button>
+    <button type="button" onclick="closeIdCheck()">ログイン画面に戻る</button>
   </div>
 </div>
 
