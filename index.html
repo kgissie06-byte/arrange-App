@@ -3366,9 +3366,9 @@ async function commitMemberEdit(pending){
     if(!res.ok){ throw new Error('保存失敗'); }
     const data = await res.json();
     const roleLabel = {user:'利用者','reinf-admin':'援軍管理者',admin:'管理者'}[data.memberRole] || data.memberRole;
-    // 自分自身のパスワードを変更した場合はセッションが無効になるため、確認画面を閉じたタイミングで再ログイン画面へ
-    const selfPwChange = password && id === currentMemberId;
-    if(!selfPwChange) await load();
+    // 自分自身の情報を変更した場合はセッションが無効になるため、確認画面を閉じたタイミングで再ログイン画面へ
+    const selfEdit = id === currentMemberId;
+    if(!selfEdit) await load();
     closeModal();
     openModal('member-updated',`<h3>メンバーを更新しました</h3>
       <div class="field"><label>ID</label><div class="added-val">${data.id}</div></div>
@@ -3377,8 +3377,8 @@ async function commitMemberEdit(pending){
       <div class="field"><label>所属</label><div class="added-val">${data.role || '―'}</div></div>
       <div class="field"><label>状態</label><div class="added-val">${data.status || '有効'}</div></div>
       <div class="field"><label>権限</label><div class="added-val">${roleLabel}</div></div>
-      ${selfPwChange ? `<p style="font-size:12px;color:var(--t2);margin:8px 0 0">閉じると自動的にログアウトします。新しいパスワードで再度ログインしてください。</p>` : ''}
-      <div class="modal-acts"><button class="btn pri" onclick="${selfPwChange ? 'closeMemberUpdatedModal(true)' : 'closeModal()'}">閉じる</button></div>`);
+      ${selfEdit ? `<p style="font-size:12px;color:var(--t2);margin:8px 0 0">閉じると自動的にログアウトします。${password ? '新しいパスワードで再度ログインしてください。' : '再度ログインしてください。'}</p>` : ''}
+      <div class="modal-acts"><button class="btn pri" onclick="${selfEdit ? 'closeMemberUpdatedModal(true)' : 'closeModal()'}">閉じる</button></div>`);
   } catch(err){
     console.error(err);
     toast('エラーが発生しました');
