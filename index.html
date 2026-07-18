@@ -187,13 +187,14 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .sub-tab.active{background:var(--acc);color:#FFF8F0;border-color:var(--acc)}
 .field{margin-bottom:9px}
 .field label{display:block;font-size:11px;color:var(--t2);margin-bottom:3px}
-.field input,.field select{width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;box-sizing:border-box}
+.field input,.field select,.field textarea{width:100%;padding:7px 10px;font-size:16px;border:1px solid var(--bm);border-radius:8px;background:var(--bg);color:var(--t);font-family:inherit;box-sizing:border-box}
 .field input[type="datetime-local"]{width:1px;min-width:100%;max-width:100%}
 
 /* モーダル */
 .overlay{position:fixed;inset:0;background:rgba(44,34,24,.42);display:flex;align-items:flex-start;justify-content:center;padding-top:48px;z-index:300;overflow-y:auto}
 .rs-confirm-overlay{z-index:500}
 .modal{background:var(--card);border:1px solid var(--bm);border-radius:14px;padding:1.125rem;width:calc(100% - 2rem);max-width:480px;margin-bottom:48px}
+.field textarea{resize:vertical}
 .modal h3{font-size:14px;font-weight:500;margin-bottom:12px}
 .modal-acts{display:flex;gap:7px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
 
