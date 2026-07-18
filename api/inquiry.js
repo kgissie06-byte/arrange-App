@@ -7,7 +7,24 @@ export const config = { api: { bodyParser: false } }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 1枚あたり5MBまで
 const MAX_FILES = 3 // 添付は最大3枚まで
-const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+
+// ブラウザが申告するContent-Type（f.mimetype）は送信側で自由に偽装できるため信用しない。
+// 実際のファイル先頭バイト（マジックナンバー）を見て本物の画像かどうかを判定する。
+function detectImageType(buffer) {
+  if (buffer.length >= 3 && buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+    return { mime: 'image/jpeg', ext: 'jpg' }
+  }
+  if (buffer.length >= 8 && buffer.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) {
+    return { mime: 'image/png', ext: 'png' }
+  }
+  if (buffer.length >= 6 && buffer.slice(0, 4).toString('ascii') === 'GIF8') {
+    return { mime: 'image/gif', ext: 'gif' }
+  }
+  if (buffer.length >= 12 && buffer.slice(0, 4).toString('ascii') === 'RIFF' && buffer.slice(8, 12).toString('ascii') === 'WEBP') {
+    return { mime: 'image/webp', ext: 'webp' }
+  }
+  return null
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -48,13 +65,18 @@ export default async function handler(req, res) {
     : []
 
   const attachments = []
+  let idx = 0
   for (const f of rawFiles) {
     if (!f || !f.filepath) continue
     try {
-      if (!ALLOWED_MIME.includes(f.mimetype || '')) continue
       const buffer = fs.readFileSync(f.filepath)
+      const detected = detectImageType(buffer)
+      if (!detected) continue // 画像として認識できないファイルは黙ってスキップ（偽装ファイル対策）
+      idx += 1
       attachments.push({
-        filename: (f.originalFilename || 'image').replace(/[\r\n"]/g, ''),
+        // 元のファイル名は信用せず、こちらで生成した安全な名前に付け替える
+        // （拡張子偽装・Unicode制御文字によるファイル名偽装トリックを無効化するため）
+        filename: `attachment-${idx}.${detected.ext}`,
         content: buffer.toString('base64'),
       })
     } finally {
@@ -70,7 +92,9 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'メール送信が設定されていません' })
   }
 
-  const senderName = (typeof name === 'string' && name.trim()) ? name.trim() : '（未入力）'
+  const senderNameRaw = (typeof name === 'string' && name.trim()) ? name.trim() : '（未入力）'
+  // 改行や制御文字が混じっていると件名（メールヘッダー）が壊れる可能性があるため除去し、長さも制限する
+  const senderName = senderNameRaw.replace(/[\r\n\t\x00-\x1F\x7F]/g, '').slice(0, 100)
   const escapeHtml = (s) => s.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]))
 
   try {
