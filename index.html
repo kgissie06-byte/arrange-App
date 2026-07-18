@@ -506,8 +506,13 @@ body.touch-device .sub-tab.active:active {
 <div class="wrap" id="main-wrap" style="display:none">
 <div class="top-action-bar">
   <span id="role-badge-wrap"></span>
-  <button class="logout-btn icon-btn" id="inquiry-btn" onclick="openInquiryModal()" title="問い合わせ" aria-label="問い合わせ">
+  <button class="logout-btn icon-btn" id="inquiry-btn" style="position:relative" onclick="openInquiryModal()" title="問い合わせ" aria-label="問い合わせ">
     <img src="images/form.png" alt="問い合わせ" width="14" height="14">
+    <span id="inq-tab-badge" class="tab-badge" style="display:none"></span>
+  </button>
+  <button class="logout-btn icon-btn inquiry-admin-only" id="inquiry-admin-btn" style="display:none;position:relative" onclick="openInquiryAdminModal()" title="問い合わせ管理" aria-label="問い合わせ管理">
+    📮
+    <span id="inq-admin-tab-badge" class="tab-badge" style="display:none"></span>
   </button>
   <button class="logout-btn" onclick="doLogout()">ログアウト</button>
 </div>
@@ -3508,7 +3513,122 @@ function openInquiryModal(){
         + 画像を選択
       </label>
     </div>
-    <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" id="inq-send-btn" onclick="submitInquiry()">送信</button></div>`);
+    <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" id="inq-send-btn" onclick="submitInquiry()">送信</button></div>
+    <div id="inq-history-wrap" style="margin-top:18px;border-top:1px solid var(--border);padding-top:12px">
+      <h4 style="font-size:13px;margin:0 0 8px">過去の問い合わせ</h4>
+      <div id="inq-history-list" style="font-size:12px;color:var(--t2)">読み込み中...</div>
+    </div>`);
+  loadMyInquiries();
+  markInquiriesSeen(); // モーダルを開いたら未読バッジは消す
+}
+
+function formatInqDate(s){
+  if(!s) return '';
+  const d = new Date(s);
+  if(isNaN(d.getTime())) return '';
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// 自分の過去の問い合わせ＋返信一覧を取得して描画（画像は表示しない）
+async function loadMyInquiries(){
+  const wrap = document.getElementById('inq-history-list');
+  if(!wrap) return;
+  try {
+    const res = await fetch('/api/inquiry');
+    if(!res.ok) throw new Error();
+    const data = await res.json();
+    const list = Array.isArray(data.inquiries) ? data.inquiries : [];
+    if(!list.length){ wrap.innerHTML = '<div>これまでの問い合わせはありません</div>'; return; }
+    wrap.innerHTML = list.map(inq => `
+      <div style="background:var(--card2,rgba(0,0,0,.04));border-radius:10px;padding:10px 12px;margin-bottom:8px">
+        <div style="font-size:11px;color:var(--t3);margin-bottom:4px">${escHtml(formatInqDate(inq.created_at))}</div>
+        <div style="white-space:pre-wrap;margin-bottom:6px;color:var(--t)">${escHtml(inq.body)}</div>
+        ${inq.reply_body
+          ? `<div style="border-top:1px dashed var(--border);padding-top:6px;margin-top:6px">
+               <div style="font-size:11px;color:var(--acc,#5b8def);font-weight:600;margin-bottom:2px">運営からの返信（${escHtml(formatInqDate(inq.replied_at))}）</div>
+               <div style="white-space:pre-wrap;color:var(--t)">${escHtml(inq.reply_body)}</div>
+             </div>`
+          : `<div style="font-size:11px;color:var(--t3)">未返信</div>`}
+      </div>
+    `).join('');
+  } catch(e) {
+    wrap.innerHTML = '<div>読み込みに失敗しました</div>';
+  }
+}
+
+// モーダルを開いたら「未読の返信」フラグを既読化し、ヘッダーの赤丸バッジを消す
+async function markInquiriesSeen(){
+  try { await fetch('/api/inquiry?action=markSeen', { method: 'POST' }); } catch(e){}
+  const badge = document.getElementById('inq-tab-badge');
+  if(badge) badge.style.display = 'none';
+}
+
+// アプリ起動時に未読の返信があるかだけを確認してバッジを出す（既読化はしない）
+async function initInquiryBadgeFromServer(){
+  try {
+    const res = await fetch('/api/inquiry');
+    if(!res.ok) return;
+    const data = await res.json();
+    const badge = document.getElementById('inq-tab-badge');
+    if(badge) badge.style.display = data.hasUnread ? '' : 'none';
+  } catch(e) {}
+}
+
+/* ---------- 問い合わせ管理（memberId=17のみ） ---------- */
+function openInquiryAdminModal(){
+  openModal('inquiryAdmin', `<h3>問い合わせ管理</h3>
+    <div id="inq-admin-list" style="font-size:13px">読み込み中...</div>`);
+  loadAllInquiries();
+}
+
+async function loadAllInquiries(){
+  const wrap = document.getElementById('inq-admin-list');
+  if(!wrap) return;
+  try {
+    const res = await fetch('/api/inquiry?action=adminList');
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error || '取得に失敗しました');
+    const list = Array.isArray(data.inquiries) ? data.inquiries : [];
+    if(!list.length){ wrap.innerHTML = '<div style="color:var(--t2)">問い合わせはありません</div>'; return; }
+    wrap.innerHTML = list.map(inq => `
+      <div style="background:var(--card2,rgba(0,0,0,.04));border-radius:10px;padding:10px 12px;margin-bottom:10px">
+        <div style="font-size:11px;color:var(--t3);margin-bottom:4px">${escHtml(formatInqDate(inq.created_at))}・${escHtml(inq.name || '（未入力）')}（memberId: ${inq.member_id ?? '-'}）</div>
+        <div style="white-space:pre-wrap;margin-bottom:6px;color:var(--t)">${escHtml(inq.body)}</div>
+        ${inq.reply_body
+          ? `<div style="border-top:1px dashed var(--border);padding-top:6px;margin-top:6px">
+               <div style="font-size:11px;color:var(--acc,#5b8def);font-weight:600;margin-bottom:2px">返信済み（${escHtml(formatInqDate(inq.replied_at))}）</div>
+               <div style="white-space:pre-wrap;color:var(--t)">${escHtml(inq.reply_body)}</div>
+             </div>`
+          : `<div style="margin-top:6px">
+               <textarea rows="3" style="width:100%;box-sizing:border-box" id="inq-reply-in-${inq.id}" placeholder="返信内容を入力"></textarea>
+               <button class="btn pri" style="margin-top:4px" onclick="submitInquiryReply(${inq.id})">返信を送信</button>
+             </div>`}
+      </div>
+    `).join('');
+  } catch(e) {
+    wrap.innerHTML = `<div style="color:var(--danger)">${escHtml(e.message || '読み込みに失敗しました')}</div>`;
+  }
+}
+
+async function submitInquiryReply(id){
+  const ta = document.getElementById(`inq-reply-in-${id}`);
+  const reply = (ta?.value || '').trim();
+  if(!reply){ toast('返信内容を入力してください'); return; }
+  if(reply.length > 5000){ toast('返信が長すぎます'); return; }
+  try {
+    const res = await fetch('/api/inquiry?action=adminReply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, reply })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error || '送信に失敗しました');
+    toast('返信を送信しました');
+    loadAllInquiries();
+  } catch(e) {
+    toast(e.message || '送信に失敗しました');
+  }
 }
 
 function handleInquiryImgSelect(input){
@@ -4526,6 +4646,7 @@ async function doApplySurvey(tableType){
       if(Array.isArray(d.surveys)) _surveys = d.surveys;
       renderAll();
       initSurveyBadgeFromServer(); // 所属フィルタにS.membersが必要なのでrenderAll後に実行する
+      initInquiryBadgeFromServer();
       startSurveyStatusWatcher();
       startSurveyNotifyChannel();
       startMemberNotifyChannel();
@@ -4678,6 +4799,11 @@ function applyRole(){
   // 援軍表の編集操作（管理者 or 援軍管理者のみ）
   document.querySelectorAll('.reinf-edit-only').forEach(el => {
     el.style.display = (isAdmin || isReinfAdmin) ? '' : 'none';
+  });
+
+  // 問い合わせ返信機能（役割に関係なく、memberId=17のみ）
+  document.querySelectorAll('.inquiry-admin-only').forEach(el => {
+    el.style.display = (currentMemberId === INQ_ADMIN_MEMBER_ID) ? '' : 'none';
   });
 
   // ロールバッジ

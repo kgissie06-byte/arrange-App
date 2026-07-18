@@ -3,10 +3,33 @@ import fs from 'fs'
 import { requireAuth } from '../lib/auth.js'
 
 // multipart/form-data を自前でパースするため、Vercelの標準bodyParserを無効化
+// （GET/markSeen/adminList/adminReplyもこの設定のまま自前でボディを読む）
 export const config = { api: { bodyParser: false } }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 1枚あたり5MBまで
 const MAX_FILES = 3 // 添付は最大3枚まで
+
+// 返信できるのはこのmemberIdのみ（役職・roleに関係なく固定で1名に限定する）
+const REPLY_ALLOWED_MEMBER_ID = 17
+const MAX_REPLY_LENGTH = 5000
+
+async function getSupabase() {
+  const { createClient } = await import('@supabase/supabase-js')
+  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+}
+
+// bodyParserを切っているため、JSONを使うアクション（adminReply）では自前でボディを読む
+async function readJsonBody(req) {
+  const chunks = []
+  for await (const chunk of req) chunks.push(chunk)
+  const raw = Buffer.concat(chunks).toString('utf8')
+  if (!raw) return {}
+  try {
+    return JSON.parse(raw)
+  } catch (e) {
+    return null
+  }
+}
 
 // ブラウザが申告するContent-Type（f.mimetype）は送信側で自由に偽装できるため信用しない。
 // 実際のファイル先頭バイト（マジックナンバー）を見て本物の画像かどうかを判定する。
@@ -26,15 +49,145 @@ function detectImageType(buffer) {
   return null
 }
 
+// /api/inquiry
+//   GET                       → 自分の問い合わせ履歴＋返信（既読化はしない）
+//   GET  ?action=adminList    → 全員分の一覧（memberId=17のみ）
+//   POST                      → 新規問い合わせ送信（multipart、メール通知＋DB保存）
+//   POST ?action=markSeen     → 自分の未読返信をすべて既読化
+//   POST ?action=adminReply   → 指定の問い合わせに返信（memberId=17のみ）
+// Vercel Hobbyプランの関数数上限に収めるため、管理用エンドポイントも新規ファイルを作らずここに統合しています。
 export default async function handler(req, res) {
+  const auth = await requireAuth(req, res)
+  if (!auth) return
+
+  const action = req.query ? req.query.action : undefined
+
+  if (req.method === 'GET' && action === 'adminList') {
+    return handleAdminList(req, res, auth)
+  }
+  if (req.method === 'GET') {
+    return handleList(req, res, auth)
+  }
+  if (req.method === 'POST' && action === 'markSeen') {
+    return handleMarkSeen(req, res, auth)
+  }
+  if (req.method === 'POST' && action === 'adminReply') {
+    return handleAdminReply(req, res, auth)
+  }
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  // ログイン済みであれば誰でもOK
-  const auth = await requireAuth(req, res)
-  if (!auth) return
+  return handleSubmit(req, res, auth)
+}
 
+// 自分の過去の問い合わせ＋返信の一覧を返す（画像は返さない・既読化はしない）
+async function handleList(req, res, auth) {
+  try {
+    const supabase = await getSupabase()
+    const { data, error } = await supabase
+      .from('inquiries')
+      .select('id, body, reply_body, replied_at, unread_by_member, created_at')
+      .eq('member_id', auth.memberId)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    const hasUnread = (data || []).some(row => row.unread_by_member)
+    return res.json({ inquiries: data || [], hasUnread })
+  } catch (e) {
+    console.error('inquiry: 一覧取得エラー', e)
+    return res.status(500).json({ error: '取得に失敗しました' })
+  }
+}
+
+// モーダルを開いたタイミングで呼ばれ、未読の返信をすべて既読にする
+async function handleMarkSeen(req, res, auth) {
+  try {
+    const supabase = await getSupabase()
+    const { error } = await supabase
+      .from('inquiries')
+      .update({ unread_by_member: false })
+      .eq('member_id', auth.memberId)
+      .eq('unread_by_member', true)
+
+    if (error) throw error
+    return res.json({ ok: true })
+  } catch (e) {
+    console.error('inquiry: 既読化エラー', e)
+    return res.status(500).json({ error: '既読化に失敗しました' })
+  }
+}
+
+// 全メンバー分の問い合わせ一覧（返信管理用・memberId=17のみ／画像は保存していないため返さない）
+async function handleAdminList(req, res, auth) {
+  if (auth.memberId !== REPLY_ALLOWED_MEMBER_ID) {
+    return res.status(403).json({ error: '権限がありません' })
+  }
+  try {
+    const supabase = await getSupabase()
+    const { data, error } = await supabase
+      .from('inquiries')
+      .select('id, member_id, name, body, reply_body, replied_at, created_at')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return res.json({ inquiries: data || [] })
+  } catch (e) {
+    console.error('inquiry: 管理者一覧取得エラー', e)
+    return res.status(500).json({ error: '取得に失敗しました' })
+  }
+}
+
+// 指定した問い合わせへの返信を保存する（memberId=17のみ／本人のアプリ内に未読表示される）
+async function handleAdminReply(req, res, auth) {
+  if (auth.memberId !== REPLY_ALLOWED_MEMBER_ID) {
+    return res.status(403).json({ error: '権限がありません' })
+  }
+
+  const body = await readJsonBody(req)
+  if (body === null) return res.status(400).json({ error: '不正なリクエストです' })
+
+  const id = body.id
+  const reply = typeof body.reply === 'string' ? body.reply.trim() : ''
+
+  if (!id || (typeof id !== 'number' && typeof id !== 'string')) {
+    return res.status(400).json({ error: '不正なリクエストです' })
+  }
+  if (!reply) {
+    return res.status(400).json({ error: '返信内容を入力してください' })
+  }
+  if (reply.length > MAX_REPLY_LENGTH) {
+    return res.status(400).json({ error: '返信が長すぎます' })
+  }
+
+  try {
+    const supabase = await getSupabase()
+    const { data, error } = await supabase
+      .from('inquiries')
+      .update({
+        reply_body: reply,
+        replied_at: new Date().toISOString(),
+        unread_by_member: true, // 送信者側に未読バッジを立てる
+      })
+      .eq('id', id)
+      .select('id')
+      .maybeSingle()
+
+    if (error) throw error
+    if (!data) {
+      return res.status(404).json({ error: '対象の問い合わせが見つかりません' })
+    }
+
+    return res.json({ ok: true })
+  } catch (e) {
+    console.error('inquiry: 返信保存エラー', e)
+    return res.status(500).json({ error: '返信の保存に失敗しました' })
+  }
+}
+
+// 新規問い合わせの送信（既存のメール通知に加えて、返信をアプリ内で受け取れるようDBにも保存する）
+async function handleSubmit(req, res, auth) {
   const form = formidable({
     maxFiles: MAX_FILES,
     maxFileSize: MAX_FILE_SIZE,
@@ -60,6 +213,7 @@ export default async function handler(req, res) {
   }
 
   // 添付画像を読み込んでBase64化（不正な形式のファイルは黙ってスキップする）
+  // ※この添付はメール通知にのみ使用し、DBには保存しない（アプリ内の返信画面では表示しない）
   const rawFiles = files.images
     ? (Array.isArray(files.images) ? files.images : [files.images]).slice(0, MAX_FILES)
     : []
@@ -108,7 +262,7 @@ export default async function handler(req, res) {
         from: fromEmail,
         to: toEmail.split(',').map(s => s.trim()).filter(Boolean),
         subject: `【問い合わせ】${senderName}様より`,
-        text: `送信者: ${senderName}\nログイン権限: ${auth.role}\nmemberId: ${auth.memberId ?? '-'}\n添付画像: ${attachments.length}枚\n\n${message}`,
+        text: `送信者: ${senderName}\nログイン権限: ${auth.role}\nmemberId: ${auth.memberId ?? '-'}\n添付画像: ${attachments.length}枚\n※返信はアプリ内の問い合わせ管理から行ってください\n\n${message}`,
         html: `<p><b>送信者:</b> ${escapeHtml(senderName)}</p><p><b>ログイン権限:</b> ${escapeHtml(String(auth.role))}</p><p><b>memberId:</b> ${escapeHtml(String(auth.memberId ?? '-'))}</p><hr><p style="white-space:pre-wrap">${escapeHtml(message)}</p>`,
         attachments: attachments.length ? attachments : undefined,
       }),
@@ -122,6 +276,20 @@ export default async function handler(req, res) {
   } catch (e) {
     console.error('inquiry: 送信エラー', e)
     return res.status(500).json({ error: '送信に失敗しました' })
+  }
+
+  // DBへの保存（アプリ内での返信のための記録）。ここが失敗してもメールは届いているので、
+  // ユーザーへは成功として返す（管理者への通知はコンソールログのみ）。
+  try {
+    const supabase = await getSupabase()
+    const { error } = await supabase.from('inquiries').insert({
+      member_id: auth.memberId,
+      name: senderName,
+      body: message,
+    })
+    if (error) throw error
+  } catch (e) {
+    console.error('inquiry: DB保存エラー（メールは送信済み・アプリ内返信の対象外になります）', e)
   }
 
   return res.json({ ok: true })
