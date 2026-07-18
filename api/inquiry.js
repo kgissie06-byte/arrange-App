@@ -12,10 +12,22 @@ const MAX_FILES = 3 // 添付は最大3枚まで
 // 返信できるのはこのmemberIdのみ（役職・roleに関係なく固定で1名に限定する）
 const REPLY_ALLOWED_MEMBER_ID = 17
 const MAX_REPLY_LENGTH = 5000
+const RETENTION_DAYS_AFTER_SEEN = 7 // 既読になってから何日後にDBから自動削除するか
 
 async function getSupabase() {
   const { createClient } = await import('@supabase/supabase-js')
   return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+}
+
+// cronは使わず、一覧を取得するタイミングで期限切れ（既読から7日経過）の行を掃除する。
+// Vercel Hobbyプランの関数数上限もあり、専用のスケジュール実行は用意していない。
+async function cleanupExpiredInquiries(supabase) {
+  try {
+    const cutoff = new Date(Date.now() - RETENTION_DAYS_AFTER_SEEN * 24 * 60 * 60 * 1000).toISOString()
+    await supabase.from('inquiries').delete().lt('seen_at', cutoff)
+  } catch (e) {
+    console.error('inquiry: 期限切れ削除エラー', e)
+  }
 }
 
 // bodyParserを切っているため、JSONを使うアクション（adminReply）では自前でボディを読む
@@ -85,9 +97,11 @@ export default async function handler(req, res) {
 async function handleList(req, res, auth) {
   try {
     const supabase = await getSupabase()
+    await cleanupExpiredInquiries(supabase)
+
     const { data, error } = await supabase
       .from('inquiries')
-      .select('id, body, reply_body, replied_at, unread_by_member, created_at')
+      .select('id, body, reply_body, replied_at, seen_at, unread_by_member, created_at')
       .eq('member_id', auth.memberId)
       .order('created_at', { ascending: false })
 
@@ -107,7 +121,7 @@ async function handleMarkSeen(req, res, auth) {
     const supabase = await getSupabase()
     const { error } = await supabase
       .from('inquiries')
-      .update({ unread_by_member: false })
+      .update({ unread_by_member: false, seen_at: new Date().toISOString() })
       .eq('member_id', auth.memberId)
       .eq('unread_by_member', true)
 
@@ -126,6 +140,8 @@ async function handleAdminList(req, res, auth) {
   }
   try {
     const supabase = await getSupabase()
+    await cleanupExpiredInquiries(supabase)
+
     const { data, error } = await supabase
       .from('inquiries')
       .select('id, member_id, name, body, reply_body, replied_at, created_at')
@@ -168,6 +184,7 @@ async function handleAdminReply(req, res, auth) {
       .update({
         reply_body: reply,
         replied_at: new Date().toISOString(),
+        seen_at: null, // 新しい返信なので既読タイマーはリセットする
         unread_by_member: true, // 送信者側に未読バッジを立てる
       })
       .eq('id', id)

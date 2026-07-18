@@ -3519,8 +3519,8 @@ function openInquiryModal(){
       <h4 style="font-size:13px;margin:0 0 8px">過去の問い合わせ</h4>
       <div id="inq-history-list" style="font-size:12px;color:var(--t2)">読み込み中...</div>
     </div>`);
-  loadMyInquiries();
-  markInquiriesSeen(); // モーダルを開いたら未読バッジは消す
+  // 既読化を先に済ませてから履歴を取得する（表示する削除予定日を正しく出すため）
+  markInquiriesSeen().finally(loadMyInquiries);
 }
 
 function formatInqDate(s){
@@ -3529,6 +3529,14 @@ function formatInqDate(s){
   if(isNaN(d.getTime())) return '';
   const p = n => String(n).padStart(2,'0');
   return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+const INQ_RETENTION_DAYS = 7; // サーバー側 RETENTION_DAYS_AFTER_SEEN と合わせる
+function addDaysIso(s, days){
+  const d = new Date(s);
+  if(isNaN(d.getTime())) return null;
+  d.setDate(d.getDate() + days);
+  return d.toISOString();
 }
 
 // 自分の過去の問い合わせ＋返信一覧を取得して描画（画像は表示しない）
@@ -3549,6 +3557,9 @@ async function loadMyInquiries(){
           ? `<div style="border-top:1px dashed var(--border);padding-top:6px;margin-top:6px">
                <div style="font-size:11px;color:var(--acc,#5b8def);font-weight:600;margin-bottom:2px">運営からの返信（${escHtml(formatInqDate(inq.replied_at))}）</div>
                <div style="white-space:pre-wrap;color:var(--t)">${escHtml(inq.reply_body)}</div>
+               ${inq.seen_at
+                 ? `<div style="margin-top:6px;font-size:11px;color:var(--danger,#e0483e)">既読になりました。${escHtml(formatInqDate(addDaysIso(inq.seen_at, INQ_RETENTION_DAYS)))} 頃に自動的に削除されます。残しておきたい内容はスクリーンショットで保存してください。</div>`
+                 : ''}
              </div>`
           : `<div style="font-size:11px;color:var(--t3)">未返信</div>`}
       </div>
