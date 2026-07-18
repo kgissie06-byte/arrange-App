@@ -326,8 +326,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .top-action-bar{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:4px 1rem;background:var(--card);border-bottom:1px solid var(--border);font-size:11px;color:var(--t2)}
 .logout-btn{padding:3px 11px;font-size:11px;border:1px solid var(--bm);border-radius:20px;background:none;cursor:pointer;color:var(--t2);font-family:inherit;transition:background .15s}
 .logout-btn:hover{background:var(--acc-bg);color:var(--t)}
-.logout-btn.icon-btn{padding:3px 9px;display:inline-flex;align-items:center;justify-content:center}
-.logout-btn.icon-btn img{display:block}
+.logout-btn.icon-btn{padding:3px 10px;display:inline-flex;align-items:center;justify-content:center}
+.logout-btn.icon-btn img{display:block;height:14px;width:14px}
 .role-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500}
 .role-badge.admin{background:#EEEDFE;color:#3C3489;border:.5px solid #AFA9EC}
 .role-badge.user{background:var(--acc-bg);color:var(--acc);border:.5px solid var(--bm)}
@@ -507,7 +507,7 @@ body.touch-device .sub-tab.active:active {
 <div class="top-action-bar">
   <span id="role-badge-wrap"></span>
   <button class="logout-btn icon-btn" id="inquiry-btn" onclick="openInquiryModal()" title="問い合わせ" aria-label="問い合わせ">
-    <img src="images/form.png" alt="問い合わせ" width="20" height="20">
+    <img src="images/form.png" alt="問い合わせ" width="14" height="14">
   </button>
   <button class="logout-btn" onclick="doLogout()">ログアウト</button>
 </div>
