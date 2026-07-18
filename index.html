@@ -326,7 +326,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .top-action-bar{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:4px 1rem;background:var(--card);border-bottom:1px solid var(--border);font-size:11px;color:var(--t2)}
 .logout-btn{padding:3px 11px;font-size:11px;border:1px solid var(--bm);border-radius:20px;background:none;cursor:pointer;color:var(--t2);font-family:inherit;transition:background .15s}
 .logout-btn:hover{background:var(--acc-bg);color:var(--t)}
-.logout-btn.icon-btn{padding:4px 8px;display:inline-flex;align-items:center;justify-content:center}
+.logout-btn.icon-btn{padding:3px 9px;display:inline-flex;align-items:center;justify-content:center}
+.logout-btn.icon-btn img{display:block}
 .role-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500}
 .role-badge.admin{background:#EEEDFE;color:#3C3489;border:.5px solid #AFA9EC}
 .role-badge.user{background:var(--acc-bg);color:var(--acc);border:.5px solid var(--bm)}
@@ -506,12 +507,7 @@ body.touch-device .sub-tab.active:active {
 <div class="top-action-bar">
   <span id="role-badge-wrap"></span>
   <button class="logout-btn icon-btn" id="inquiry-btn" onclick="openInquiryModal()" title="問い合わせ" aria-label="問い合わせ">
-    <svg viewBox="0 0 1024 1024" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M512 316c-84 0-206 51-206 190v210l-84 84a20 20 0 0 0 14 34h276c116 0 206-82 206-190V506c0-139-122-190-206-190Z" stroke="currentColor" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M462 480a60 60 0 1 1 96 46c-20 15-46 34-46 66" stroke="currentColor" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="512" cy="640" r="10" fill="currentColor" stroke="currentColor" stroke-width="30"/>
-      <path d="M660 250l-16 46M732 296l-38 32M782 366l-48 14" stroke="currentColor" stroke-width="40" stroke-linecap="round"/>
-    </svg>
+    <img src="images/form.png" alt="問い合わせ" width="20" height="20">
   </button>
   <button class="logout-btn" onclick="doLogout()">ログアウト</button>
 </div>
