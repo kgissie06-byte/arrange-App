@@ -4474,7 +4474,11 @@ async function doApplySurvey(tableType){
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('main-wrap').style.display = '';
       applyRole();
-      load().then(initSurveyBadgeFromServer); // 所属フィルタにS.membersが必要なのでload完了後に実行する
+      // /api/initは既に取得済みなので、load()で再度叩き直さずここで直接反映する
+      S = d;
+      if(Array.isArray(d.surveys)) _surveys = d.surveys;
+      renderAll();
+      initSurveyBadgeFromServer(); // 所属フィルタにS.membersが必要なのでrenderAll後に実行する
       startSurveyStatusWatcher();
       startSurveyNotifyChannel();
       startMemberNotifyChannel();
