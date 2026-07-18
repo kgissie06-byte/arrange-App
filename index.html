@@ -1091,8 +1091,8 @@ function renderMembers(){
     const a = av(S.members.indexOf(loginMember));
     html += `<div style="grid-column:1/-1;margin-bottom:4px;font-size:11px;color:var(--t2);font-weight:500">ログイン中のアカウント</div>`;
     html += `<div class="m-card" style="border-color:var(--tab);background:#f4f4ff" onclick="selectMember(${loginMember.id})">
-      <div class="avatar" style="background:${a.bg};color:${a.c}">${ini(loginMember.name)}</div>
-      <div class="m-name">${loginMember.name}</div><div class="m-sub">${loginMember.role}</div>
+      <div class="avatar" style="background:${a.bg};color:${a.c}">${escHtml(ini(loginMember.name))}</div>
+      <div class="m-name">${escHtml(loginMember.name)}</div><div class="m-sub">${escHtml(loginMember.role)}</div>
       <div class="m-sub">${loginMember.chars.length}体育成中</div>
     </div>
     ${memberCountLabel}`;
@@ -1101,8 +1101,8 @@ function renderMembers(){
     html += memberCountLabel;
   }
   el.innerHTML=visible.map((m,i)=>{const a=av(S.members.indexOf(m));return`<div class="m-card" onclick="selectMember(${m.id})">
-    <div class="avatar" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
-    <div class="m-name">${m.name}</div><div class="m-sub">${m.role}</div>
+    <div class="avatar" style="background:${a.bg};color:${a.c}">${escHtml(ini(m.name))}</div>
+    <div class="m-name">${escHtml(m.name)}</div><div class="m-sub">${escHtml(m.role)}</div>
     <div class="m-sub">${m.chars.length}体育成中</div>
   </div>`;}).join('');
   el.innerHTML = html + el.innerHTML;
@@ -1146,14 +1146,14 @@ function renderCharGridEdit(m){
   const renderCc=(cd,isRecent)=>{
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
     const imgHtml=cd.img
-      ?`<img class="cc-img" src="${cd.img}" alt="">`
+      ?`<img class="cc-img" src="${escHtml(cd.img)}" alt="">`
       :`<div class="cc-img empty"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--bm)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
     const hasShukuen=shukuenMemberSet.has(cd.name);
     return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}" data-trained="${c?'1':'0'}">
       ${hasShukuen?`<div class="shukuen-icon" onclick="showShukuenPopup(event,'${esc(cd.name)}')">!</div>`:''}
       ${imgHtml}
       <div class="cc-info">
-        <div class="cc-name" title="${cd.name}">${cd.name}</div>
+        <div class="cc-name" title="${escHtml(cd.name)}">${escHtml(cd.name)}</div>
         <div class="badges">${c?rarBdg(c.rar):''}${c&&c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}
         ${c&&c.ex?exBdg(c.ex):''}
         ${!c?'<span style="font-size:10px;color:var(--t3)">未育成</span>':''}</div>
@@ -1475,8 +1475,8 @@ function showShukuenPopup(e, charName){
   const pop=document.createElement('div');
   pop.className='shukuen-popup';
   pop.id='shukuen-popup';
-  pop.innerHTML=`<div class="shukuen-popup-title">「${charName}」が含まれる宿縁</div>`
-    +owners.map(n=>`<div class="shukuen-popup-item">${n}</div>`).join('');
+  pop.innerHTML=`<div class="shukuen-popup-title">「${escHtml(charName)}」が含まれる宿縁</div>`
+    +owners.map(n=>`<div class="shukuen-popup-item">${escHtml(n)}</div>`).join('');
   document.body.appendChild(pop);
   const r=e.target.getBoundingClientRect();
   let top=r.bottom+4, left=r.left;
@@ -1542,9 +1542,9 @@ function renderSearch(alreadyNames){
     const a=av(mi);
     const shBadge=shukuenBadgeHtml(m,cd);
     const pt=shukuenPt(m,cd);
-    rows.push({pt, html:`<div class="res-card"><div class="av2" style="background:${a.bg};color:${a.c}">${ini(m.name)}</div>
-      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">${m.name} <span style="font-size:10px;color:var(--t2)">${m.role}</span></div>
-      <div style="font-size:10px;color:var(--t2);margin:1px 0">${cd.name}</div>
+    rows.push({pt, html:`<div class="res-card"><div class="av2" style="background:${a.bg};color:${a.c}">${escHtml(ini(m.name))}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">${escHtml(m.name)} <span style="font-size:10px;color:var(--t2)">${escHtml(m.role)}</span></div>
+      <div style="font-size:10px;color:var(--t2);margin:1px 0">${escHtml(cd.name)}</div>
       <div class="badges" style="margin-top:3px">${rarBdg(c.rar)}${c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}${c.ex?exBdg(c.ex):''}</div>
       ${shBadge}</div></div>`});
   });});
@@ -1575,7 +1575,7 @@ async function addReinfRow(){
 
 function pairLabel(main,sub){
   if(!main&&!sub)return`<span style="color:var(--t3);font-size:11px">未設定</span>`;
-  const m=main||'?';const s=sub?`<span class="pair-sep">-</span>${sub}`:`<span class="pair-sep" style="opacity:.4">-</span><span style="color:var(--t3);font-size:10px">副将なし</span>`;
+  const m=escHtml(main)||'?';const s=sub?`<span class="pair-sep">-</span>${escHtml(sub)}`:`<span class="pair-sep" style="opacity:.4">-</span><span style="color:var(--t3);font-size:10px">副将なし</span>`;
   return`${m}${s}`;
 }
 
@@ -1600,7 +1600,7 @@ function renderReinfTable(){
         <div class="name-cell${hasMember?' filled':''}"
             ${canEdit ? `onclick="openReinfSearch(${row.id})"` : ''}
             style="${canEdit ? '' : 'cursor:default;pointer-events:none'}">
-          ${hasMember?row.memberName:'盟員選択'}
+          ${hasMember?escHtml(row.memberName):'盟員選択'}
         </div>
       </td>
       <td class="rt-pair">
@@ -2099,26 +2099,26 @@ function renderRSResults(){
     const castleSubC=RS.dualMode&&row.castleSub?m.chars.find(c=>c.name===row.castleSub):null;
     const castleMainShBadge=castleMainCd?shukuenBadgeHtml(m,castleMainCd):'';
     const castleSubShBadge=castleSubCd?shukuenBadgeHtml(m,castleSubCd):'';
-    const normalBadges=`${mainC?`<span style="font-size:10px;color:var(--t2)">通常 ${row.normalMain}：</span>${rarBdg(mainC.rar)}${summarizeRanks(mainC.ranks).map(rankBdg).join('')}`:''}${subC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${row.normalSub}：</span>${rarBdg(subC.rar)}${summarizeRanks(subC.ranks).map(rankBdg).join('')}`:''}`;
-    const castleBadges=RS.dualMode?`${castleMainC?`<span style="font-size:10px;color:var(--t2)">城 ${row.castleMain}：</span>${rarBdg(castleMainC.rar)}${summarizeRanks(castleMainC.ranks).map(rankBdg).join('')}`:''}${castleSubC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${row.castleSub}：</span>${rarBdg(castleSubC.rar)}${summarizeRanks(castleSubC.ranks).map(rankBdg).join('')}`:''}` :'';
+    const normalBadges=`${mainC?`<span style="font-size:10px;color:var(--t2)">通常 ${escHtml(row.normalMain)}：</span>${rarBdg(mainC.rar)}${summarizeRanks(mainC.ranks).map(rankBdg).join('')}`:''}${subC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${escHtml(row.normalSub)}：</span>${rarBdg(subC.rar)}${summarizeRanks(subC.ranks).map(rankBdg).join('')}`:''}`;
+    const castleBadges=RS.dualMode?`${castleMainC?`<span style="font-size:10px;color:var(--t2)">城 ${escHtml(row.castleMain)}：</span>${rarBdg(castleMainC.rar)}${summarizeRanks(castleMainC.ranks).map(rankBdg).join('')}`:''}${castleSubC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${escHtml(row.castleSub)}：</span>${rarBdg(castleSubC.rar)}${summarizeRanks(castleSubC.ranks).map(rankBdg).join('')}`:''}` :'';
     const votedPair=getMemberVotedRowPair(m.name,row);
-    const votedMarkHtml=votedPair?`<span class="rs-voted-mark" title="${esc(pairName(votedPair))}">投票中</span>`:'';
+    const votedMarkHtml=votedPair?`<span class="rs-voted-mark" title="${pairName(votedPair)}">投票中</span>`:'';
     return`<div class="reinf-res-card${isAlready?' already':''}">
       ${votedMarkHtml}
-      <div class="av2" style="background:${a.bg};color:${a.c};flex-shrink:0">${ini(m.name)}</div>
+      <div class="av2" style="background:${a.bg};color:${a.c};flex-shrink:0">${escHtml(ini(m.name))}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:500">${m.name}
+        <div style="font-size:12px;font-weight:500">${escHtml(m.name)}
           ${isAlready&&!isCurrentRow?`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:#EDE5D8;color:#634B38;border:.5px solid #B4A494;margin-left:4px">表に登録済み</span>`:''}
           ${isCurrentRow?`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:#E1F5EE;color:#085041;border:.5px solid #1D9E75;margin-left:4px">この行に設定中</span>`:''}
         </div>
-        <div style="font-size:11px;color:var(--t2);margin-top:2px">${m.role}</div>
+        <div style="font-size:11px;color:var(--t2);margin-top:2px">${escHtml(m.role)}</div>
         ${normalBadges?`<div class="badges" style="margin-top:4px">${normalBadges}</div>`:''}
         ${RS.dualMode&&castleBadges?`<div class="badges" style="margin-top:3px">${castleBadges}</div>`:''}
         ${mainShBadge||subShBadge?`<div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--border)">
-          ${mainCd&&mainShBadge?`<div style="display:flex;align-items:center;gap:5px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${RS.dualMode?'通常 ':''}${row.normalMain}</span>${mainShBadge}</div>`:''}
-          ${subCd&&subShBadge?`<div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${row.normalSub}</span>${subShBadge}</div>`:''}
-          ${RS.dualMode&&castleMainCd&&castleMainShBadge?`<div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">城 ${row.castleMain}</span>${castleMainShBadge}</div>`:''}
-          ${RS.dualMode&&castleSubCd&&castleSubShBadge?`<div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${row.castleSub}</span>${castleSubShBadge}</div>`:''}
+          ${mainCd&&mainShBadge?`<div style="display:flex;align-items:center;gap:5px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${RS.dualMode?'通常 ':''}${escHtml(row.normalMain)}</span>${mainShBadge}</div>`:''}
+          ${subCd&&subShBadge?`<div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${escHtml(row.normalSub)}</span>${subShBadge}</div>`:''}
+          ${RS.dualMode&&castleMainCd&&castleMainShBadge?`<div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">城 ${escHtml(row.castleMain)}</span>${castleMainShBadge}</div>`:''}
+          ${RS.dualMode&&castleSubCd&&castleSubShBadge?`<div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${escHtml(row.castleSub)}</span>${castleSubShBadge}</div>`:''}
         </div>`:''}
       </div>
       ${isCurrentRow
@@ -3027,7 +3027,7 @@ function renderCuSelList(q){ q=romaToHira(q||'');
     list.innerHTML='<div class="combo-option combo-empty">該当なし</div>';return;
   }
   const cur=document.getElementById('cu-sel').value;
-  list.innerHTML=chars.map(c=>`<div class="combo-option${c.name===cur?' selected':''}" data-name="${esc(c.name)}" data-yomi="${esc(c.yomi||'')}" onclick="pickCuSel('${esc(c.name)}')">${c.name}</div>`).join('');
+  list.innerHTML=chars.map(c=>`<div class="combo-option${c.name===cur?' selected':''}" data-name="${esc(c.name)}" data-yomi="${esc(c.yomi||'')}" onclick="pickCuSel('${esc(c.name)}')">${escHtml(c.name)}</div>`).join('');
 }
 
 function toggleCuSelCombo(){
@@ -3167,7 +3167,7 @@ function renderCharListDisplay(){
 
     return`<div class="c-card" onclick="jumpToCharUpdate('${esc(cd.name)}')">
       ${shukuenBadge}
-      <div style="font-size:12px;font-weight:500;margin-bottom:5px;padding-right:14px">${cd.name}</div>
+      <div style="font-size:12px;font-weight:500;margin-bottom:5px;padding-right:14px">${escHtml(cd.name)}</div>
       <div style="font-size:10px;color:var(--t2);margin-bottom:3px">レアリティ</div>
       <div class="badges" style="margin-bottom:5px">${cd.rars.map(rarBdg).join('')||'<span style="font-size:10px;color:var(--t3)">未設定</span>'}</div>
       <div style="font-size:10px;color:var(--t2);margin-bottom:3px">ランク</div>
@@ -3328,7 +3328,7 @@ function _renderMeSelList(q) {
   }
   list.innerHTML = filtered.map(m =>
     `<div class="combo-option${_meSelId === m.id ? ' selected' : ''}" onclick="selectMeSel(${m.id},'${m.name.replace(/'/g,"\\'")}')">
-      ${m.name}<span style="font-size:11px;color:var(--t3);margin-left:6px">ID:${m.id}</span>${m.status==='無効'?'<span style="font-size:10px;color:var(--danger);margin-left:6px">無効</span>':''}
+      ${escHtml(m.name)}<span style="font-size:11px;color:var(--t3);margin-left:6px">ID:${m.id}</span>${m.status==='無効'?'<span style="font-size:10px;color:var(--danger);margin-left:6px">無効</span>':''}
     </div>`
   ).join('');
 }
@@ -3489,13 +3489,54 @@ function surveyAppliesToMe(survey){
   return me.role === requiredRole;
 }
 
+const INQ_MAX_FILES = 3;
+const INQ_MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+let _inqFiles = [];
+
 function openInquiryModal(){
   const me = (S && S.members) ? S.members.find(m => m.id === currentMemberId) : null;
+  _inqFiles = [];
   openModal('inquiry',`<h3>問い合わせ</h3>
     <p style="font-size:12px;color:var(--t2);margin:0 0 8px">不具合報告やご要望などをお送りください。</p>
-    <div class="field"><label>お名前</label><input type="text" id="inq-name" value="${me ? me.name : ''}" placeholder=""></div>
+    <div class="field"><label>お名前</label><input type="text" id="inq-name" value="${escHtml(me ? me.name : '')}" placeholder=""></div>
     <div class="field"><label>内容</label><textarea id="inq-body" rows="6" placeholder="内容を入力してください"></textarea></div>
+    <div class="field">
+      <label>画像添付（任意・最大${INQ_MAX_FILES}枚、1枚5MBまで）</label>
+      <div id="inq-img-list" style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0"></div>
+      <label class="img-upload-area" style="display:inline-block;padding:6px 14px;font-size:11px;color:var(--t2);cursor:pointer">
+        <input type="file" id="inq-img-input" accept="image/*" multiple onchange="handleInquiryImgSelect(this)" style="display:none">
+        + 画像を選択
+      </label>
+    </div>
     <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" id="inq-send-btn" onclick="submitInquiry()">送信</button></div>`);
+}
+
+function handleInquiryImgSelect(input){
+  const files = Array.from(input.files || []);
+  input.value = ''; // 同じファイルを選び直せるようにリセット
+  for(const f of files){
+    if(_inqFiles.length >= INQ_MAX_FILES){ toast(`画像は${INQ_MAX_FILES}枚まで添付できます`); break; }
+    if(!f.type.startsWith('image/')){ toast('画像ファイルを選択してください'); continue; }
+    if(f.size > INQ_MAX_FILE_SIZE){ toast(`${f.name} は5MBを超えています`); continue; }
+    _inqFiles.push(f);
+  }
+  renderInquiryImgList();
+}
+
+function removeInquiryImg(idx){
+  _inqFiles.splice(idx, 1);
+  renderInquiryImgList();
+}
+
+function renderInquiryImgList(){
+  const wrap = document.getElementById('inq-img-list');
+  if(!wrap) return;
+  wrap.innerHTML = _inqFiles.map((f, idx) => `
+    <div class="img-preview-wrap">
+      <img class="img-preview" style="width:56px;height:56px" src="${URL.createObjectURL(f)}" alt="">
+      <button class="img-remove-btn" onclick="removeInquiryImg(${idx})" title="削除">✕</button>
+    </div>
+  `).join('');
 }
 
 async function submitInquiry(){
@@ -3508,10 +3549,15 @@ async function submitInquiry(){
   const btn = document.getElementById('inq-send-btn');
   if(btn){ btn.disabled = true; btn.textContent = '送信中'; }
   try {
+    const fd = new FormData();
+    fd.append('name', name);
+    fd.append('body', body);
+    _inqFiles.forEach(f => fd.append('images', f));
+
+    // FormData送信時はContent-Typeを手動指定しない（ブラウザがboundary付きで自動設定する）
     const res = await fetch('/api/inquiry', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ name, body, memberId: currentMemberId })
+      body: fd
     });
     const data = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(data.error || '送信に失敗しました');
@@ -3838,7 +3884,7 @@ function formatDateTime(iso){
   const d = new Date(iso);
   return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
-function pairName(p){ return `${p.main||'（なし）'} - ${p.sub||'（なし）'}`; }
+function pairName(p){ return `${escHtml(p.main)||'（なし）'} - ${escHtml(p.sub)||'（なし）'}`; }
 
 /* ---------- アンケート一覧 ---------- */
 async function initSurveyPage(){
@@ -3920,7 +3966,7 @@ function renderSurveyList(){
     const tableLabel = sv.tableType === 'ransaki' ? '乱咲' : '蕾';
     const myCount = (sv.myVotePairIds||[]).length;
     return `<div class="sv-card" onclick="openSurveyDetail(${sv.id})">
-      <div class="sv-card-title">${sv.title}</div>
+      <div class="sv-card-title">${escHtml(sv.title)}</div>
       <div class="sv-card-meta">
         <span class="sv-status ${isOpen?'open':'closed'}">${isOpen?'受付中':'終了'}</span>
         <span>【${tableLabel}】</span>
@@ -4056,7 +4102,7 @@ function renderSurveyDetail(sv){
   if(member && isOpen){
     bannerHtml = `<div class="sv-member-banner">
       <span style="font-size:12px">投票者：</span>
-      <span class="sv-member-banner-name">${esc(member.name)}</span>
+      <span class="sv-member-banner-name">${escHtml(member.name)}</span>
     </div>`;
   }
   if(!isOpen){
@@ -4165,7 +4211,7 @@ function renderVotersList(voters){
   }
   const rows = voters.map(v => {
     return `<div class="sv-voter-row">
-      <div class="sv-voter-name">${esc(v.memberName)}</div>
+      <div class="sv-voter-name">${escHtml(v.memberName)}</div>
     </div>`;
   }).join('');
   section.innerHTML = `<div class="sv-voters-title">投票者一覧 <span style="font-weight:400;color:var(--t3)">(${voters.length}名)</span></div>${rows}`;
@@ -4256,7 +4302,7 @@ async function showVotersPopup(svId, pairId){
     popup.innerHTML = `
       <div class="sv-voters-popup-title">${pairLabel}</div>
       <div class="sv-voters-popup-list">
-        ${names.length ? names.map(n=>`✓ ${n}`).join('<br>') : 'まだ投票がありません'}
+        ${names.length ? names.map(n=>`✓ ${escHtml(n)}`).join('<br>') : 'まだ投票がありません'}
       </div>
       <button class="sv-voters-popup-close" onclick="this.closest('.sv-voters-popup').remove();document.querySelector('.sv-voters-overlay').remove()">閉じる</button>`;
   } catch(e){

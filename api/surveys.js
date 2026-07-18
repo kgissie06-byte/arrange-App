@@ -351,13 +351,17 @@ async function markSeen(res, auth) {
 
 /* ===== 投票・取消（複数ペア対応） ===== */
 async function handleVote(req, res, auth) {
-  const { surveyId, pairId, memberId: bodyMemberId, memberName: bodyMemberName } = req.body
+  const { surveyId, pairId, memberId: bodyMemberId } = req.body
   if (!surveyId) return res.status(400).json({ error: 'surveyId is required' })
   if (!pairId) return res.status(400).json({ error: 'pairId is required' })
 
   const memberId = bodyMemberId || null
-  const memberName = bodyMemberName || null
   if (!memberId) return res.status(400).json({ error: 'メンバーIDが必要です。メンバーを選択してください' })
+
+  // 表示名はクライアント入力を信用せず、DBの正の値を使う（なりすまし・スクリプト混入防止）
+  const { data: memberRow } = await supabase
+    .from('members').select('name').eq('id', memberId).maybeSingle()
+  const memberName = memberRow?.name || null
 
   const { data: sv } = await supabase
     .from('surveys').select('deadline, table_type').eq('id', surveyId).single()
