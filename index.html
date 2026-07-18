@@ -3496,6 +3496,7 @@ function surveyAppliesToMe(survey){
 
 const INQ_MAX_FILES = 3;
 const INQ_MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const INQ_ADMIN_MEMBER_ID = 17; // 問い合わせに返信できるのはこのmemberIdのみ（サーバー側 REPLY_ALLOWED_MEMBER_ID と合わせる）
 let _inqFiles = [];
 
 function openInquiryModal(){
