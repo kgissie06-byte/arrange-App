@@ -325,6 +325,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .top-action-bar{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:4px 1rem;background:var(--card);border-bottom:1px solid var(--border);font-size:11px;color:var(--t2)}
 .logout-btn{padding:3px 11px;font-size:11px;border:1px solid var(--bm);border-radius:20px;background:none;cursor:pointer;color:var(--t2);font-family:inherit;transition:background .15s}
 .logout-btn:hover{background:var(--acc-bg);color:var(--t)}
+.logout-btn.icon-btn{padding:4px 8px;display:inline-flex;align-items:center;justify-content:center}
 .role-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500}
 .role-badge.admin{background:#EEEDFE;color:#3C3489;border:.5px solid #AFA9EC}
 .role-badge.user{background:var(--acc-bg);color:var(--acc);border:.5px solid var(--bm)}
@@ -503,7 +504,14 @@ body.touch-device .sub-tab.active:active {
 <div class="wrap" id="main-wrap" style="display:none">
 <div class="top-action-bar">
   <span id="role-badge-wrap"></span>
-  <button class="logout-btn" id="reload-btn" onclick="manualReload()">更新</button>
+  <button class="logout-btn icon-btn" id="inquiry-btn" onclick="openInquiryModal()" title="問い合わせ" aria-label="問い合わせ">
+    <svg viewBox="0 0 1024 1024" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M512 316c-84 0-206 51-206 190v210l-84 84a20 20 0 0 0 14 34h276c116 0 206-82 206-190V506c0-139-122-190-206-190Z" stroke="currentColor" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M462 480a60 60 0 1 1 96 46c-20 15-46 34-46 66" stroke="currentColor" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="512" cy="640" r="10" fill="currentColor" stroke="currentColor" stroke-width="30"/>
+      <path d="M660 250l-16 46M732 296l-38 32M782 366l-48 14" stroke="currentColor" stroke-width="40" stroke-linecap="round"/>
+    </svg>
+  </button>
   <button class="logout-btn" onclick="doLogout()">ログアウト</button>
 </div>
 <div class="top-bar">
@@ -3484,16 +3492,38 @@ function surveyAppliesToMe(survey){
   return me.role === requiredRole;
 }
 
-async function manualReload(){
-  const btn = document.getElementById('reload-btn');
-  if(btn){ btn.disabled = true; btn.textContent = '更新中'; }
+function openInquiryModal(){
+  const me = (S && S.members) ? S.members.find(m => m.id === currentMemberId) : null;
+  openModal('inquiry',`<h3>問い合わせ</h3>
+    <p style="font-size:12px;color:var(--t2);margin:0 0 8px">不具合報告やご要望などをお送りください。</p>
+    <div class="field"><label>お名前</label><input type="text" id="inq-name" value="${me ? me.name : ''}" placeholder=""></div>
+    <div class="field"><label>内容</label><textarea id="inq-body" rows="6" placeholder="内容を入力してください"></textarea></div>
+    <div class="modal-acts"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn pri" id="inq-send-btn" onclick="submitInquiry()">送信</button></div>`);
+}
+
+async function submitInquiry(){
+  const nameEl = document.getElementById('inq-name');
+  const bodyEl = document.getElementById('inq-body');
+  const name = (nameEl?.value || '').trim();
+  const body = (bodyEl?.value || '').trim();
+  if(!body){ toast('内容を入力してください'); return; }
+
+  const btn = document.getElementById('inq-send-btn');
+  if(btn){ btn.disabled = true; btn.textContent = '送信中'; }
   try {
-    await load();
-    toast('最新データに更新しました');
+    const res = await fetch('/api/inquiry', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ name, body, memberId: currentMemberId })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error || '送信に失敗しました');
+    closeModal();
+    toast('問い合わせを送信しました');
   } catch(e) {
-    toast('更新に失敗しました');
+    toast(e.message || '送信に失敗しました');
   } finally {
-    if(btn){ btn.disabled = false; btn.textContent = '更新'; }
+    if(btn){ btn.disabled = false; btn.textContent = '送信'; }
   }
 }
 
