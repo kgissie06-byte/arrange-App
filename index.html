@@ -4699,6 +4699,7 @@ async function doLogin(){
     document.getElementById('main-wrap').style.display = '';
     applyRole();
     load().then(initSurveyBadgeFromServer); // 所属フィルタにS.membersが必要なのでload完了後に実行する
+    initInquiryBadgeFromServer();
     startSurveyStatusWatcher();
     startSurveyNotifyChannel();
     startMemberNotifyChannel();
