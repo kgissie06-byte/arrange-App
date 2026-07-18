@@ -1,13 +1,29 @@
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
-import { issueSession } from '../../lib/auth.js'
+import { issueSession, clearSession } from '../lib/auth.js'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
+// /api/auth
+//   POST /api/auth                → ログイン（旧 /api/auth/verify）
+//   POST /api/auth?action=logout  → ログアウト（旧 /api/auth/logout）
+// Vercel Hobbyプランのサーバーレス関数数上限（12個）を超えないよう、
+// verify.js と logout.js をこの1ファイルに統合しています。
 export default async function handler(req, res) {
+  const { action } = req.query
+
+  if (action === 'logout') {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' })
+    }
+    clearSession(res)
+    return res.json({ ok: true })
+  }
+
+  // ----- ログイン（デフォルト） -----
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }

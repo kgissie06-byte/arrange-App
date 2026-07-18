@@ -4495,7 +4495,7 @@ async function doLogin(){
   if(!pw){ errEl.textContent = 'パスワードを入力してください'; return; }
   btn.disabled = true; btn.textContent = '確認中...'; errEl.textContent = '';
   try {
-    const res = await fetch('/api/auth/verify', {
+    const res = await fetch('/api/auth', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ memberId, password: pw })
@@ -4590,7 +4590,7 @@ async function doLogout(){
   stopSurveyNotifyChannel();
   stopMemberNotifyChannel();
   updateSurveyBadge();
-  await fetch('/api/auth/logout', { method: 'POST' }).catch(()=>{});
+  await fetch('/api/auth?action=logout', { method: 'POST' }).catch(()=>{});
   currentRole = null;
   currentMemberId = null;
   const idEl = document.getElementById('login-id'); if(idEl) idEl.value = '';
