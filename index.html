@@ -469,7 +469,7 @@ body.touch-device .sub-tab.active:active {
 </div>
 
 <!-- ログイン画面 -->
-<div id="login-screen">
+<div id="login-screen" style="display:none">
   <div class="login-box">
     <h1>育成管理</h1>
     <p>IDとパスワードを入力してください</p>
@@ -4465,6 +4465,7 @@ async function doApplySurvey(tableType){
 
 // roleのみメモリ上に保持してUI制御に使う
  (async function restoreSession(){
+  showLoading(); // 開いた瞬間に即ローディング表示。セッション有無が分かるまでログイン画面もメイン画面も出さない
   try {
     const res = await fetch('/api/init');
     if(res.ok){
@@ -4482,8 +4483,15 @@ async function doApplySurvey(tableType){
       startSurveyStatusWatcher();
       startSurveyNotifyChannel();
       startMemberNotifyChannel();
+    } else {
+      // セッションなし・切れ → ログイン画面を表示
+      document.getElementById('login-screen').style.display = 'flex';
     }
   } catch(e) {
+    // 通信エラー時もログイン画面を表示しておく
+    document.getElementById('login-screen').style.display = 'flex';
+  } finally {
+    hideLoading();
   }
 })();
 
