@@ -74,7 +74,7 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .tab:hover:not(.active){color:var(--t);background:var(--acc-bg)}
 .tab{position:relative}
 .tab-badge{position:absolute;top:8px;right:2px;width:8px;height:8px;border-radius:50%;background:#E0483E;box-shadow:0 0 0 1.5px var(--card)}
-.icon-btn .tab-badge{top:2px;left:auto;right:2px}
+.icon-btn .tab-badge{top:2px;left:2px;right:auto}
 .content{padding:1.125rem 1rem;max-width:920px;margin:0 auto;position:relative}
 .page{display:none}.page.active{display:block}
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
@@ -775,6 +775,13 @@ body.touch-device .sub-tab.active:active {
           <button class="shukuen-add-btn" onclick="openShukuenAddModal('cu',1)">＋ キャラを追加</button>
         </div>
       </div>
+      <div class="field">
+        <label>最近更新されたキャラに反映</label>
+        <div class="shukuen-toggle">
+          <button id="cu-bump-off" class="on" onclick="setCuBumpUpdatedAt(false)">反映しない</button>
+          <button id="cu-bump-on" onclick="setCuBumpUpdatedAt(true)">反映する</button>
+        </div>
+      </div>
       <div class="save-bar">
         <button class="btn danger" onclick="deleteChar()">削除</button>
         <button class="btn pri" onclick="updateChar()">更新</button>
@@ -1002,7 +1009,7 @@ let _reinfRefSurveyId = { ransaki: null, tsubomi: null };   // 援軍表で参�
 let _reinfSurveyVoters = { ransaki: null, tsubomi: null };  // 参照中アンケートの投票者一覧キャッシュ（テーブル種別ごと）
 let E={memberId:null,charName:null,pendingRar:null,pendingRanks:[],pendingEx:null};
 let cnSelRar=[],cnSelRank=[],cuSelRar=[],cuSelRank=[];
-let cnExSotsui=false, cuExSotsui=false;
+let cnExSotsui=false, cuExSotsui=false, cuBumpUpdatedAt=false; // キャラ更新時、既定では「最近更新されたキャラ」に反映しない
 let RS={rowId:null,mainRar:[],mainRank:[],subRar:[],subRank:[],castleMainRar:[],castleMainRank:[],castleSubRar:[],castleSubRank:[],roleFilter:[],sortMode:'rar',dualMode:false};
 
 function esc(s){return(s||'').replace(/'/g,"\\'");}
@@ -2457,6 +2464,11 @@ function setCuEx(enabled){
   const off=document.getElementById('cu-ex-off');const on=document.getElementById('cu-ex-on');
   if(off)off.className=enabled?'':'on';if(on)on.className=enabled?'on':'';
 }
+function setCuBumpUpdatedAt(enabled){
+  cuBumpUpdatedAt=enabled;
+  const off=document.getElementById('cu-bump-off');const on=document.getElementById('cu-bump-on');
+  if(off)off.className=enabled?'':'on';if(on)on.className=enabled?'on':'';
+}
 function renderShukuenList(prefix,idx,members){
   const el=document.getElementById(`${prefix}-shukuen-list-${idx}`);if(!el)return;
   if(!members.length){el.innerHTML='<div style="font-size:11px;color:var(--t3);padding:4px 0">キャラが追加されていません</div>';return;}
@@ -3093,6 +3105,7 @@ function loadCharForUpdate(){
     btn.style.color = _charAssistMode ? '#FFF8F0' : 'var(--t2)';
     btn.style.borderColor = _charAssistMode ? 'var(--acc)' : 'var(--bm)';
   }
+  setCuBumpUpdatedAt(false); // キャラを選び直すたびに既定値（反映しない）に戻す
   document.getElementById('cu-detail').style.display='block';
 }
 async function updateChar(){
@@ -3109,6 +3122,7 @@ async function updateChar(){
       ranks:sortedRanks,
       shukuens:cuShukuens,
       exSotsui:cuExSotsui,
+      bumpUpdatedAt:cuBumpUpdatedAt,
     };
     if(_cuImg !== null) body.img = _cuImg;
     await fetch(`/api/chars/${oldName}`,{

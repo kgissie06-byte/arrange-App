@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
   // キャラ更新（名前変更含む）
   if (req.method === 'PUT') {
-    const { name: newName, yomi, rars, ranks, shukuen, shukuens, img, exSotsui } = req.body
+    const { name: newName, yomi, rars, ranks, shukuen, shukuens, img, exSotsui, bumpUpdatedAt } = req.body
 
     const updates = {}
     if (newName) updates.name = newName
@@ -28,7 +28,8 @@ export default async function handler(req, res) {
     else if (shukuen !== undefined) updates.shukuen = shukuen
     if (img !== undefined) updates.img = img || null
     if (exSotsui !== undefined) updates.ex_sotsui = exSotsui
-    updates.updated_at = new Date().toISOString()
+    // 「最近更新されたキャラ」に反映するかは管理者がボタンで選択（デフォルトは反映しない）
+    if (bumpUpdatedAt === true) updates.updated_at = new Date().toISOString()
 
     // rars/imgチェック用に現在のキャラ情報を取得（rars変更判定・古い画像削除の両方で使う）
     let currentChar = null
