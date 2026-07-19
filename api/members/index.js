@@ -47,9 +47,10 @@ export default async function handler(req, res) {
         member_id: data.id,
         role: memberRole,
         password: hashed,
-        // ID確認画面で「初期パスワードのまま」の場合のみ平文を表示するため保持する
-        initial_password_plain: finalPassword,
-        is_initial_password: true,
+        // 自動生成パスワードの場合のみ、ID確認画面で表示するため平文を保持する
+        // 管理者が手動でパスワードを指定した場合は、平文をどこにも残さない
+        initial_password_plain: password ? null : finalPassword,
+        is_initial_password: !password,
       })
     if (authErr) return res.status(500).json({ error: authErr })
 
