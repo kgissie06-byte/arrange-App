@@ -3613,10 +3613,11 @@ async function loadAllInquiries(){
                <div style="font-size:11px;color:var(--acc,#5b8def);font-weight:600;margin-bottom:2px">返信済み（${escHtml(formatInqDate(inq.replied_at))}）</div>
                <div style="white-space:pre-wrap;color:var(--t)">${escHtml(inq.reply_body)}</div>
              </div>`
-          : `<div style="margin-top:6px">
-               <textarea rows="3" style="width:100%;box-sizing:border-box" id="inq-reply-in-${inq.id}" placeholder="返信内容を入力"></textarea>
-               <button class="btn pri" style="margin-top:4px" onclick="submitInquiryReply(${inq.id})">返信を送信</button>
-             </div>`}
+          : `<div class="field" style="margin-top:6px">
+               <label>返信</label>
+               <textarea id="inq-reply-in-${inq.id}" rows="6" placeholder="返信内容を入力してください"></textarea>
+             </div>
+             <div class="modal-acts"><button class="btn pri" onclick="submitInquiryReply(${inq.id})">返信を送信</button></div>`}
       </div>
     `).join('');
   } catch(e) {

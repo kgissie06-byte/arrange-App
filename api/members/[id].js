@@ -66,7 +66,7 @@ export default async function handler(req, res) {
     })
   }
 
-  // メンバー削除（関連する育成データ・アンケート投票・援軍表の記載も削除）
+  // メンバー削除（関連する育成データ・アンケート投票・問い合わせ・援軍表の記載も削除）
   if (req.method === 'DELETE') {
     // 援軍表はmember_name（文字列）で紐づいているため、削除前に名前を取得しておく
     const { data: memberData, error: memberFetchErr } = await supabase
@@ -91,6 +91,14 @@ export default async function handler(req, res) {
       .eq('member_id', memberId)
 
     if (voteErr) return res.status(500).json({ error: voteErr })
+
+    // 問い合わせ（このメンバーが送ったもの）を削除
+    const { error: inquiryErr } = await supabase
+      .from('inquiries')
+      .delete()
+      .eq('member_id', memberId)
+
+    if (inquiryErr) return res.status(500).json({ error: inquiryErr })
 
     // 援軍表の該当行をクリア（行自体は残し、member_nameのみnullにする）
     if (memberData?.name) {
