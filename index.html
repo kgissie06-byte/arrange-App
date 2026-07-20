@@ -74,7 +74,8 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 .tab:hover:not(.active){color:var(--t);background:var(--acc-bg)}
 .tab{position:relative}
 .tab-badge{position:absolute;top:8px;right:2px;width:8px;height:8px;border-radius:50%;background:#E0483E;box-shadow:0 0 0 1.5px var(--card)}
-.icon-btn .tab-badge{top:0px;left:auto;right:2px}
+.icon-btn .tab-badge{top:2px;left:2px;right:auto}
+#inq-admin-tab-badge{top:2px;left:auto;right:2px}
 .content{padding:1.125rem 1rem;max-width:920px;margin:0 auto;position:relative}
 .page{display:none}.page.active{display:block}
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
@@ -194,7 +195,9 @@ body{font-family:var(--font-sans);color:var(--t);font-size:14px;background:var(-
 /* モーダル */
 .overlay{position:fixed;inset:0;background:rgba(44,34,24,.42);display:flex;align-items:flex-start;justify-content:center;padding-top:48px;z-index:300;overflow-y:auto}
 .rs-confirm-overlay{z-index:500}
-.modal{background:var(--card);border:1px solid var(--bm);border-radius:14px;padding:1.125rem;width:calc(100% - 2rem);max-width:480px;margin-bottom:48px}
+.modal{position:relative;background:var(--card);border:1px solid var(--bm);border-radius:14px;padding:1.125rem;width:calc(100% - 2rem);max-width:480px;margin-bottom:48px}
+.modal-close-btn{position:absolute;top:10px;right:10px;width:26px;height:26px;border:none;border-radius:50%;background:transparent;color:var(--t2);font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.modal-close-btn:hover{background:var(--acc-bg);color:var(--t)}
 .field textarea{resize:vertical}
 .modal h3{font-size:14px;font-weight:500;margin-bottom:12px}
 .modal-acts{display:flex;gap:7px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
@@ -3517,7 +3520,8 @@ let _inqFiles = [];
 function openInquiryModal(){
   const me = (S && S.members) ? S.members.find(m => m.id === currentMemberId) : null;
   _inqFiles = [];
-  openModal('inquiry',`<h3>問い合わせ</h3>
+  openModal('inquiry',`<button class="modal-close-btn" onclick="closeModal()" title="閉じる" aria-label="閉じる">✕</button>
+    <h3>問い合わせ</h3>
     <p style="font-size:12px;color:var(--t2);margin:0 0 8px">不具合報告やご要望などをお送りください。</p>
     <div class="field"><label>お名前</label><input type="text" id="inq-name" value="${escHtml(me ? me.name : '')}" placeholder=""></div>
     <div class="field"><label>内容</label><textarea id="inq-body" rows="6" placeholder="内容を入力してください"></textarea></div>
@@ -3604,7 +3608,8 @@ async function initInquiryBadgeFromServer(){
 
 /* ---------- 問い合わせ管理（memberId=17のみ） ---------- */
 function openInquiryAdminModal(){
-  openModal('inquiryAdmin', `<h3>問い合わせ管理</h3>
+  openModal('inquiryAdmin', `<button class="modal-close-btn" onclick="closeModal()" title="閉じる" aria-label="閉じる">✕</button>
+    <h3>問い合わせ管理</h3>
     <div id="inq-admin-list" style="font-size:13px">読み込み中...</div>`);
   loadAllInquiries();
 }
