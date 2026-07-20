@@ -3609,6 +3609,25 @@ function openInquiryAdminModal(){
   loadAllInquiries();
 }
 
+// 未返信（reply_bodyなし）の問い合わせが1件でもあればヘッダーの赤丸バッジを出す
+function updateInquiryAdminBadge(list){
+  const badge = document.getElementById('inq-admin-tab-badge');
+  if(!badge) return;
+  const hasUnreplied = (list || []).some(inq => !inq.reply_body);
+  badge.style.display = hasUnreplied ? '' : 'none';
+}
+
+// アプリ起動時・ログイン時に未返信の問い合わせがあるかだけを確認してバッジを出す（memberId=17のみ対象）
+async function initInquiryAdminBadgeFromServer(){
+  if(currentMemberId !== INQ_ADMIN_MEMBER_ID) return;
+  try {
+    const res = await fetch('/api/inquiry?action=adminList');
+    if(!res.ok) return;
+    const data = await res.json();
+    updateInquiryAdminBadge(Array.isArray(data.inquiries) ? data.inquiries : []);
+  } catch(e) {}
+}
+
 async function loadAllInquiries(){
   const wrap = document.getElementById('inq-admin-list');
   if(!wrap) return;
@@ -3617,6 +3636,7 @@ async function loadAllInquiries(){
     const data = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(data.error || '取得に失敗しました');
     const list = Array.isArray(data.inquiries) ? data.inquiries : [];
+    updateInquiryAdminBadge(list);
     if(!list.length){ wrap.innerHTML = '<div style="color:var(--t2)">問い合わせはありません</div>'; return; }
     wrap.innerHTML = list.map(inq => `
       <div style="background:var(--card2,rgba(0,0,0,.04));border-radius:10px;padding:10px 12px;margin-bottom:10px">
@@ -4675,6 +4695,7 @@ async function doApplySurvey(tableType){
       renderAll();
       initSurveyBadgeFromServer(); // 所属フィルタにS.membersが必要なのでrenderAll後に実行する
       initInquiryBadgeFromServer();
+      initInquiryAdminBadgeFromServer();
       startSurveyStatusWatcher();
       startSurveyNotifyChannel();
       startMemberNotifyChannel();
@@ -4717,6 +4738,7 @@ async function doLogin(){
     await load();
     initSurveyBadgeFromServer(); // 所属フィルタにS.membersが必要なのでload完了後に実行する
     initInquiryBadgeFromServer(); // load()で最初の認証済みリクエストが成功した後なのでCookieのレースが起きない
+    initInquiryAdminBadgeFromServer();
     startSurveyStatusWatcher();
     startSurveyNotifyChannel();
     startMemberNotifyChannel();
@@ -4835,6 +4857,7 @@ function applyRole(){
   document.querySelectorAll('.inquiry-admin-only').forEach(el => {
     el.style.display = (currentMemberId === INQ_ADMIN_MEMBER_ID) ? '' : 'none';
   });
+  initInquiryAdminBadgeFromServer();
 
   // ロールバッジ
   const badgeClass = isAdmin ? 'admin' : isReinfAdmin ? 'reinf-admin' : 'user';
