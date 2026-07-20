@@ -10,7 +10,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024 // 1枚あたり5MBまで
 const MAX_FILES = 3 // 添付は最大3枚まで
 
 // 返信できるのはこのmemberIdのみ（役職・roleに関係なく固定で1名に限定する）
-const REPLY_ALLOWED_MEMBER_ID = 17
+const REPLY_ALLOWED_MEMBER_ID = 1
 const MAX_REPLY_LENGTH = 5000
 const RETENTION_DAYS_AFTER_SEEN = 7 // 既読になってから何日後にDBから自動削除するか
 
@@ -63,10 +63,10 @@ function detectImageType(buffer) {
 
 // /api/inquiry
 //   GET                       → 自分の問い合わせ履歴＋返信（既読化はしない）
-//   GET  ?action=adminList    → 全員分の一覧（memberId=17のみ）
+//   GET  ?action=adminList    → 全員分の一覧（memberId=1のみ）
 //   POST                      → 新規問い合わせ送信（multipart、メール通知＋DB保存）
 //   POST ?action=markSeen     → 自分の未読返信をすべて既読化
-//   POST ?action=adminReply   → 指定の問い合わせに返信（memberId=17のみ）
+//   POST ?action=adminReply   → 指定の問い合わせに返信（memberId=1のみ）
 // Vercel Hobbyプランの関数数上限に収めるため、管理用エンドポイントも新規ファイルを作らずここに統合しています。
 export default async function handler(req, res) {
   const auth = await requireAuth(req, res)
@@ -133,7 +133,7 @@ async function handleMarkSeen(req, res, auth) {
   }
 }
 
-// 全メンバー分の問い合わせ一覧（返信管理用・memberId=17のみ／画像は保存していないため返さない）
+// 全メンバー分の問い合わせ一覧（返信管理用・memberId=1のみ／画像は保存していないため返さない）
 async function handleAdminList(req, res, auth) {
   if (auth.memberId !== REPLY_ALLOWED_MEMBER_ID) {
     return res.status(403).json({ error: '権限がありません' })
@@ -155,7 +155,7 @@ async function handleAdminList(req, res, auth) {
   }
 }
 
-// 指定した問い合わせへの返信を保存する（memberId=17のみ／本人のアプリ内に未読表示される）
+// 指定した問い合わせへの返信を保存する（memberId=1のみ／本人のアプリ内に未読表示される）
 async function handleAdminReply(req, res, auth) {
   if (auth.memberId !== REPLY_ALLOWED_MEMBER_ID) {
     return res.status(403).json({ error: '権限がありません' })

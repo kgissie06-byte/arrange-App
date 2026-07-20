@@ -10,6 +10,9 @@ const supabase = createClient(
 // 1000件を超える場合に備えてページングしながら全件取得する
 const PAGE_SIZE = 1000
 
+// このIDはガチ管理者用のため、メンバー一覧など画面上のどこにも表示しない
+const HIDDEN_MEMBER_ID = 1
+
 async function fetchAllTraining() {
   let all = []
   let from = 0
@@ -53,10 +56,11 @@ export default async function handler(req, res) {
     updatedAt: c.updated_at || c.created_at || null,
   }))
 
-  // メンバー一覧（auth_roleをJOINして権限も取得）
+  // メンバー一覧（auth_roleをJOINして権限も取得／管理者(ID:1)は除外）
   const { data: membersRaw, error: membersErr } = await supabase
     .from('members')
     .select('*, auth_role(role)')
+    .neq('id', HIDDEN_MEMBER_ID)
     .order('created_at', { ascending: true })
   if (membersErr) return res.status(500).json({ error: membersErr })
 

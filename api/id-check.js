@@ -12,6 +12,9 @@ const ID_CHECK_CODE = process.env.ID_CHECK_CODE || 'hououtai'
 // 初期パスワードでない場合に表示するマスク（実際の文字数が分からないよう固定長にする）
 const MASKED_PASSWORD = '●●●●●●'
 
+// このIDは管理者用のため、ID確認画面には一切表示しない
+const HIDDEN_MEMBER_ID = 1
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -22,11 +25,12 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'コードが違います' })
   }
 
-  // 有効なメンバーのみ対象
+  // 有効なメンバーのみ対象（管理者は除外）
   const { data: membersRaw, error: membersErr } = await supabase
     .from('members')
     .select('id, name, role, status, auth_role(is_initial_password, initial_password_plain)')
     .eq('status', '有効')
+    .neq('id', HIDDEN_MEMBER_ID)
     .order('created_at', { ascending: true })
 
   if (membersErr) return res.status(500).json({ error: membersErr.message || membersErr })

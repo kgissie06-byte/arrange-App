@@ -5,7 +5,7 @@ import { parse } from 'cookie'
 const COOKIE_NAME = 'session'
 const BYPASS_COOKIE_NAME = 'maint_bypass'
 const secret = new TextEncoder().encode(process.env.JWT_SECRET)
-const ALLOWED_MEMBER_ID = 17
+const ALLOWED_MEMBER_ID = 1 // メンテナンス中にログイン維持できる「ガチ管理者」本人のID
 
 const MAINTENANCE_HTML = `<!DOCTYPE html>
 <html lang="ja">
@@ -31,7 +31,7 @@ const MAINTENANCE_HTML = `<!DOCTYPE html>
 </body>
 </html>`
 
-/** ログイン済みセッションがID:17本人か判定 */
+/** ログイン済みセッションがID:1本人か判定 */
 async function isAllowedSession(request) {
   const cookies = parse(request.headers.get('cookie') || '')
   const token = cookies[COOKIE_NAME]
