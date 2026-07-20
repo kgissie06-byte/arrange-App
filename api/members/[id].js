@@ -7,6 +7,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
+// このIDはガチ管理者用。本人以外はAPI越しでも編集・削除できないようにする
+const HIDDEN_MEMBER_ID = 1
+
 export default async function handler(req, res) {
   // メンバー管理は管理者のみ
   const auth = await requireAuth(req, res, 'admin')
@@ -16,6 +19,11 @@ export default async function handler(req, res) {
   const memberId = parseInt(id)
 
   if (isNaN(memberId)) return res.status(400).json({ error: 'invalid id' })
+
+  // ガチ管理者(ID:1)は本人以外、編集も削除もできない（一覧非表示だけでなくAPIレベルでも保護する）
+  if (memberId === HIDDEN_MEMBER_ID && auth.memberId !== HIDDEN_MEMBER_ID) {
+    return res.status(403).json({ error: '権限がありません' })
+  }
 
   // メンバー更新
   if (req.method === 'PUT') {
