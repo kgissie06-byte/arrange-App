@@ -815,12 +815,14 @@ body.touch-device .sub-tab.active:active {
       <div style="margin-bottom:10px">
         <div class="filter-group-title" id="rs-main-label">大将</div>
         <div class="fil-sec" style="margin-bottom:6px"><div class="fil-label">レアリティ</div><div class="fil-btns" id="rs-main-rar"></div></div>
+        <div class="fil-sec" id="rs-main-ex-sec" style="display:none;margin-bottom:6px"><div class="fil-label">EX追想</div><div class="fil-btns" id="rs-main-ex"></div></div>
         <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-main-rank"></div></div>
       </div>
       <hr class="div" style="margin:.75rem 0">
       <div id="rs-sub-section">
         <div class="filter-group-title" id="rs-sub-label">副将</div>
         <div class="fil-sec" style="margin-bottom:6px"><div class="fil-label">レアリティ</div><div class="fil-btns" id="rs-sub-rar"></div></div>
+        <div class="fil-sec" id="rs-sub-ex-sec" style="display:none;margin-bottom:6px"><div class="fil-label">EX追想</div><div class="fil-btns" id="rs-sub-ex"></div></div>
         <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-sub-rank"></div></div>
       </div>
     </div>
@@ -829,12 +831,14 @@ body.touch-device .sub-tab.active:active {
       <div style="margin-bottom:10px">
         <div class="filter-group-title" id="rs-castle-main-label">城 大将</div>
         <div class="fil-sec" style="margin-bottom:6px"><div class="fil-label">レアリティ</div><div class="fil-btns" id="rs-castle-main-rar"></div></div>
+        <div class="fil-sec" id="rs-castle-main-ex-sec" style="display:none;margin-bottom:6px"><div class="fil-label">EX追想</div><div class="fil-btns" id="rs-castle-main-ex"></div></div>
         <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-castle-main-rank"></div></div>
       </div>
       <hr class="div" style="margin:.75rem 0">
       <div id="rs-castle-sub-section">
         <div class="filter-group-title" id="rs-castle-sub-label">城 副将</div>
         <div class="fil-sec" style="margin-bottom:6px"><div class="fil-label">レアリティ</div><div class="fil-btns" id="rs-castle-sub-rar"></div></div>
+        <div class="fil-sec" id="rs-castle-sub-ex-sec" style="display:none;margin-bottom:6px"><div class="fil-label">EX追想</div><div class="fil-btns" id="rs-castle-sub-ex"></div></div>
         <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-castle-sub-rank"></div></div>
       </div>
     </div>
@@ -939,6 +943,7 @@ document.addEventListener('touchend', () => {
 
 const ALL_RARITIES=['LG3','LG2','LG1','LG','UR','SR','R','N'];
 const ALL_RANKS=['全技極','裏技極','技極','表1','表2','表3','表4','表5','表6','裏1','裏2','裏3','裏4','裏5','裏6'];
+const ALL_EX_LEVELS=['星6','星5','星4','星3','星2','星1'];
 
 const RAR_ORDER=['LG3','LG2','LG1','LG','UR','SR','R','N'];
 function getRarImplied(r){
@@ -970,6 +975,17 @@ function rarMatchesFilter(memberRar, filterRars){
     const fi=RAR_ORDER.indexOf(fr);
     const mi=RAR_ORDER.indexOf(memberRar);
     return mi>=0&&fi>=0&&mi<=fi;
+  });
+}
+
+// EXレベルは「選択した星以上」でマッチ（ALL_EX_LEVELSは星6→星1の順＝index0が最高）
+function exMatchesFilter(memberEx, filterExLevels){
+  if(!filterExLevels.length) return true;
+  const mi=ALL_EX_LEVELS.indexOf(memberEx);
+  if(mi<0) return false;
+  return filterExLevels.some(fx=>{
+    const fi=ALL_EX_LEVELS.indexOf(fx);
+    return fi>=0&&mi<=fi;
   });
 }
 
@@ -1013,7 +1029,7 @@ let _reinfSurveyVoters = { ransaki: null, tsubomi: null };  // 参照中アン�
 let E={memberId:null,charName:null,pendingRar:null,pendingRanks:[],pendingEx:null};
 let cnSelRar=[],cnSelRank=[],cuSelRar=[],cuSelRank=[];
 let cnExSotsui=false, cuExSotsui=false, cuBumpUpdatedAt=false; // キャラ更新時、既定では「最近更新されたキャラ」に反映しない
-let RS={rowId:null,mainRar:[],mainRank:[],subRar:[],subRank:[],castleMainRar:[],castleMainRank:[],castleSubRar:[],castleSubRank:[],roleFilter:[],sortMode:'rar',dualMode:false};
+let RS={rowId:null,mainRar:[],mainRank:[],mainEx:[],subRar:[],subRank:[],subEx:[],castleMainRar:[],castleMainRank:[],castleMainEx:[],castleSubRar:[],castleSubRank:[],castleSubEx:[],roleFilter:[],sortMode:'rar',dualMode:false};
 
 function esc(s){return(s||'').replace(/'/g,"\\'");}
 function av(i){return AVC[((i%AVC.length)+AVC.length)%AVC.length];}
@@ -1915,7 +1931,7 @@ async function savePairEdit(rowId,type){
 function openReinfSearch(rowId){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
   const prevSortMode=RS.sortMode||'rar';
-  RS={rowId,mainRar:[],mainRank:[],subRar:[],subRank:[],castleMainRar:[],castleMainRank:[],castleSubRar:[],castleSubRank:[],roleFilter:[_activeReinfTable==='ransaki'?'乱咲':'蕾'],sortMode:prevSortMode,dualMode:false};
+  RS={rowId,mainRar:[],mainRank:[],mainEx:[],subRar:[],subRank:[],subEx:[],castleMainRar:[],castleMainRank:[],castleMainEx:[],castleSubRar:[],castleSubRank:[],castleSubEx:[],roleFilter:[_activeReinfTable==='ransaki'?'乱咲':'蕾'],sortMode:prevSortMode,dualMode:false};
   // ソートボタン表示を同期
   const onStyle='background:#EDE5D8;color:#634B38;border-color:#B4A494';
   const rarBtn=document.getElementById('rs-sort-rar');const rankBtn=document.getElementById('rs-sort-rank');
@@ -1936,9 +1952,11 @@ function openReinfSearch(rowId){
     const castleMainCd=S.chars.find(c=>c.name===row.castleMain);
     const castleSubCd=S.chars.find(c=>c.name===row.castleSub);
     renderRSFilterBtns('rs-castle-main-rar',castleMainCd?castleMainCd.rars:ALL_RARITIES,RS.castleMainRar,'castle-main-rar');
+    renderRSExSec('rs-castle-main-ex-sec','rs-castle-main-ex',castleMainCd,RS.castleMainEx,'castle-main-ex');
     renderRSFilterBtns('rs-castle-main-rank',castleMainCd?castleMainCd.ranks:ALL_RANKS,RS.castleMainRank,'castle-main-rank');
     if(row.castleSub){
       renderRSFilterBtns('rs-castle-sub-rar',castleSubCd?castleSubCd.rars:ALL_RARITIES,RS.castleSubRar,'castle-sub-rar');
+      renderRSExSec('rs-castle-sub-ex-sec','rs-castle-sub-ex',castleSubCd,RS.castleSubEx,'castle-sub-ex');
       renderRSFilterBtns('rs-castle-sub-rank',castleSubCd?castleSubCd.ranks:ALL_RANKS,RS.castleSubRank,'castle-sub-rank');
     }
     castlePanel.style.display='block';
@@ -1953,14 +1971,32 @@ function openReinfSearch(rowId){
   const mainCd=S.chars.find(c=>c.name===row.normalMain);
   const subCd=S.chars.find(c=>c.name===row.normalSub);
   renderRSFilterBtns('rs-main-rar',mainCd?mainCd.rars:ALL_RARITIES,RS.mainRar,'main-rar');
+  renderRSExSec('rs-main-ex-sec','rs-main-ex',mainCd,RS.mainEx,'main-ex');
   renderRSFilterBtns('rs-main-rank',mainCd?mainCd.ranks:ALL_RANKS,RS.mainRank,'main-rank');
   if(row.normalSub){
     renderRSFilterBtns('rs-sub-rar',subCd?subCd.rars:ALL_RARITIES,RS.subRar,'sub-rar');
+    renderRSExSec('rs-sub-ex-sec','rs-sub-ex',subCd,RS.subEx,'sub-ex');
     renderRSFilterBtns('rs-sub-rank',subCd?subCd.ranks:ALL_RANKS,RS.subRank,'sub-rank');
   }
   document.getElementById('reinf-search-overlay').style.display='flex';
   document.getElementById('reinf-search-overlay').scrollTop=0;
   renderRSResults();
+}
+
+// EX追想フィルター（対象キャラがEX追想持ちの場合のみセクションごと表示）
+function renderRSExSec(secId,btnsId,cd,selArr,key){
+  const sec=document.getElementById(secId);
+  if(!sec) return;
+  if(!cd||!cd.exSotsui){
+    sec.style.display='none';
+    document.getElementById(btnsId).innerHTML='';
+    return;
+  }
+  sec.style.display='';
+  document.getElementById(btnsId).innerHTML=ALL_EX_LEVELS.map(lv=>{
+    const on=selArr.includes(lv);
+    return`<button class="f-btn${on?' on':''}" onclick="toggleRSFilter('${key}','${lv}')">${lv}</button>`;
+  }).join('');
 }
 
 function renderRSFilterBtns(elId,options,selArr,key){
@@ -1974,29 +2010,38 @@ function toggleRSFilter(key,val){
   let arr;
   if(key==='main-rar')arr=RS.mainRar;
   else if(key==='main-rank')arr=RS.mainRank;
+  else if(key==='main-ex')arr=RS.mainEx;
   else if(key==='sub-rar')arr=RS.subRar;
   else if(key==='sub-rank')arr=RS.subRank;
+  else if(key==='sub-ex')arr=RS.subEx;
   else if(key==='castle-main-rar')arr=RS.castleMainRar;
   else if(key==='castle-main-rank')arr=RS.castleMainRank;
+  else if(key==='castle-main-ex')arr=RS.castleMainEx;
   else if(key==='castle-sub-rar')arr=RS.castleSubRar;
+  else if(key==='castle-sub-rank')arr=RS.castleSubRank;
+  else if(key==='castle-sub-ex')arr=RS.castleSubEx;
   else arr=RS.castleSubRank;
   const i=arr.indexOf(val);if(i>=0)arr.splice(i,1);else arr.push(val);
   const row=S.reinf.find(r=>r.id===RS.rowId);if(!row)return;
   const mainCd=S.chars.find(c=>c.name===row.normalMain);
   const subCd=S.chars.find(c=>c.name===row.normalSub);
   renderRSFilterBtns('rs-main-rar',mainCd?mainCd.rars:ALL_RARITIES,RS.mainRar,'main-rar');
+  renderRSExSec('rs-main-ex-sec','rs-main-ex',mainCd,RS.mainEx,'main-ex');
   renderRSFilterBtns('rs-main-rank',mainCd?mainCd.ranks:ALL_RANKS,RS.mainRank,'main-rank');
   if(row.normalSub){
     renderRSFilterBtns('rs-sub-rar',subCd?subCd.rars:ALL_RARITIES,RS.subRar,'sub-rar');
+    renderRSExSec('rs-sub-ex-sec','rs-sub-ex',subCd,RS.subEx,'sub-ex');
     renderRSFilterBtns('rs-sub-rank',subCd?subCd.ranks:ALL_RANKS,RS.subRank,'sub-rank');
   }
   if(RS.dualMode){
     const castleMainCd=S.chars.find(c=>c.name===row.castleMain);
     const castleSubCd=S.chars.find(c=>c.name===row.castleSub);
     renderRSFilterBtns('rs-castle-main-rar',castleMainCd?castleMainCd.rars:ALL_RARITIES,RS.castleMainRar,'castle-main-rar');
+    renderRSExSec('rs-castle-main-ex-sec','rs-castle-main-ex',castleMainCd,RS.castleMainEx,'castle-main-ex');
     renderRSFilterBtns('rs-castle-main-rank',castleMainCd?castleMainCd.ranks:ALL_RANKS,RS.castleMainRank,'castle-main-rank');
     if(row.castleSub){
       renderRSFilterBtns('rs-castle-sub-rar',castleSubCd?castleSubCd.rars:ALL_RARITIES,RS.castleSubRar,'castle-sub-rar');
+      renderRSExSec('rs-castle-sub-ex-sec','rs-castle-sub-ex',castleSubCd,RS.castleSubEx,'castle-sub-ex');
       renderRSFilterBtns('rs-castle-sub-rank',castleSubCd?castleSubCd.ranks:ALL_RANKS,RS.castleSubRank,'castle-sub-rank');
     }
   }
@@ -2009,11 +2054,13 @@ function memberPassesRS(m,row){
     const mc=m.chars.find(c=>c.name===mainName);if(!mc)return false;
     if(!rarMatchesFilter(mc.rar, RS.mainRar))return false;
     if(RS.mainRank.length&&!RS.mainRank.every(fr=>mc.ranks&&mc.ranks.includes(fr)))return false;
+    if(!exMatchesFilter(mc.ex, RS.mainEx))return false;
   }
   if(subName){
     const sc=m.chars.find(c=>c.name===subName);if(!sc)return false;
     if(!rarMatchesFilter(sc.rar, RS.subRar))return false;
     if(RS.subRank.length&&!RS.subRank.every(fr=>sc.ranks&&sc.ranks.includes(fr)))return false;
+    if(!exMatchesFilter(sc.ex, RS.subEx))return false;
   }
   if(RS.dualMode){
     const castleMainName=row.castleMain;const castleSubName=row.castleSub;
@@ -2021,11 +2068,13 @@ function memberPassesRS(m,row){
       const mc=m.chars.find(c=>c.name===castleMainName);if(!mc)return false;
       if(!rarMatchesFilter(mc.rar, RS.castleMainRar))return false;
       if(RS.castleMainRank.length&&!RS.castleMainRank.every(fr=>mc.ranks&&mc.ranks.includes(fr)))return false;
+      if(!exMatchesFilter(mc.ex, RS.castleMainEx))return false;
     }
     if(castleSubName){
       const sc=m.chars.find(c=>c.name===castleSubName);if(!sc)return false;
       if(!rarMatchesFilter(sc.rar, RS.castleSubRar))return false;
       if(RS.castleSubRank.length&&!RS.castleSubRank.every(fr=>sc.ranks&&sc.ranks.includes(fr)))return false;
+      if(!exMatchesFilter(sc.ex, RS.castleSubEx))return false;
     }
   }
   if(RS.roleFilter.length&&!RS.roleFilter.includes(m.role))return false;
@@ -2115,8 +2164,21 @@ function renderRSResults(){
     const castleSubC=RS.dualMode&&row.castleSub?m.chars.find(c=>c.name===row.castleSub):null;
     const castleMainShBadge=castleMainCd?shukuenBadgeHtml(m,castleMainCd):'';
     const castleSubShBadge=castleSubCd?shukuenBadgeHtml(m,castleSubCd):'';
-    const normalBadges=`${mainC?`<span style="font-size:10px;color:var(--t2)">通常 ${escHtml(row.normalMain)}：</span>${rarBdg(mainC.rar)}${summarizeRanks(mainC.ranks).map(rankBdg).join('')}`:''}${subC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${escHtml(row.normalSub)}：</span>${rarBdg(subC.rar)}${summarizeRanks(subC.ranks).map(rankBdg).join('')}`:''}`;
-    const castleBadges=RS.dualMode?`${castleMainC?`<span style="font-size:10px;color:var(--t2)">城 ${escHtml(row.castleMain)}：</span>${rarBdg(castleMainC.rar)}${summarizeRanks(castleMainC.ranks).map(rankBdg).join('')}`:''}${castleSubC?`<span style="font-size:10px;color:var(--t2);margin-left:6px">${escHtml(row.castleSub)}：</span>${rarBdg(castleSubC.rar)}${summarizeRanks(castleSubC.ranks).map(rankBdg).join('')}`:''}` :'';
+    // キャラ1体分の行（レアリティ・ランク・EX追想バッジ）
+    const rsCharLine=(label,c)=>{
+      if(!c) return '';
+      return `<div style="font-size:11px;margin-top:3px"><span style="font-weight:500">${escHtml(label)}：</span>${rarBdg(c.rar)}${summarizeRanks(c.ranks).map(rankBdg).join('')}${c.ex?exBdg(c.ex):''}</div>`;
+    };
+    const normalLines=`${rsCharLine(row.normalMain,mainC)}${rsCharLine(row.normalSub,subC)}`;
+    const normalBadges=normalLines?`<div style="font-size:10px;font-weight:700;color:var(--t)">通常</div>${normalLines}`:'';
+    const castleLines=RS.dualMode?`${rsCharLine(row.castleMain,castleMainC)}${rsCharLine(row.castleSub,castleSubC)}`:'';
+    const castleBadges=castleLines?`<div style="font-size:10px;font-weight:700;color:var(--t);margin-top:6px">城</div>${castleLines}`:'';
+    // 宿縁セクション：キャラ名（太字）ごとにまとめ、通常/城で同じキャラが重複する場合は1回だけ表示
+    const shukuenSeen=new Set();
+    const shukuenBlocks=[[mainCd,mainShBadge],[subCd,subShBadge],[castleMainCd,castleMainShBadge],[castleSubCd,castleSubShBadge]]
+      .filter(([cd,badge])=>cd&&badge&&!shukuenSeen.has(cd.name)&&shukuenSeen.add(cd.name))
+      .map(([cd,badge])=>`<div style="margin-top:5px"><div style="font-size:11px;font-weight:600;color:var(--t)">${escHtml(cd.name)}</div><div style="margin-top:2px">${badge}</div></div>`)
+      .join('');
     const votedPair=getMemberVotedRowPair(m.name,row);
     const votedMarkHtml=votedPair?`<span class="rs-voted-mark" title="${pairName(votedPair)}">投票中</span>`:'';
     return`<div class="reinf-res-card${isAlready?' already':''}">
@@ -2128,14 +2190,9 @@ function renderRSResults(){
           ${isCurrentRow?`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:#E1F5EE;color:#085041;border:.5px solid #1D9E75;margin-left:4px">この行に設定中</span>`:''}
         </div>
         <div style="font-size:11px;color:var(--t2);margin-top:2px">${escHtml(m.role)}</div>
-        ${normalBadges?`<div class="badges" style="margin-top:4px">${normalBadges}</div>`:''}
-        ${RS.dualMode&&castleBadges?`<div class="badges" style="margin-top:3px">${castleBadges}</div>`:''}
-        ${mainShBadge||subShBadge?`<div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--border)">
-          ${mainCd&&mainShBadge?`<div style="display:flex;align-items:center;gap:5px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${RS.dualMode?'通常 ':''}${escHtml(row.normalMain)}</span>${mainShBadge}</div>`:''}
-          ${subCd&&subShBadge?`<div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${escHtml(row.normalSub)}</span>${subShBadge}</div>`:''}
-          ${RS.dualMode&&castleMainCd&&castleMainShBadge?`<div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">城 ${escHtml(row.castleMain)}</span>${castleMainShBadge}</div>`:''}
-          ${RS.dualMode&&castleSubCd&&castleSubShBadge?`<div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="font-size:10px;color:var(--t2);white-space:nowrap">${escHtml(row.castleSub)}</span>${castleSubShBadge}</div>`:''}
-        </div>`:''}
+        ${normalBadges?`<div style="margin-top:4px">${normalBadges}</div>`:''}
+        ${RS.dualMode&&castleBadges?`<div style="margin-top:2px">${castleBadges}</div>`:''}
+        ${shukuenBlocks?`<div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--border)">${shukuenBlocks}</div>`:''}
       </div>
       ${isCurrentRow
         ?`<button class="add-to-table-btn" style="color:#791F1F;border-color:#F09595" onclick="setReinfMember(${RS.rowId},'')">解除</button>`
