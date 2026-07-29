@@ -815,15 +815,15 @@ body.touch-device .sub-tab.active:active {
       <div style="margin-bottom:10px">
         <div class="filter-group-title" id="rs-main-label">大将</div>
         <div class="fil-sec" style="margin-bottom:6px"><div class="fil-label">レアリティ</div><div class="fil-btns" id="rs-main-rar"></div></div>
-        <div class="fil-sec" id="rs-main-ex-sec" style="display:none;margin-bottom:6px"><div class="fil-label">EX追想</div><div class="fil-btns" id="rs-main-ex"></div></div>
         <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-main-rank"></div></div>
+        <div class="fil-sec" id="rs-main-ex-sec" style="display:none;margin-bottom:6px"><div class="fil-label">EX追想</div><div class="fil-btns" id="rs-main-ex"></div></div>
       </div>
       <hr class="div" style="margin:.75rem 0">
       <div id="rs-sub-section">
         <div class="filter-group-title" id="rs-sub-label">副将</div>
         <div class="fil-sec" style="margin-bottom:6px"><div class="fil-label">レアリティ</div><div class="fil-btns" id="rs-sub-rar"></div></div>
-        <div class="fil-sec" id="rs-sub-ex-sec" style="display:none;margin-bottom:6px"><div class="fil-label">EX追想</div><div class="fil-btns" id="rs-sub-ex"></div></div>
         <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-sub-rank"></div></div>
+        <div class="fil-sec" id="rs-sub-ex-sec" style="display:none;margin-bottom:6px"><div class="fil-label">EX追想</div><div class="fil-btns" id="rs-sub-ex"></div></div>
       </div>
     </div>
     <!-- 城用フィルターパネル（通常と城が異なる場合のみ表示） -->
@@ -831,15 +831,15 @@ body.touch-device .sub-tab.active:active {
       <div style="margin-bottom:10px">
         <div class="filter-group-title" id="rs-castle-main-label">城 大将</div>
         <div class="fil-sec" style="margin-bottom:6px"><div class="fil-label">レアリティ</div><div class="fil-btns" id="rs-castle-main-rar"></div></div>
-        <div class="fil-sec" id="rs-castle-main-ex-sec" style="display:none;margin-bottom:6px"><div class="fil-label">EX追想</div><div class="fil-btns" id="rs-castle-main-ex"></div></div>
         <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-castle-main-rank"></div></div>
+        <div class="fil-sec" id="rs-castle-main-ex-sec" style="display:none;margin-bottom:6px"><div class="fil-label">EX追想</div><div class="fil-btns" id="rs-castle-main-ex"></div></div>
       </div>
       <hr class="div" style="margin:.75rem 0">
       <div id="rs-castle-sub-section">
         <div class="filter-group-title" id="rs-castle-sub-label">城 副将</div>
         <div class="fil-sec" style="margin-bottom:6px"><div class="fil-label">レアリティ</div><div class="fil-btns" id="rs-castle-sub-rar"></div></div>
-        <div class="fil-sec" id="rs-castle-sub-ex-sec" style="display:none;margin-bottom:6px"><div class="fil-label">EX追想</div><div class="fil-btns" id="rs-castle-sub-ex"></div></div>
         <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="rs-castle-sub-rank"></div></div>
+        <div class="fil-sec" id="rs-castle-sub-ex-sec" style="display:none;margin-bottom:6px"><div class="fil-label">EX追想</div><div class="fil-btns" id="rs-castle-sub-ex"></div></div>
       </div>
     </div>
     <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:.75rem">
@@ -1943,10 +1943,10 @@ function openReinfSearch(rowId){
   const castlePanel=document.getElementById('rs-castle-filters');
   if(dualMode){
     // 通常パネルのラベルを「通常 大将/副将」に
-    document.getElementById('rs-main-label').textContent=(row.normalMain||'大将')+' 【通常】';
+    document.getElementById('rs-main-label').textContent=(row.normalMain||'大将')+' 【通常 大将】';
     document.getElementById('rs-sub-label').textContent=(row.normalSub||'副将')+' 【通常 副将】';
     // 城パネル設定
-    document.getElementById('rs-castle-main-label').textContent=(row.castleMain||'大将')+' 【城】';
+    document.getElementById('rs-castle-main-label').textContent=(row.castleMain||'大将')+' 【城 大将】';
     document.getElementById('rs-castle-sub-label').textContent=(row.castleSub||'副将')+' 【城 副将】';
     document.getElementById('rs-castle-sub-section').style.display=row.castleSub?'block':'none';
     const castleMainCd=S.chars.find(c=>c.name===row.castleMain);
