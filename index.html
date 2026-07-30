@@ -2651,9 +2651,9 @@ function shukuenBadgeHtml(member, charDef){
       ?`<span style="font-size:10px;color:var(--t2)">宿縁${si+1}</span>`
       :`<span style="font-size:10px;color:var(--t2)">宿縁</span>`;
     let pills='';
-    pills+=`<span class="sh-pill gikkyoku"><span class="sh-pill-dot"></span>${g}</span>`;
-    pills+=`<span class="sh-pill omote6"><span class="sh-pill-dot"></span>${o}</span>`;
-    pills+=`<span class="sh-pill soji"><span class="sh-pill-dot"></span>${s}</span>`;
+    pills+=`<span class="sh-pill gikkyoku" title="技極"><span class="sh-pill-dot"></span>${g}</span>`;
+    pills+=`<span class="sh-pill omote6" title="ランク最大"><span class="sh-pill-dot"></span>${o}</span>`;
+    pills+=`<span class="sh-pill soji" title="所持"><span class="sh-pill-dot"></span>${s}</span>`;
     badges.push(`<div class="sh-badge-wrap">${label}${pills}<span style="font-size:10px;color:var(--t3)">/${total}</span></div>`);
   });
   if(!badges.length) return '';
