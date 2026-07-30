@@ -308,6 +308,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .sh-pill.omote6 .sh-pill-dot{background:#1D9E75}
 .sh-pill.soji .sh-pill-dot{background:#C89B20}
 .sh-badge-wrap{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:5px}
+.sh-pill{cursor:pointer}
+.pill-tip{position:fixed;background:var(--card);border:1px solid var(--bm);border-radius:8px;padding:5px 10px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:500;font-size:11px;font-weight:600;color:var(--t);white-space:nowrap}
 /* 宿縁アイコンバッジ（ccカード右上） */
 .cc{position:relative}
 .shukuen-icon{position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:50%;background:#F0EDE8;color:#9A9088;font-size:11px;font-weight:900;line-height:18px;text-align:center;cursor:pointer;z-index:2;box-shadow:0 1px 3px rgba(0,0,0,.12);border:1px solid #D4CCBE;flex-shrink:0;user-select:none}
@@ -1523,6 +1525,29 @@ function closeShukuenPopup(){
   const p=document.getElementById('shukuen-popup');
   if(p) p.remove();
 }
+
+/* 宿縁ピル（紫/緑/黄）タップ時の説明ツールチップ */
+function showPillTip(e, label){
+  e.stopPropagation();
+  closePillTip();
+  const pop=document.createElement('div');
+  pop.className='pill-tip';
+  pop.id='pill-tip';
+  pop.textContent=label;
+  document.body.appendChild(pop);
+  const r=e.currentTarget.getBoundingClientRect();
+  let top=r.bottom+4, left=r.left;
+  const pw=pop.offsetWidth||60, ph=pop.offsetHeight||24;
+  if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
+  if(top+ph>window.innerHeight-8) top=r.top-ph-4;
+  pop.style.top=top+'px';
+  pop.style.left=left+'px';
+  setTimeout(()=>document.addEventListener('click',closePillTip,{once:true}),0);
+}
+function closePillTip(){
+  const p=document.getElementById('pill-tip');
+  if(p) p.remove();
+}
 function goBack(){
   document.getElementById('v-members').style.display='';
   document.getElementById('v-chars').style.display='none';
@@ -2651,9 +2676,9 @@ function shukuenBadgeHtml(member, charDef){
       ?`<span style="font-size:10px;color:var(--t2)">宿縁${si+1}</span>`
       :`<span style="font-size:10px;color:var(--t2)">宿縁</span>`;
     let pills='';
-    pills+=`<span class="sh-pill gikkyoku" title="技極"><span class="sh-pill-dot"></span>${g}</span>`;
-    pills+=`<span class="sh-pill omote6" title="ランク最大"><span class="sh-pill-dot"></span>${o}</span>`;
-    pills+=`<span class="sh-pill soji" title="所持"><span class="sh-pill-dot"></span>${s}</span>`;
+    pills+=`<span class="sh-pill gikkyoku" title="技極" onclick="showPillTip(event,'技極')"><span class="sh-pill-dot"></span>${g}</span>`;
+    pills+=`<span class="sh-pill omote6" title="ランク最大" onclick="showPillTip(event,'ランク最大')"><span class="sh-pill-dot"></span>${o}</span>`;
+    pills+=`<span class="sh-pill soji" title="所持" onclick="showPillTip(event,'所持')"><span class="sh-pill-dot"></span>${s}</span>`;
     badges.push(`<div class="sh-badge-wrap">${label}${pills}<span style="font-size:10px;color:var(--t3)">/${total}</span></div>`);
   });
   if(!badges.length) return '';
