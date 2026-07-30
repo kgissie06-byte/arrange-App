@@ -1062,6 +1062,12 @@ function summarizeRanks(ranks){
   const best=topUra||OMOTE_ORDER.find(r=>ranks.includes(r));
   return best?[best]:[];
 }
+function ensureFilterDefaults(){
+  if(!S.filRar)S.filRar=[];
+  if(!S.filRank)S.filRank=[];
+  if(!S.filEx)S.filEx=[];
+  if(!S.filRole)S.filRole=[];
+}
 async function load() {
   showLoading();
   try {
@@ -1074,10 +1080,7 @@ async function load() {
     const data = await res.json();
     S = data;
     // サーバーデータにフィルタ状態が含まれないため、既定値を補完
-    if(!S.filRar)S.filRar=[];
-    if(!S.filRank)S.filRank=[];
-    if(!S.filEx)S.filEx=[];
-    if(!S.filRole)S.filRole=[];
+    ensureFilterDefaults();
     // アンケートキャッシュも更新
     if(Array.isArray(data.surveys)) _surveys = data.surveys;
     renderAll();
@@ -4787,6 +4790,7 @@ async function doApplySurvey(tableType){
       applyRole();
       // /api/initは既に取得済みなので、load()で再度叩き直さずここで直接反映する
       S = d;
+      ensureFilterDefaults();
       if(Array.isArray(d.surveys)) _surveys = d.surveys;
       renderAll();
       initSurveyBadgeFromServer(); // 所属フィルタにS.membersが必要なのでrenderAll後に実行する
