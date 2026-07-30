@@ -598,6 +598,7 @@ body.touch-device .sub-tab.active:active {
   </div>
   <div class="fil-sec"><div class="fil-label">レアリティ</div><div class="fil-btns" id="fil-rar"></div></div>
   <div class="fil-sec"><div class="fil-label">ランク</div><div class="fil-btns" id="fil-rank"></div></div>
+  <div class="fil-sec"><div class="fil-label">EX追想</div><div class="fil-btns" id="fil-ex"></div></div>
   <div class="fil-sec"><div class="fil-label">所属</div><div class="fil-btns" id="fil-role"></div></div>
   <div id="search-results"></div>
 </div>
@@ -1023,7 +1024,7 @@ let S={
   chars:[],
   reinf:[],
   nextId:5, nextReinfId:1,
-  filRar:[],filRank:[],filRole:[],
+  filRar:[],filRank:[],filEx:[],filRole:[],
 };
 let _activeReinfTable = 'ransaki';
 let _reinfRefSurveyId = { ransaki: null, tsubomi: null };   // 援軍表で参照中のアンケートID（テーブル種別ごと）
@@ -1565,11 +1566,13 @@ function renderFilters(){
     return`<button class="f-btn${on?' on':''}" onclick="toggleFil('rar','${r}')"> ${r}</button>`;}).join('');
   document.getElementById('fil-rank').innerHTML=ALL_RANKS.map(r=>{const on=S.filRank.includes(r);const top=TOP_RANKS.includes(r);
     return`<button class="f-btn${on?' on':''}" onclick="toggleFil('rank','${r}')"> ${r}</button>`;}).join('');
+  document.getElementById('fil-ex').innerHTML=ALL_EX_LEVELS.map(r=>{const on=S.filEx.includes(r);
+    return`<button class="f-btn${on?' on':''}" onclick="toggleFil('ex','${r}')"> ${r}</button>`;}).join('');
   document.getElementById('fil-role').innerHTML=allRoles.map(r=>{const on=S.filRole.includes(r);
     return`<button class="f-btn${on?' on':''}" onclick="toggleFil('role','${r}')"> ${r}</button>`;}).join('');
 }
 function toggleFil(type,val){
-  const key=type==='rar'?'filRar':type==='rank'?'filRank':'filRole';
+  const key=type==='rar'?'filRar':type==='rank'?'filRank':type==='ex'?'filEx':'filRole';
   const i=S[key].indexOf(val);if(i>=0)S[key].splice(i,1);else S[key].push(val);
   renderFilters();renderSearch();
 }
@@ -1595,6 +1598,7 @@ function renderSearch(alreadyNames){
     const c=m.chars.find(x=>x.name===cd.name);if(!c)return;
     if(!rarMatchesFilter(c.rar, S.filRar))return;
     if(S.filRank.length&&!S.filRank.every(fr=>c.ranks&&c.ranks.includes(fr)))return;
+    if(!exMatchesFilter(c.ex, S.filEx))return;
     if(S.filRole.length&&!S.filRole.includes(m.role))return;
     const a=av(mi);
     const shBadge=shukuenBadgeHtml(m,cd);
