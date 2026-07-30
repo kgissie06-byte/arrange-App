@@ -1073,6 +1073,11 @@ async function load() {
     }
     const data = await res.json();
     S = data;
+    // サーバーデータにフィルタ状態が含まれないため、既定値を補完
+    if(!S.filRar)S.filRar=[];
+    if(!S.filRank)S.filRank=[];
+    if(!S.filEx)S.filEx=[];
+    if(!S.filRole)S.filRole=[];
     // アンケートキャッシュも更新
     if(Array.isArray(data.surveys)) _surveys = data.surveys;
     renderAll();
