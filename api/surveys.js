@@ -359,12 +359,11 @@ async function handleVote(req, res, auth) {
   if (!memberId) return res.status(400).json({ error: 'メンバーIDが必要です。メンバーを選択してください' })
 
   // 表示名はクライアント入力を信用せず、DBの正の値を使う（なりすまし・スクリプト混入防止）
-  const { data: memberRow } = await supabase
-    .from('members').select('name').eq('id', memberId).maybeSingle()
+  const [{ data: memberRow }, { data: sv }] = await Promise.all([
+    supabase.from('members').select('name').eq('id', memberId).maybeSingle(),
+    supabase.from('surveys').select('deadline, table_type').eq('id', surveyId).single(),
+  ])
   const memberName = memberRow?.name || null
-
-  const { data: sv } = await supabase
-    .from('surveys').select('deadline, table_type').eq('id', surveyId).single()
   if (!sv) return res.status(404).json({ error: 'アンケートが見つかりません' })
   if (new Date(sv.deadline).getTime() <= Date.now()) {
     return res.status(400).json({ error: 'このアンケートは終了しています' })
