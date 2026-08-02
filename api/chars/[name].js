@@ -1,10 +1,37 @@
 import { createClient } from '@supabase/supabase-js'
+import { v2 as cloudinary } from 'cloudinary'
 import { requireAuth } from '../../lib/auth.js'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
+
+// CloudinaryのURLから public_id（フォルダ込み・拡張子なし）を抽出する
+// 例: https://res.cloudinary.com/xxx/image/upload/v123456/char-images/abc123.jpg
+//     -> "char-images/abc123"
+function extractPublicId(url) {
+  if (!url) return null
+  const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z0-9]+$/)
+  return match ? match[1] : null
+}
+
+// Cloudinary上の画像を削除する（失敗してもDB側の処理は止めない）
+async function deleteCloudinaryImage(url) {
+  const publicId = extractPublicId(url)
+  if (!publicId) return
+  try {
+    await cloudinary.uploader.destroy(publicId)
+  } catch (e) {
+    console.error('Cloudinary delete error:', e)
+  }
+}
 
 export default async function handler(req, res) {
   // キャラ管理は管理者のみ
@@ -82,12 +109,11 @@ export default async function handler(req, res) {
 
     if (error) return res.status(500).json({ error })
 
-    // 画像が変更・削除された場合は古い画像をStorageから削除する
+    // 画像が変更・削除された場合は古い画像をCloudinaryから削除する
     if (img !== undefined) {
       const oldImg = currentChar?.img
       if (oldImg && oldImg !== img) {
-        const oldFileName = oldImg.split('/').pop()
-        await supabase.storage.from('char-images').remove([oldFileName])
+        await deleteCloudinaryImage(oldImg)
       }
     }
 
@@ -112,8 +138,7 @@ export default async function handler(req, res) {
       .single()
 
     if (charData?.img) {
-      const fileName = charData.img.split('/').pop()
-      await supabase.storage.from('char-images').remove([fileName])
+      await deleteCloudinaryImage(charData.img)
     }
 
     const { error: trainingErr } = await supabase
