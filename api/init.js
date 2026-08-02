@@ -13,6 +13,25 @@ const PAGE_SIZE = 1000
 // このIDはガチ管理者用のため、メンバー一覧など画面上のどこにも表示しない
 const HIDDEN_MEMBER_ID = 1
 
+// ===== Cloudinary画像の帯域最適化 =====
+// 一覧表示(.cc-img)は52px角にしか表示していないのに、元画像をそのまま配信すると
+// 無駄に帯域を消費する（Cloudinaryのプラン上限＝「パンク」の原因）。
+// f_auto,q_auto はブラウザ対応フォーマットへの自動変換・知覚的に無劣化な範囲での
+// 自動圧縮なので、見た目の粗さはほぼ変えずにファイルサイズだけ削れる。
+// w_,h_,c_fill で表示サイズ以上の解像度を送らないようにする。
+// ※DBには元URLのまま保存されているので、ここでの変換は表示用の一時的なもの。
+function optimizeCloudinaryUrl(url, size = 120) {
+  if (typeof url !== 'string' || !url) return url
+  if (!/(^|\.)res\.cloudinary\.com\//.test(url)) return url // cloudinary以外のURLは無変換
+  const marker = '/upload/'
+  const idx = url.indexOf(marker)
+  if (idx === -1) return url // 想定外の形式のURLはそのまま返す（壊さない）
+  const insertPos = idx + marker.length
+  return url.slice(0, insertPos)
+    + `f_auto,q_auto,w_${size},h_${size},c_fill/`
+    + url.slice(insertPos)
+}
+
 async function fetchAllTraining() {
   let all = []
   let from = 0
@@ -51,7 +70,7 @@ export default async function handler(req, res) {
     rars: c.rars || [],
     ranks: c.ranks || [],
     shukuens: c.shukuens || (c.shukuen ? [c.shukuen, {enabled:false,members:[]}] : [{enabled:false,members:[]},{enabled:false,members:[]}]),
-    img: c.img || null,
+    img: optimizeCloudinaryUrl(c.img) || null,
     exSotsui: c.ex_sotsui || false,
     updatedAt: c.updated_at || c.created_at || null,
   }))

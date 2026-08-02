@@ -1193,7 +1193,7 @@ function renderCharGridEdit(m){
   const renderCc=(cd,isRecent)=>{
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
     const imgHtml=cd.img
-      ?`<img class="cc-img" src="${escHtml(cldThumb(cd.img,104))}" alt="">`
+      ?`<img class="cc-img" src="${escHtml(cd.img)}" alt="">`
       :`<div class="cc-img empty"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--bm)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
     const hasShukuen=shukuenMemberSet.has(cd.name);
     return`<div class="cc${isSel?' sel':''}" onclick="selectCharEdit('${esc(cd.name)}')" data-name="${esc(cd.name)}" data-yomi="${esc(cd.yomi||'')}" data-trained="${c?'1':'0'}">
@@ -3038,7 +3038,7 @@ function renderImgPreview(prefix, url, uploading=false){
   if(!area) return;
   area.innerHTML = `<div style="display:flex;align-items:flex-start;gap:10px">
     <div class="img-preview-wrap">
-      <img class="img-preview" src="${cldThumb(url,160)}" alt="" style="${uploading?'opacity:.5':''}">
+      <img class="img-preview" src="${url}" alt="" style="${uploading?'opacity:.5':''}">
       ${uploading?`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--t2)">送信中...</div>`
         :`<button class="img-remove-btn" onclick="removeImg('${prefix}')" title="削除">✕</button>`}
     </div>
@@ -4852,15 +4852,6 @@ async function doLogin(){
     btn.disabled = false;
     btn.textContent = 'ログイン';
   }
-}
-
-// Cloudinaryの配信URLに w_,h_,c_fill,f_auto,q_auto を差し込み、
-// 表示サイズより大きい元画像がそのまま配信されるのを防ぐ（帯域クレジット節約）。
-// blob:/data: など元がCloudinaryでないURLはそのまま返す。
-function cldThumb(url, size){
-  if(!url || typeof url !== 'string') return url;
-  if(!/^https?:\/\/res\.cloudinary\.com\//.test(url)) return url;
-  return url.replace('/upload/', `/upload/w_${size},h_${size},c_fill,g_auto,f_auto,q_auto/`);
 }
 
 function escHtml(s){
