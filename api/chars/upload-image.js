@@ -1,16 +1,17 @@
-import { createClient } from '@supabase/supabase-js'
+import { v2 as cloudinary } from 'cloudinary'
 import formidable from 'formidable'
 import fs from 'fs'
 import { requireAuth } from '../../lib/auth.js'
 
 export const config = { api: { bodyParser: false } }
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
-const BUCKET = 'char-images'
+const FOLDER = 'char-images'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -32,23 +33,18 @@ export default async function handler(req, res) {
   const file = Array.isArray(files.file) ? files.file[0] : files.file
   if (!file) return res.status(400).json({ error: 'No file uploaded' })
 
-  const fileBuffer = fs.readFileSync(file.filepath)
-  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
-
-  const { error: uploadError } = await supabase.storage
-    .from(BUCKET)
-    .upload(fileName, fileBuffer, {
-      contentType: 'image/jpeg',
-      upsert: false,
+  try {
+    const result = await cloudinary.uploader.upload(file.filepath, {
+      folder: FOLDER,
+      resource_type: 'image',
     })
 
-  fs.unlinkSync(file.filepath)
+    fs.unlinkSync(file.filepath)
 
-  if (uploadError) {
-    return res.status(500).json({ error: uploadError.message })
+    return res.json({ url: result.secure_url })
+  } catch (e) {
+    fs.unlinkSync(file.filepath)
+    console.error('Cloudinary upload error:', e)
+    return res.status(500).json({ error: e.message || 'Upload failed' })
   }
-
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(fileName)
-
-  return res.json({ url: data.publicUrl })
 }
