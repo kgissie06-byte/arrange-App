@@ -1751,14 +1751,14 @@ async function copyReinfTable(){
   const tsvHeader2 = ['城主名', '大将', '副将', '大将', '副将'];
   const tsvText = [tsvHeader1, tsvHeader2, ...dataRows].map(r => r.join('\t')).join('\n');
 
-  // HTML（Excel/スプレッドシート貼り付け用）：colspanで見出しを結合し、枠線とヘッダー色を付与
+  // HTML（Excel/スプレッドシート貼り付け用）：colspan/rowspanで見出しを結合し、枠線とヘッダー色を付与
   const cellBorder = 'border:1px solid #999999';
-  const headStyle = `${cellBorder};background-color:#EDE5D8;color:#634B38;font-weight:bold;text-align:center`;
+  const headStyle = `${cellBorder};background-color:#EDE5D8;color:#634B38;font-weight:bold;text-align:center;font-size:14px`;
   const bodyStyle = `${cellBorder}`;
   let htmlTable = `<table style="border-collapse:collapse">` +
     '<thead>' +
-    `<tr><th style="${cellBorder}"></th><th colspan="2" style="${headStyle}">通常</th><th colspan="2" style="${headStyle}">城</th></tr>` +
-    `<tr><th style="${headStyle}">城主名</th><th style="${headStyle}">大将</th><th style="${headStyle}">副将</th><th style="${headStyle}">大将</th><th style="${headStyle}">副将</th></tr>` +
+    `<tr><th rowspan="2" style="${headStyle}">城主名</th><th colspan="2" style="${headStyle}">通常</th><th colspan="2" style="${headStyle}">城</th></tr>` +
+    `<tr><th style="${headStyle}">大将</th><th style="${headStyle}">副将</th><th style="${headStyle}">大将</th><th style="${headStyle}">副将</th></tr>` +
     '</thead><tbody>';
   dataRows.forEach(r => {
     htmlTable += '<tr>' + r.map(v => `<td style="${bodyStyle}">${escapeHtmlCell(v)}</td>`).join('') + '</tr>';
