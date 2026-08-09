@@ -1736,25 +1736,32 @@ async function copyReinfTable(){
 
   const escapeHtmlCell = s => String(s == null ? '' : s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const pairText = (main,sub) => {
-    if(!main && !sub) return '';
-    return sub ? `${main}-${sub}` : main;
-  };
 
-  const header = ['name','通常','城'];
+  // name / 通常(大将・副将) / 城(大将・副将) の5列に分割
   const dataRows = rows.map(row => [
     row.memberName || '',
-    pairText(row.normalMain, row.normalSub),
-    pairText(row.castleMain, row.castleSub)
+    row.normalMain || '',
+    row.normalSub || '',
+    row.castleMain || '',
+    row.castleSub || ''
   ]);
 
-  const tsvText = [header, ...dataRows].map(r => r.join('\t')).join('\n');
+  // TSV（プレーンテキスト）：1行目は通常/城のグループ見出し、2行目が大将/副将見出し
+  const tsvHeader1 = ['', '通常', '', '城', ''];
+  const tsvHeader2 = ['城主名', '大将', '副将', '大将', '副将'];
+  const tsvText = [tsvHeader1, tsvHeader2, ...dataRows].map(r => r.join('\t')).join('\n');
 
-  let htmlTable = '<table><thead><tr>' +
-    header.map(h => `<th>${escapeHtmlCell(h)}</th>`).join('') +
-    '</tr></thead><tbody>';
+  // HTML（Excel/スプレッドシート貼り付け用）：colspanで見出しを結合し、枠線とヘッダー色を付与
+  const cellBorder = 'border:1px solid #999999';
+  const headStyle = `${cellBorder};background-color:#EDE5D8;color:#634B38;font-weight:bold;text-align:center`;
+  const bodyStyle = `${cellBorder}`;
+  let htmlTable = `<table style="border-collapse:collapse">` +
+    '<thead>' +
+    `<tr><th style="${cellBorder}"></th><th colspan="2" style="${headStyle}">通常</th><th colspan="2" style="${headStyle}">城</th></tr>` +
+    `<tr><th style="${headStyle}">城主名</th><th style="${headStyle}">大将</th><th style="${headStyle}">副将</th><th style="${headStyle}">大将</th><th style="${headStyle}">副将</th></tr>` +
+    '</thead><tbody>';
   dataRows.forEach(r => {
-    htmlTable += '<tr>' + r.map(v => `<td>${escapeHtmlCell(v)}</td>`).join('') + '</tr>';
+    htmlTable += '<tr>' + r.map(v => `<td style="${bodyStyle}">${escapeHtmlCell(v)}</td>`).join('') + '</tr>';
   });
   htmlTable += '</tbody></table>';
 
