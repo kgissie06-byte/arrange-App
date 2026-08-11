@@ -1133,10 +1133,10 @@ function renderMemberRankBadges(m){
   if(!el)return;
   const b=computeMemberRankBadges(m);
   el.innerHTML=`
-    <span class="rank-badge gikyoku">技極 ${b.gikyoku}</span>
-    <span class="rank-badge uragikyoku">裏技極 ${b.uragikyoku}</span>
-    <span class="rank-badge zengikyoku">全技極 ${b.zengikyoku}</span>
-    <span class="rank-badge lg">LG ${b.lg}</span>`;
+    <span class="rank-badge gikyoku">技極: ${b.gikyoku}</span>
+    <span class="rank-badge uragikyoku">裏技極: ${b.uragikyoku}</span>
+    <span class="rank-badge zengikyoku">全技極: ${b.zengikyoku}</span>
+    <span class="rank-badge lg">LG: ${b.lg}</span>`;
 }
 
 /* ========== ① 育成入力 ========== */
