@@ -332,6 +332,13 @@ hr.div{border:none;border-top:1px solid var(--border);margin:1.125rem 0}
 .shukuen-toggle{display:flex;gap:6px;margin-bottom:8px}
 .shukuen-toggle button{padding:4px 12px;font-size:11px;border:1px solid var(--bm);border-radius:20px;background:var(--bg);cursor:pointer;color:var(--t2);font-family:inherit;transition:all .15s}
 .shukuen-toggle button.on{background:var(--acc);color:#FFF8F0;border-color:var(--acc)}
+/* ===== メンバー実績バッジ（技極/裏技極/全技極/LG） ===== */
+.rank-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.rank-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;line-height:1.4}
+.rank-badge.gikyoku{background:#EEEDFE;color:#3C3489;border:.5px solid #AFA9EC}
+.rank-badge.uragikyoku{background:#CECBF6;color:#26215C;border:.5px solid #7F77DD}
+.rank-badge.zengikyoku{background:#FAC775;color:#412402;border:.5px solid #BA7517}
+.rank-badge.lg{background:#FFF0D0;color:#854F0B;border:.5px solid #EF9F27}
 /* ===== ログアウトボタン / 管理バー ===== */
 .top-action-bar{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:4px 1rem;background:var(--card);border-bottom:1px solid var(--border);font-size:11px;color:var(--t2)}
 .logout-btn{padding:3px 11px;font-size:11px;border:1px solid var(--bm);border-radius:20px;background:none;cursor:pointer;color:var(--t2);font-family:inherit;transition:background .15s}
@@ -562,6 +569,7 @@ body.touch-device .sub-tab.active:active {
       <h2 id="editing-name"></h2>
       <button class="back-btn" onclick="goBack()">← 戻る</button>
     </div>
+    <div class="rank-badge-row" id="editing-rank-badges"></div>
     <div class="cc-search-row">
       <input type="text" class="cc-search-input" id="cc-search" placeholder="キャラ名・読み仮名で絞り込み" oninput="filterCharGrid()">
       <button class="f-btn" id="cc-untrained-btn" onclick="toggleUntrainedFilter()">未入力</button>
@@ -1100,9 +1108,35 @@ function renderAll(){
     const m=S.members.find(x=>x.id===E.memberId);
     if(m){
       document.getElementById('editing-name').textContent=m.name+' の育成キャラ';
+      renderMemberRankBadges(m);
       renderCharGridEdit(m);
     }
   }
+}
+
+// メンバーの育成キャラから「技極/裏技極/全技極」保有数と「LG以上」保有数を集計する
+const LG_OR_ABOVE=['LG','LG1','LG2','LG3'];
+function computeMemberRankBadges(m){
+  const chars=m.chars||[];
+  let gikyoku=0,uragikyoku=0,zengikyoku=0,lg=0;
+  chars.forEach(c=>{
+    const ranks=c.ranks||[];
+    if(ranks.includes('技極'))gikyoku++;
+    if(ranks.includes('裏技極'))uragikyoku++;
+    if(ranks.includes('全技極'))zengikyoku++;
+    if(LG_OR_ABOVE.includes(c.rar))lg++;
+  });
+  return{gikyoku,uragikyoku,zengikyoku,lg};
+}
+function renderMemberRankBadges(m){
+  const el=document.getElementById('editing-rank-badges');
+  if(!el)return;
+  const b=computeMemberRankBadges(m);
+  el.innerHTML=`
+    <span class="rank-badge gikyoku">技極 ${b.gikyoku}</span>
+    <span class="rank-badge uragikyoku">裏技極 ${b.uragikyoku}</span>
+    <span class="rank-badge zengikyoku">全技極 ${b.zengikyoku}</span>
+    <span class="rank-badge lg">LG ${b.lg}</span>`;
 }
 
 /* ========== ① 育成入力 ========== */
@@ -1158,6 +1192,7 @@ function selectMember(id){
   const m=S.members.find(x=>x.id===id);if(!m)return;
   E={memberId:id,charName:null,pendingRar:null,pendingRanks:[]};
   document.getElementById('editing-name').textContent=m.name+' の育成キャラ';
+  renderMemberRankBadges(m);
   document.getElementById('v-members').style.display='none';
   document.getElementById('v-chars').style.display='block';
   const cs=document.getElementById('cc-search');if(cs)cs.value='';
@@ -1203,7 +1238,7 @@ function renderCharGridEdit(m){
         <div class="cc-name" title="${escHtml(cd.name)}">${escHtml(cd.name)}</div>
         <div class="badges">${c?rarBdg(c.rar):''}${c&&c.ranks?summarizeRanks(c.ranks).map(rankBdg).join(''):''}
         ${c&&c.ex?exBdg(c.ex):''}
-        ${!c?'<span style="font-size:10px;color:var(--t3)">未育成</span>':''}</div>
+        ${!c?'<span style="font-size:10px;color:var(--t3)">未所持</span>':''}</div>
       </div>
     </div>`;
   };
@@ -4964,7 +4999,7 @@ function applyRole(){
     el.style.display = (isAdmin || isReinfAdmin) ? '' : 'none';
   });
 
-  // 問い合わせ返信機能（役割に関係なく、memberId=17のみ）
+  // 問い合わせ返信機能（役割に関係なく、memberId=1のみ）
   document.querySelectorAll('.inquiry-admin-only').forEach(el => {
     el.style.display = (currentMemberId === INQ_ADMIN_MEMBER_ID) ? '' : 'none';
   });
