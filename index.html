@@ -1498,7 +1498,15 @@ async function saveTraining(){
       toast(msg);
       return;
     }
-    await load();
+    // サーバーへの保存成功後、全件再取得(/api/init)はせずローカルのS.membersだけ更新する
+    const m0=S.members.find(x=>x.id===E.memberId);
+    if(m0){
+      if(!m0.chars) m0.chars=[];
+      const idx=m0.chars.findIndex(c=>c.name===E.charName);
+      const entry={name:E.charName, rar:E.pendingRar, ranks:E.pendingRanks, ex:E.pendingEx||null};
+      if(idx>=0) m0.chars[idx]=entry; else m0.chars.push(entry);
+    }
+    renderAll();
     toast('保存しました');
     E.charName=null; E.pendingRar=null; E.pendingRanks=[]; E.pendingEx=null;
     const cs=document.getElementById('cc-search');if(cs)cs.value='';
@@ -1531,7 +1539,10 @@ async function clearTraining(){
       toast(msg);
       return;
     }
-    await load();
+    // サーバーへの削除成功後、全件再取得(/api/init)はせずローカルのS.membersだけ更新する
+    const m0=S.members.find(x=>x.id===E.memberId);
+    if(m0 && m0.chars) m0.chars=m0.chars.filter(c=>c.name!==E.charName);
+    renderAll();
     toast('未入力に戻しました');
     E.pendingRar=null; E.pendingRanks=[];
     document.getElementById('lv-panel').style.display='none';
@@ -2317,10 +2328,13 @@ async function setReinfMemberCore(rowId,name){
 }
 
 async function setReinfMember(rowId,name){
+  showLoading();
   try {
     await setReinfMemberCore(rowId,name);
   } catch(err) {
     console.error(err);
+  } finally {
+    hideLoading();
   }
   renderReinfTable();
   if(name){
