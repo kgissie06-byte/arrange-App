@@ -3691,7 +3691,17 @@ async function commitMemberEdit(pending){
     const roleLabel = {user:'利用者','reinf-admin':'援軍管理者',admin:'管理者'}[data.memberRole] || data.memberRole;
     // 自分自身の情報を変更した場合はセッションが無効になるため、確認画面を閉じたタイミングで再ログイン画面へ
     const selfEdit = id === currentMemberId;
-    if(!selfEdit) await load();
+    if(!selfEdit){
+      // 自分以外の編集は、全件再取得(/api/init)はせずローカルのS.membersだけ更新する
+      const m0 = S.members.find(x=>x.id===id);
+      if(m0){
+        m0.name = data.name;
+        m0.role = data.role || '';
+        if(data.status !== undefined) m0.status = data.status;
+        if(data.memberRole) m0.memberRole = data.memberRole;
+      }
+      renderAll();
+    }
     closeModal();
     openModal('member-updated',`<h3>メンバーを更新しました</h3>
       <div class="field"><label>ID</label><div class="added-val">${data.id}</div></div>
@@ -3724,7 +3734,11 @@ async function deleteMember(){
       toast('削除しました。ログアウトします');
       await doLogout();
     } else {
-      await load();
+      // 自分以外の削除は、全件再取得(/api/init)はせずローカルのS.members/S.reinfだけ更新する
+      // (サーバー側で育成データ・投票・問い合わせも削除されるが、それらは全メンバー分をローカルに保持していないため対象外)
+      S.members = S.members.filter(m=>m.id!==id);
+      S.reinf.forEach(r=>{ if(r.memberName===name) r.memberName=null; });
+      renderAll();
       toast('削除しました');
     }
   } finally {
@@ -3750,7 +3764,16 @@ async function addMember(){
     });
     if(!res.ok){ throw new Error('保存失敗'); }
     const data = await res.json();
-    await load();
+    // サーバーへの追加成功後、全件再取得(/api/init)はせずレスポンス内容をローカルのS.membersに反映する
+    S.members.push({
+      id: data.id,
+      name: data.name,
+      role: data.role || '',
+      status: data.status || '有効',
+      memberRole: data.memberRole || 'user',
+      chars: [],
+    });
+    renderAll();
     closeModal();
     // 追加完了ポップアップ
     const roleLabel = {user:'利用者','reinf-admin':'援軍管理者',admin:'管理者'}[data.memberRole] || data.memberRole;
