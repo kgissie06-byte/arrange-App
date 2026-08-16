@@ -9,6 +9,7 @@ const supabase = createClient(
 /**
  * /api/reinf
  *
+ * GET    /api/reinf        → 一覧取得（援軍表のみの軽量取得。/api/init全体を叩き直さず済むように）
  * POST   /api/reinf        → 行追加
  * PUT    /api/reinf?id=XX  → 行更新
  * DELETE /api/reinf?id=XX  → 行削除
@@ -19,6 +20,26 @@ export default async function handler(req, res) {
 
   const { id } = req.query
   const rowId = id ? parseInt(id) : null
+
+  // id なし・GET → 援軍表のみを取得（members/chars/trainingは含めない軽量版）
+  if (!rowId && req.method === 'GET') {
+    const { data, error } = await supabase
+      .from('reinf')
+      .select('*')
+      .order('sort_order', { ascending: true })
+    if (error) return res.status(500).json({ error })
+
+    return res.json((data || []).map(r => ({
+      id: r.id,
+      memberName: r.member_name || null,
+      normalMain: r.normal_main || null,
+      normalSub: r.normal_sub || null,
+      castleMain: r.castle_main || null,
+      castleSub: r.castle_sub || null,
+      sortOrder: r.sort_order || 0,
+      tableType: r.table_type || 'ransaki',
+    })))
+  }
 
   // id あり → 既存行の更新・削除
   if (rowId) {

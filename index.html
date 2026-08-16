@@ -2413,6 +2413,7 @@ async function onReinfSurveySelect(val){
   _reinfSurveyVoters[tableType] = null;
   renderReinfSurveySelect(); // 選択直後に表示ラベルとチェック状態を更新
   if(id){
+    showLoading();
     try{
       const res = await fetch(`/api/surveys?action=voters&id=${id}`);
       if(res.ok) _reinfSurveyVoters[tableType] = await res.json();
@@ -2426,10 +2427,22 @@ async function onReinfSurveySelect(val){
     if(_reinfSurveyVoters[tableType]){
       await autoAddVotedPairRows(tableType);
     }
+    hideLoading();
   }
   // 援軍検索を開いている最中であれば、マーク表示を反映するため再描画する
   const overlay = document.getElementById('reinf-search-overlay');
   if(overlay && overlay.style.display === 'flex') renderRSResults();
+}
+
+// 援軍表のみを軽量に再取得する（/api/reinf）。member/chars/trainingまで含む重い/api/initを
+// 叩き直さずに済むため、行追加後の反映が速くなる
+async function fetchReinfOnly(){
+  try{
+    const res = await fetch('/api/reinf');
+    if(!res.ok) return false;
+    S.reinf = await res.json();
+    return true;
+  } catch(e){ return false; }
 }
 
 // 表に既に設定済みのメンバーについて、そのメンバーが自分の行のペアに投票していて、
@@ -2469,7 +2482,9 @@ async function autoAddVotedPairRows(tableType){
     } catch(e){ /* 1件の失敗で全体を止めない */ }
   }
   if(addedCount > 0){
-    await load();
+    const ok = await fetchReinfOnly();
+    if(!ok) await load(); // 軽量版が失敗した場合のみ、フォールバックとして通常のloadを使う
+    else renderReinfTable();
     toast(`投票中のペアの行を${addedCount}件追加しました`);
   }
 }
