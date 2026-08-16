@@ -2344,6 +2344,11 @@ async function ensureReinfSurveyListLoaded(){
 function renderReinfSurveySelect(){
   const wrap = document.getElementById('reinf-survey-ref');
   if(!wrap) return;
+  // アンケート参照機能は援軍管理者・管理者のみ（利用者ロールには表示しない）
+  if(currentRole !== 'admin' && currentRole !== 'reinf-admin'){
+    wrap.innerHTML = '';
+    return;
+  }
   const tableType = _activeReinfTable;
   const list = _surveys
     .filter(s => (s.tableType || 'ransaki') === tableType)
@@ -2400,6 +2405,8 @@ function pickReinfSurvey(val){
 }
 
 async function onReinfSurveySelect(val){
+  // アンケート参照は援軍管理者・管理者のみの機能（利用者ロールでは操作させない）
+  if(currentRole !== 'admin' && currentRole !== 'reinf-admin') return;
   const tableType = _activeReinfTable;
   const id = val ? parseInt(val) : null;
   _reinfRefSurveyId[tableType] = id;
@@ -3670,7 +3677,14 @@ function switchTab(tab,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   if(tab==='search'){renderFilters();renderSearch();}
-  if(tab==='reinf'){renderReinfTable();startReinfRealtime();ensureReinfSurveyListLoaded().then(renderReinfSurveySelect);}
+  if(tab==='reinf'){
+    renderReinfTable();startReinfRealtime();
+    if(currentRole==='admin'||currentRole==='reinf-admin'){
+      ensureReinfSurveyListLoaded().then(renderReinfSurveySelect);
+    } else {
+      renderReinfSurveySelect(); // ラッパーを空にするだけ（利用者ロールには表示しない）
+    }
+  }
   else{stopReinfRealtime();}
   if(tab==='chars'){initCharNewForm();renderCharListDisplay();}
   if(tab==='survey'){initSurveyPage();startSurveyRealtime();clearSurveyBadge();}
