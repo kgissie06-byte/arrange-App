@@ -4669,9 +4669,12 @@ async function doAddPair(){
     await fetchAndRenderDetail(_activeSurveyId);
     const sv = _surveys.find(s => s.id === _activeSurveyId);
     if(sv){
-      // 追加前に仮選択していたペア（現在も存在するもの）を復元
+      // 追加前の仮選択状態をそのまま復元する（fetchAndRenderDetail内でサーバーの
+      // 確定済み投票にリセットされた_pendingVotesを使わず、prevPendingで完全に置き換える。
+      // ※ 追加ではなく置き換えにすることで、追加前にチェックを外していたペアが
+      //   確定済み票からの復元で再チェックされてしまうのを防ぐ）
       const validIds = new Set((sv.pairs||[]).map(p => p.id));
-      prevPending.forEach(id => { if(validIds.has(id)) _pendingVotes.add(id); });
+      _pendingVotes = new Set([...prevPending].filter(id => validIds.has(id)));
       // 追加したペアを自動で仮選択（チェック）状態にする
       const newPair = (data && data.id != null)
         ? (sv.pairs||[]).find(p => p.id === data.id)
