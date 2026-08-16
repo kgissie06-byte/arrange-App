@@ -1524,11 +1524,10 @@ async function saveTraining(){
     toast('保存しました');
     E.charName=null; E.pendingRar=null; E.pendingRanks=[]; E.pendingEx=null;
     const cs=document.getElementById('cc-search');if(cs)cs.value='';
-    _showUntrainedOnly=false;
-    const ub=document.getElementById('cc-untrained-btn');if(ub)ub.classList.remove('on');
     document.getElementById('lv-panel').style.display='none';
     const m=S.members.find(x=>x.id===E.memberId);
     if(m) renderCharGridEdit(m);
+    filterCharGrid(); // 未入力絞り込みの状態は維持したまま、再描画後のグリッドに絞り込みを再適用する
   }catch(e){
     toast('エラー');
   } finally {
