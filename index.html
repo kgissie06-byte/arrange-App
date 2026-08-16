@@ -3431,6 +3431,7 @@ async function deleteChar(){
   const name = document.getElementById('cu-sel').value;
   if(!name){ toast('キャラを選択してください'); return; }
   if(!confirm(`${name} を削除しますか？`)) return;
+  showLoading();
   try{
     const res = await fetch(`/api/chars/${encodeURIComponent(name)}`, { method: 'DELETE' });
     if(!res.ok){ throw new Error('削除失敗'); }
@@ -3445,6 +3446,8 @@ async function deleteChar(){
   } catch(err){
     console.error(err);
     toast('削除に失敗しました');
+  } finally {
+    hideLoading();
   }
 }
 
