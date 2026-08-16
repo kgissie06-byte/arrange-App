@@ -25,9 +25,9 @@ export default async function handler(req, res) {
     if (isNaN(rowId)) return res.status(400).json({ error: 'invalid id' })
 
     if (req.method === 'PUT') {
-      const { memberName, normalMain, normalSub, castleMain, castleSub, tableType } = req.body
+      const { memberName, normalMain, normalSub, castleMain, castleSub, tableType, sortOrder } = req.body
 
-      // 同じtableType内で既に同名の盟員がいれば、その行をnullにする
+      // 同じtableType内で既に同名の盟員がいれば、その行をnullにする（memberNameの更新時のみ）
       if (memberName) {
         const { data: dupes } = await supabase
           .from('reinf')
@@ -45,15 +45,27 @@ export default async function handler(req, res) {
         }
       }
 
+      // リクエストに含まれるフィールドだけを更新する（部分更新）。
+      // 例えばsortOrderのみを渡した場合、memberNameやペア情報は変更せず並び順だけを書き換えられる。
+      const updates = {}
+      if (memberName !== undefined) updates.member_name = memberName || null
+      if (normalMain !== undefined) updates.normal_main = normalMain || null
+      if (normalSub !== undefined) updates.normal_sub = normalSub || null
+      if (castleMain !== undefined) updates.castle_main = castleMain || null
+      if (castleSub !== undefined) updates.castle_sub = castleSub || null
+      if (sortOrder !== undefined) {
+        const so = parseInt(sortOrder)
+        if (isNaN(so)) return res.status(400).json({ error: 'invalid sortOrder' })
+        updates.sort_order = so
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ error: '更新内容がありません' })
+      }
+
       const { error } = await supabase
         .from('reinf')
-        .update({
-          member_name: memberName || null,
-          normal_main: normalMain || null,
-          normal_sub: normalSub || null,
-          castle_main: castleMain || null,
-          castle_sub: castleSub || null,
-        })
+        .update(updates)
         .eq('id', rowId)
       if (error) return res.status(500).json({ error })
       return res.json({ ok: true })

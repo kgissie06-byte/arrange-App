@@ -4184,6 +4184,7 @@ let _surveys = [];           // キャッシュ
 let _activeSurveyId = null;  // 詳細表示中のアンケートID
 let _pendingVotes = new Set(); // 仮選択中のペアID（確定前）
 let _confirmedVotes = new Set(); // 確定済みペアID（サーバーと同期済み）
+let _svVotersCache = {};     // 投票者一覧のキャッシュ（アンケートID→投票者配列）。終了済みアンケートの結果は変化しないため、一度取得したら使い回してポーリングしない
 
 function getSvMember(){
   if(!currentMemberId) return null;
@@ -4490,20 +4491,27 @@ function renderSurveyDetail(sv){
   const applyArea = document.getElementById('sv-apply-area');
   applyArea.style.display = (currentRole==='admin'||currentRole==='reinf-admin') ? 'block' : 'none';
 
-  // 投票者一覧（終了後のみ非同期で表示）
+  // 投票者一覧（終了後のみ表示）。結果は締切後に変わらないため、一度取得したらキャッシュを使い回し、
+  // 15秒ごとのステータス再描画のたびにサーバーへポーリングしないようにする。
   const existingSection = document.getElementById('sv-voters-section');
-  if(existingSection) existingSection.remove();
   if(!isOpen){
-    fetchAndRenderVoters(sv.id);
+    if(_svVotersCache[sv.id]){
+      renderVotersList(_svVotersCache[sv.id]);
+    } else if(!existingSection){
+      fetchAndRenderVoters(sv.id);
+    }
+  } else if(existingSection){
+    existingSection.remove();
   }
 }
 
-/* ---------- 投票者一覧の取得・描画（終了後のみ呼ばれる） ---------- */
+/* ---------- 投票者一覧の取得・描画（終了後のみ呼ばれる。取得結果はキャッシュする） ---------- */
 async function fetchAndRenderVoters(svId){
   try {
     const res = await fetch(`/api/surveys?action=voters&id=${svId}`);
     if(!res.ok) return;
     const voters = await res.json();
+    _svVotersCache[svId] = voters;
     renderVotersList(voters);
   } catch(e){ /* silent */ }
 }
@@ -4751,7 +4759,6 @@ function applySurveyToReinf(){
   const sortedPairs = [...sv.pairs].filter(p=>(p.votes||0)>0).sort((a,b)=>(b.votes||0)-(a.votes||0));
   const tableType = sv.tableType;
   const tableLabel = tableType === 'ransaki' ? '乱咲' : '蕾';
-  const existingRows = S.reinf.filter(r=>(r.tableType||'ransaki')===tableType);
 
   const pairsPreview = sortedPairs.map((p,i)=>
     `<div style="padding:3px 0;border-bottom:1px solid var(--border)">
@@ -4762,15 +4769,18 @@ function applySurveyToReinf(){
   openModal('apply-confirm', `<h3>援軍表に反映</h3>
     <div style="font-size:12px;margin-bottom:12px">
       ${isOpen ? '<div style="background:#FAEEDA;color:#633806;border:1px solid #FAC775;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11px">⚠️ まだ受付中です。このまま反映しますか？</div>' : ''}
-      【${tableLabel}】援軍表の<strong>全行を削除</strong>し、以下の${sortedPairs.length}行を新規作成します。（0票のペアは反映されません）<br><br>
+      【${tableLabel}】援軍表を以下の${sortedPairs.length}行の並び順に更新します。（0票のペアは反映されません）<br>
+      既存のペアは<strong>盟員の設定を維持したまま並び替え</strong>のみ行い、結果にないペアは削除、新しいペアは追加されます。<br><br>
       <div style="margin:8px 0;max-height:200px;overflow-y:auto">${pairsPreview}</div>
-      ${existingRows.length>0?`<span style="color:var(--danger)">※ 既存の行が削除されます</span>`:''}
     </div>
     <div class="modal-acts">
       <button class="btn" onclick="closeModal()">キャンセル</button>
       <button class="btn pri" onclick="doApplySurvey('${tableType}')">反映する</button>
     </div>`);
 }
+
+// ペアの一致判定キー（大将・副将の組み合わせ）
+function _reinfPairKey(main, sub){ return `${main||''}\u0000${sub||''}`; }
 
 async function doApplySurvey(tableType){
   closeModal();
@@ -4779,9 +4789,43 @@ async function doApplySurvey(tableType){
   const sortedPairs = [...sv.pairs].filter(p=>(p.votes||0)>0).sort((a,b)=>(b.votes||0)-(a.votes||0));
   showLoading();
   try {
-    const targetRows = S.reinf.filter(r=>(r.tableType||'ransaki')===tableType);
-    await Promise.all(targetRows.map(r => fetch(`/api/reinf?id=${r.id}`, { method: 'DELETE' })));
+    const existingRows = S.reinf.filter(r=>(r.tableType||'ransaki')===tableType);
+
+    // 既存行をペアキーごとにグルーピングしておく（同じペアが複数行ある場合にも対応）
+    const rowsByPair = new Map();
+    for(const row of existingRows){
+      const key = _reinfPairKey(row.normalMain, row.normalSub);
+      if(!rowsByPair.has(key)) rowsByPair.set(key, []);
+      rowsByPair.get(key).push(row);
+    }
+
+    // アンケート結果の並び順どおりに、既存行を維持するか新規行を作るかを決める
+    const usedRowIds = new Set();
+    const finalRowIds = []; // 最終的な行順（既存行のID。新規分は後で埋める）
+    const newPairs = [];    // 新規に追加が必要なペア（finalRowIds内のnullの位置に対応）
+
     for(const pair of sortedPairs){
+      const key = _reinfPairKey(pair.main, pair.sub);
+      const candidates = rowsByPair.get(key);
+      const row = candidates && candidates.length ? candidates.shift() : null;
+      if(row){
+        usedRowIds.add(row.id);
+        finalRowIds.push(row.id);
+      } else {
+        finalRowIds.push(null);
+        newPairs.push(pair);
+      }
+    }
+
+    // 結果に含まれなくなった既存行は削除
+    const rowsToDelete = existingRows.filter(r => !usedRowIds.has(r.id));
+    await Promise.all(rowsToDelete.map(r => fetch(`/api/reinf?id=${r.id}`, { method: 'DELETE' })));
+
+    // 新規ペアの行を作成し、finalRowIds内のnullを実際のIDに置き換える
+    let newIdx = 0;
+    for(let i = 0; i < finalRowIds.length; i++){
+      if(finalRowIds[i] !== null) continue;
+      const pair = newPairs[newIdx++];
       const addRes = await fetch('/api/reinf', {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ tableType }),
@@ -4790,9 +4834,19 @@ async function doApplySurvey(tableType){
       const newRow = await addRes.json();
       await fetch(`/api/reinf?id=${newRow.id}`, {
         method: 'PUT', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ memberName:null, normalMain:pair.main||null, normalSub:pair.sub||null, castleMain:pair.main||null, castleSub:pair.sub||null }),
+        body: JSON.stringify({ normalMain:pair.main||null, normalSub:pair.sub||null, castleMain:pair.main||null, castleSub:pair.sub||null }),
       });
+      finalRowIds[i] = newRow.id;
     }
+
+    // 最終順序どおりに sort_order だけを振り直す（既存行のmember_name等はここでは変更しない）
+    await Promise.all(finalRowIds.map((id, i) =>
+      fetch(`/api/reinf?id=${id}`, {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ sortOrder: i }),
+      })
+    ));
+
     toast('援軍表に反映しました');
     await load();
   } catch(e){ toast('反映に失敗しました'); }
