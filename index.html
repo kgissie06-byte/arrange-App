@@ -1671,12 +1671,13 @@ async function addReinfRow(){
       body: JSON.stringify({ tableType: _activeReinfTable })
     });
     if (!res.ok) throw new Error('行追加失敗');
-    // load() 内で showLoading/hideLoading するため、ここでは先に hideLoading してから呼ぶ
-    hideLoading();
-    await load();
+    const ok = await fetchReinfOnly();
+    if (!ok) await load(); // 軽量版が失敗した場合のみ、フォールバックとして通常のloadを使う
+    else renderReinfTable();
   } catch(err) {
     console.error(err);
     toast('行の追加に失敗しました');
+  } finally {
     hideLoading();
   }
 }
@@ -1834,7 +1835,9 @@ async function deleteReinfRow(id){
   showLoading();
   try {
     await fetch(`/api/reinf?id=${id}`, { method: 'DELETE' });
-    await load();
+    const ok = await fetchReinfOnly();
+    if (!ok) await load(); // 軽量版が失敗した場合のみ、フォールバックとして通常のloadを使う
+    else renderReinfTable();
   } catch(err) {
     console.error(err);
     toast('削除に失敗しました');
@@ -2589,7 +2592,9 @@ async function confirmAddToReinfTable(){
     });
     if(!putRes.ok) throw new Error('新規行へのペア設定に失敗しました');
 
-    await load();
+    const ok = await fetchReinfOnly();
+    if (!ok) await load(); // 軽量版が失敗した場合のみ、フォールバックとして通常のloadを使う
+    else renderReinfTable();
     toast(pending.name+'を追加し、同じペアの行も追加しました');
     closeReinfSearch();
   } catch(e){
@@ -4928,8 +4933,10 @@ async function doApplySurvey(tableType){
       })
     ));
 
+    const ok = await fetchReinfOnly();
+    if (!ok) await load(); // 軽量版が失敗した場合のみ、フォールバックとして通常のloadを使う
+    else renderReinfTable();
     toast('援軍表に反映しました');
-    await load();
   } catch(e){ toast('反映に失敗しました'); }
   finally { hideLoading(); }
 }
