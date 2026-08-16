@@ -1398,6 +1398,20 @@ function selectCharEdit(cn){
 }
 const SR_OR_BELOW=['SR','R','N'];
 const HIGH_RANKS_BLOCKED=['全技極','裏技極','技極','表6','裏6'];
+const UR_OR_ABOVE=['UR','LG','LG1','LG2','LG3'];
+const GIKOKU_RANKS=['技極','裏技極','全技極'];
+
+// サーバー側(init.js)のCloudinary帯域最適化と同じ変換を、キャラ追加/更新のローカル反映時にも
+// (再度/api/initを叩き直さずに)一覧サムネイルへ適用するためのクライアント側コピー
+function optimizeCloudinaryUrl(url, size = 120) {
+  if (typeof url !== 'string' || !url) return url;
+  if (!/(^|\.)res\.cloudinary\.com\//.test(url)) return url;
+  const marker = '/upload/';
+  const idx = url.indexOf(marker);
+  if (idx === -1) return url;
+  const insertPos = idx + marker.length;
+  return url.slice(0, insertPos) + `f_auto,q_auto,w_${size},h_${size},c_fill/` + url.slice(insertPos);
+}
 
 function pickRar(r){
   E.pendingRar=r;
@@ -3221,7 +3235,19 @@ async function addChar(){
       toast('追加に失敗しました');
       return;
     }
-    await load();
+    // サーバーへの追加成功後、全件再取得(/api/init)はせずレスポンス内容をローカルのS.charsに反映する
+    const data = await res.json();
+    S.chars.push({
+      name: data.name,
+      yomi: data.yomi || '',
+      rars: data.rars || [],
+      ranks: data.ranks || [],
+      shukuens: data.shukuens || [{enabled:false,members:[]},{enabled:false,members:[]}],
+      img: optimizeCloudinaryUrl(data.img) || null,
+      exSotsui: data.ex_sotsui || false,
+      updatedAt: data.updated_at || data.created_at || null,
+    });
+    renderAll();
     toast('追加しました');
     initCharNewForm();
     // 宿縁に？が残っているキャラのうち、新キャラが該当するかもしれないものを提示
@@ -3358,12 +3384,43 @@ async function updateChar(){
       bumpUpdatedAt:cuBumpUpdatedAt,
     };
     if(_cuImg !== null) body.img = _cuImg;
-    await fetch(`/api/chars/${oldName}`,{
+    const res = await fetch(`/api/chars/${oldName}`,{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(body)
     });
-    await load();
+    if(!res.ok){ toast('更新に失敗しました'); return; }
+
+    // rarsがSR以下のみ→UR以上を含む、に変わる場合はサーバー側で他メンバーの育成データ
+    // (技極系ranks)も書き換わるため、その場合だけ従来通りの全件再取得にフォールバックする
+    const oldChar = S.chars.find(c=>c.name===oldName);
+    const oldRars = oldChar ? oldChar.rars : [];
+    const wasOnlySrOrBelow = oldRars.length>0 && oldRars.every(r=>SR_OR_BELOW.includes(r));
+    const newRarsHasUrOrAbove = sortedRars.some(r=>UR_OR_ABOVE.includes(r));
+    if(wasOnlySrOrBelow && newRarsHasUrOrAbove){
+      await load();
+      toast('更新しました');
+      return;
+    }
+
+    // それ以外は全件再取得(/api/init)はせず、ローカルのS.charsだけ更新する
+    if(oldChar){
+      oldChar.name = name;
+      oldChar.yomi = yomi;
+      oldChar.rars = sortedRars;
+      oldChar.ranks = sortedRanks;
+      oldChar.shukuens = cuShukuens;
+      oldChar.exSotsui = cuExSotsui;
+      if(_cuImg !== null) oldChar.img = optimizeCloudinaryUrl(_cuImg) || null;
+      if(cuBumpUpdatedAt) oldChar.updatedAt = new Date().toISOString();
+    }
+    if(name !== oldName){
+      // キャラ名が変わった場合、育成データ側(S.members[].chars)のchar_name参照も追従させる
+      S.members.forEach(m=>{
+        (m.chars||[]).forEach(c=>{ if(c.name===oldName) c.name=name; });
+      });
+    }
+    renderAll();
     toast('更新しました');
   } finally {
     hideLoading();
@@ -3377,7 +3434,12 @@ async function deleteChar(){
   try{
     const res = await fetch(`/api/chars/${encodeURIComponent(name)}`, { method: 'DELETE' });
     if(!res.ok){ throw new Error('削除失敗'); }
-    await load();
+    // サーバーへの削除成功後、全件再取得(/api/init)はせずローカルのS.chars/S.membersを直接更新する
+    S.chars = S.chars.filter(c=>c.name!==name);
+    S.members.forEach(m=>{
+      if(m.chars) m.chars = m.chars.filter(c=>c.name!==name);
+    });
+    renderAll();
     document.getElementById('cu-detail').style.display = 'none';
     toast('削除しました');
   } catch(err){
