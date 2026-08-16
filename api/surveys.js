@@ -138,6 +138,14 @@ async function getSurveys(res, auth, req) {
     voteCountMap[v.pair_id] = (voteCountMap[v.pair_id] || 0) + 1
   })
 
+  // アンケートごとのユニーク投票者数（一覧表示用。これをレスポンスに含めることで、
+  // クライアント側がアンケートごとに個別の /api/surveys?action=voters を叩く必要をなくす）
+  const voterSetMap = {}
+  ;(votesRaw || []).forEach(v => {
+    if (!voterSetMap[v.survey_id]) voterSetMap[v.survey_id] = new Set()
+    voterSetMap[v.survey_id].add(v.member_id)
+  })
+
   const pairsMap = {}
   ;(pairsRaw || []).forEach(p => {
     if (!pairsMap[p.survey_id]) pairsMap[p.survey_id] = []
@@ -172,6 +180,7 @@ async function getSurveys(res, auth, req) {
     createdAt: s.created_at,
     pairs: pairsMap[s.id] || [],
     myVotePairIds: myVoteMap[s.id] || [],
+    voterCount: voterSetMap[s.id] ? voterSetMap[s.id].size : 0,
   })))
 }
 
