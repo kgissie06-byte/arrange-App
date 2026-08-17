@@ -57,11 +57,18 @@ export default async function handler(req, res) {
   const auth = await requireAuth(req, res)
   if (!auth) return
 
+  // chars/members/training/reinf は互いに依存しない独立したクエリなので、
+  // 直列(await の連続)で待たず Promise.all で並列実行し、合計の待ち時間を
+  // 「4クエリの合計」ではなく「一番遅い1クエリ分」まで縮める
+  const [charsResult, membersResult, trainingResult, reinfResult] = await Promise.all([
+    supabase.from('chars').select('*').order('created_at', { ascending: true }),
+    supabase.from('members').select('*, auth_role(role)').neq('id', HIDDEN_MEMBER_ID).order('created_at', { ascending: true }),
+    fetchAllTraining().then(data => ({ data, error: null })).catch(error => ({ data: null, error })),
+    supabase.from('reinf').select('*').order('sort_order', { ascending: true }),
+  ])
+
   // キャラ一覧
-  const { data: charsRaw, error: charsErr } = await supabase
-    .from('chars')
-    .select('*')
-    .order('created_at', { ascending: true })
+  const { data: charsRaw, error: charsErr } = charsResult
   if (charsErr) return res.status(500).json({ error: charsErr })
 
   const chars = (charsRaw || []).map(c => ({
@@ -76,20 +83,12 @@ export default async function handler(req, res) {
   }))
 
   // メンバー一覧（auth_roleをJOINして権限も取得／管理者(ID:1)は除外）
-  const { data: membersRaw, error: membersErr } = await supabase
-    .from('members')
-    .select('*, auth_role(role)')
-    .neq('id', HIDDEN_MEMBER_ID)
-    .order('created_at', { ascending: true })
+  const { data: membersRaw, error: membersErr } = membersResult
   if (membersErr) return res.status(500).json({ error: membersErr })
 
   // 育成データ
-  let trainingRaw
-  try {
-    trainingRaw = await fetchAllTraining()
-  } catch (trainingErr) {
-    return res.status(500).json({ error: trainingErr })
-  }
+  const { data: trainingRaw, error: trainingErr } = trainingResult
+  if (trainingErr) return res.status(500).json({ error: trainingErr })
 
   const members = (membersRaw || []).map(m => ({
     id: m.id,
@@ -108,10 +107,7 @@ export default async function handler(req, res) {
   }))
 
   // 援軍表
-  const { data: reinfRaw, error: reinfErr } = await supabase
-    .from('reinf')
-    .select('*')
-    .order('sort_order', { ascending: true })
+  const { data: reinfRaw, error: reinfErr } = reinfResult
   if (reinfErr) return res.status(500).json({ error: reinfErr })
 
   const reinf = (reinfRaw || []).map(r => ({
