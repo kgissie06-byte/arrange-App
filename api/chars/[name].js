@@ -58,15 +58,47 @@ export default async function handler(req, res) {
     // 「最近更新されたキャラ」に反映するかは管理者がボタンで選択（デフォルトは反映しない）
     if (bumpUpdatedAt === true) updates.updated_at = new Date().toISOString()
 
-    // rars/imgチェック用に現在のキャラ情報を取得（rars変更判定・古い画像削除の両方で使う）
+    // rars/img/ranksチェック用に現在のキャラ情報を取得（rars変更判定・古い画像削除・裏側解禁判定で使う）
     let currentChar = null
-    if (rars !== undefined || img !== undefined) {
+    if (rars !== undefined || img !== undefined || ranks !== undefined) {
       const { data } = await supabase
         .from('chars')
-        .select('rars, img')
+        .select('rars, img, ranks')
         .eq('name', name)
         .single()
       currentChar = data
+    }
+
+    // ranksが更新される場合、表(技極)のみ→裏技極が追加された変更かチェックし、
+    // 既に技極を達成しているメンバーの育成データへ裏1を自動解放する
+    // （表しか無かった当時は裏1が選択肢に存在しなかったため、技極=表の最高到達点だった。
+    //   裏側が追加された後は「技極を選んでいる＝裏1まで到達している」とみなして開放する）
+    if (ranks !== undefined) {
+      const currentRanks = currentChar?.ranks || []
+      const backWasUnavailable = !currentRanks.includes('裏技極')
+      const backNowAvailable = ranks.includes('裏技極')
+
+      if (backWasUnavailable && backNowAvailable) {
+        const { data: targets, error: fetchErr } = await supabase
+          .from('training')
+          .select('id, ranks')
+          .eq('char_name', name)
+
+        if (fetchErr) return res.status(500).json({ error: fetchErr })
+
+        for (const t of (targets || [])) {
+          const trainingRanks = t.ranks || []
+          const hasGikyoku = trainingRanks.includes('技極')
+          const alreadyHasUra1 = trainingRanks.includes('裏1')
+          if (!hasGikyoku || alreadyHasUra1) continue
+
+          const { error: updateErr } = await supabase
+            .from('training')
+            .update({ ranks: [...trainingRanks, '裏1'] })
+            .eq('id', t.id)
+          if (updateErr) return res.status(500).json({ error: updateErr })
+        }
+      }
     }
 
     // rarsが更新される場合、SR以下→UR以上への変更かチェックして技極系ranksを削除
