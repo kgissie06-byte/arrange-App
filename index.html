@@ -1454,7 +1454,18 @@ function pickRank(r){
     if(i>=0) E.pendingRanks.splice(i,1);
     else E.pendingRanks.push(r);
   }
+  syncZenGikyoku(E.pendingRanks,allowed);
   renderLvPanel();
+}
+// 技極かつ裏技極の両方を満たす場合は全技極を自動で付与。片方が外れたら自動で外す
+function syncZenGikyoku(ranks,allowed){
+  const hasBoth=ranks.includes('技極')&&ranks.includes('裏技極');
+  const idx=ranks.indexOf('全技極');
+  if(hasBoth){
+    if(idx<0 && (!allowed || allowed.includes('全技極'))) ranks.push('全技極');
+  } else if(idx>=0){
+    ranks.splice(idx,1);
+  }
 }
 function pickEx(lv){
   E.pendingEx = E.pendingEx===lv ? null : lv;
