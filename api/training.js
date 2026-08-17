@@ -11,17 +11,27 @@ const supabase = createClient(
 const PAGE_SIZE = 1000
 
 async function fetchAllTraining() {
-  let all = []
-  let from = 0
-  while (true) {
-    const { data, error } = await supabase
-      .from('training')
-      .select('*')
-      .range(from, from + PAGE_SIZE - 1)
+  // まず件数だけを軽量に取得(head:trueなので行データ自体は転送されない)
+  const { count, error: countErr } = await supabase
+    .from('training')
+    .select('*', { count: 'exact', head: true })
+  if (countErr) return null
+  if (!count) return []
+
+  // 必要なページ数ぶんを「1ページ取れたら次を取りに行く」直列ループではなく、
+  // 最初から全ページ分のリクエストをPromise.allで並列発行する
+  const pageCount = Math.ceil(count / PAGE_SIZE)
+  const pages = await Promise.all(
+    Array.from({ length: pageCount }, (_, i) => {
+      const from = i * PAGE_SIZE
+      return supabase.from('training').select('*').range(from, from + PAGE_SIZE - 1)
+    })
+  )
+
+  const all = []
+  for (const { data, error } of pages) {
     if (error) return null
-    all = all.concat(data || [])
-    if (!data || data.length < PAGE_SIZE) break
-    from += PAGE_SIZE
+    all.push(...(data || []))
   }
   return all
 }
