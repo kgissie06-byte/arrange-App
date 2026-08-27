@@ -2692,7 +2692,7 @@ let _charAssistMode = true;
 // ・裏技極＝全技極なので、裏技極を選んだら全技極も自動選択する
 function getCharRankImplied(r){
   if(r==='全技極') return['全技極','裏技極','技極',...OMOTE_RANKS,...URA_RANKS];
-  if(r==='裏技極') return['全技極','裏技極',...OMOTE_RANKS,...URA_RANKS];
+  if(r==='裏技極') return['全技極','裏技極','技極',...OMOTE_RANKS,...URA_RANKS];
   if(r==='技極')   return['技極',...OMOTE_RANKS];
   if(OMOTE_RANKS.includes(r)){
     const idx=OMOTE_RANKS.indexOf(r);
