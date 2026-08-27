@@ -2687,6 +2687,23 @@ async function confirmAddToReinfTable(){
 /* ========== キャラ管理 ========== */
 // 入力補助モード（キャラ管理用、デフォルトON）
 let _charAssistMode = true;
+// キャラ管理の「最大ランク」用の入力補助ロジック（育成側のgetRankImpliedとは別物）
+// ・技極を選んでも裏1は自動選択しない（裏側の有無はキャラごとに違うため）
+// ・裏技極＝全技極なので、裏技極を選んだら全技極も自動選択する
+function getCharRankImplied(r){
+  if(r==='全技極') return['全技極','裏技極','技極',...OMOTE_RANKS,...URA_RANKS];
+  if(r==='裏技極') return['全技極','裏技極',...OMOTE_RANKS,...URA_RANKS];
+  if(r==='技極')   return['技極',...OMOTE_RANKS];
+  if(OMOTE_RANKS.includes(r)){
+    const idx=OMOTE_RANKS.indexOf(r);
+    return OMOTE_RANKS.slice(0,idx+1);
+  }
+  if(URA_RANKS.includes(r)){
+    const idx=URA_RANKS.indexOf(r);
+    return[...URA_RANKS.slice(0,idx+1),...OMOTE_RANKS];
+  }
+  return[r];
+}
 function toggleCharAssist(){
   _charAssistMode = !_charAssistMode;
   // 新規・更新どちらのボタンも同期
@@ -2715,7 +2732,7 @@ function toggleCnRar(r){
   renderCharMgmtRankBtns('cn-rank-btns',cnSelRank,'toggleCnRank');
 }
 function toggleCnRank(r){
-  if(_charAssistMode){ toggleWithHierarchy(cnSelRank,r,getRankImplied); }
+  if(_charAssistMode){ toggleWithHierarchy(cnSelRank,r,getCharRankImplied); }
   else { const i=cnSelRank.indexOf(r); if(i>=0)cnSelRank.splice(i,1); else cnSelRank.push(r); }
   renderCharMgmtRarBtns('cn-rar-btns',cnSelRar,'toggleCnRar');
   renderCharMgmtRankBtns('cn-rank-btns',cnSelRank,'toggleCnRank');
@@ -2727,7 +2744,7 @@ function toggleCuRar(r){
   renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');
 }
 function toggleCuRank(r){
-  if(_charAssistMode){ toggleWithHierarchy(cuSelRank,r,getRankImplied); }
+  if(_charAssistMode){ toggleWithHierarchy(cuSelRank,r,getCharRankImplied); }
   else { const i=cuSelRank.indexOf(r); if(i>=0)cuSelRank.splice(i,1); else cuSelRank.push(r); }
   renderCharMgmtRarBtns('cu-rar-btns',cuSelRar,'toggleCuRar');
   renderCharMgmtRankBtns('cu-rank-btns',cuSelRank,'toggleCuRank');
