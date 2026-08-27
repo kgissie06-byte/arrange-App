@@ -1925,7 +1925,7 @@ async function deleteReinfRow(id){
 function buildComboOptions(chars, selected) {
   return [
     { value: '', label: '（なし）' },
-    ...sortByYomi(chars).map(c => ({ value: c.name, label: c.name, yomi: c.yomi || '' }))
+    ...sortByYomi(chars).map(c => ({ value: c.name, label: c.labelOverride || c.name, yomi: c.yomi || '' }))
   ];
 }
 
@@ -2785,17 +2785,31 @@ function removeShukuenMember(prefix,idx,i){
   arr[idx].members.splice(i,1);
   renderShukuenList(prefix,idx,arr[idx].members);
 }
+// 編集中のキャラ自身の名前（新規追加中はまだS.charsに存在しないため、入力欄から直接取得する）
+function currentEditingCharName(prefix){
+  const el=document.getElementById(prefix==='cn'?'cn-name':'cu-name');
+  return (el?.value||'').trim();
+}
+// 検索コンボの選択肢に、名前入力欄（cn-name/cu-name）の値を1件だけ普通の候補として合成する
+// （新規追加中のキャラはS.charsにまだ無いため、通常の候補には出てこない。それ以外は他のキャラと同じ扱い）
+function withSelfOption(available, usedInSlot, prefix){
+  const selfName=currentEditingCharName(prefix);
+  if(!selfName) return available;
+  if(usedInSlot.includes(selfName)) return available; // 既に追加済みなら出さない
+  if(available.some(c=>c.name===selfName)) return available; // 既存キャラとして既にリストにあるなら重複させない
+  return [{ name: selfName, yomi: '' }, ...available];
+}
 function openShukuenAddModal(prefix,idx){
   shukuenAddTarget={prefix,idx,changeIdx:null};
   const arr=prefix==='cn'?cnShukuens:cuShukuens;
   const usedInSlot=arr[idx].members.filter(n=>n!=='?');
-  const available=S.chars.filter(c=>!usedInSlot.includes(c.name));
-  openModal('shukuen-add',`<h3>宿縁キャラを追加</h3>
+  const available=withSelfOption(S.chars.filter(c=>!usedInSlot.includes(c.name)), usedInSlot, prefix);
+  openModal('shukuen-add',`<button class="modal-close-btn" onclick="closeModal()" title="閉じる" aria-label="閉じる">✕</button>
+    <h3>宿縁キャラを追加</h3>
     <div class="field">
       ${comboHtml('shukuen-char-combo', available, '', '-- キャラを選択 --')}
     </div>
     <div class="modal-acts">
-      <button class="btn" onclick="closeModal()">キャンセル</button>
       <button class="btn" onclick="addShukuenDummy()">？を追加</button>
       <button class="btn pri" onclick="addShukuenMember()">追加</button>
     </div>`);
@@ -2805,14 +2819,14 @@ function openShukuenChangeModal(prefix,idx,changeIdx){
   shukuenAddTarget={prefix,idx,changeIdx};
   const arr=prefix==='cn'?cnShukuens:cuShukuens;
   const usedInSlot=arr[idx].members.filter((n,i)=>n!=='?'&&i!==changeIdx);
-  const available=S.chars.filter(c=>!usedInSlot.includes(c.name));
+  const available=withSelfOption(S.chars.filter(c=>!usedInSlot.includes(c.name)), usedInSlot, prefix);
   const currentName=arr[idx].members[changeIdx]&&arr[idx].members[changeIdx]!=='?'?arr[idx].members[changeIdx]:'';
-  openModal('shukuen-add',`<h3>宿縁キャラを変更</h3>
+  openModal('shukuen-add',`<button class="modal-close-btn" onclick="closeModal()" title="閉じる" aria-label="閉じる">✕</button>
+    <h3>宿縁キャラを変更</h3>
     <div class="field">
       ${comboHtml('shukuen-char-combo', available, currentName, '-- キャラを選択 --')}
     </div>
     <div class="modal-acts">
-      <button class="btn" onclick="closeModal()">キャンセル</button>
       <button class="btn pri" onclick="addShukuenMember()">変更</button>
     </div>`);
   _comboState['shukuen-char-combo']={chars:available};
@@ -2837,6 +2851,7 @@ function addShukuenMember(){
   renderShukuenList(prefix,idx,arr[idx].members);
   closeModal();
 }
+
 
 function shukuenLevel(memberChar, charDef){
   if(!memberChar || !memberChar.ranks || !memberChar.ranks.length) return null;
