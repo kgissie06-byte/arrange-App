@@ -553,9 +553,13 @@ body.touch-device .sub-tab.active:active {
     <div class="sec-head">
       <h2>メンバーを選択</h2>
       <div style="display:flex;gap:6px">
+        <button class="btn sm" id="member-search-toggle-btn" onclick="toggleMemberSearch()" title="ユーザー検索" aria-label="ユーザー検索">🔍</button>
         <button class="btn input-admin-only" onclick="openMemberModal('add')">+ 追加</button>
         <button class="btn input-admin-only" onclick="openMemberModal('edit')">編集</button>
       </div>
+    </div>
+    <div class="cc-search-row" id="member-search-row" style="display:none">
+      <input type="text" class="cc-search-input" id="member-search-input" placeholder="メンバー名で絞り込み" oninput="filterMembers(this.value)">
     </div>
     <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap">
       <button class="f-btn on" id="mf-all"    onclick="setMemberFilter('all')">すべて</button>
@@ -1141,6 +1145,25 @@ function renderMemberRankBadges(m){
 
 /* ========== ① 育成入力 ========== */
 let _memberFilter = 'all'; // 'all' | 'ransaki' | 'tsubomi'
+let _memberSearchQuery = '';
+function toggleMemberSearch(){
+  const row = document.getElementById('member-search-row');
+  const isOpen = row.style.display !== 'none';
+  if(isOpen){
+    row.style.display = 'none';
+    const input = document.getElementById('member-search-input');
+    input.value = '';
+    _memberSearchQuery = '';
+    renderMembers();
+  }else{
+    row.style.display = 'flex';
+    setTimeout(()=>document.getElementById('member-search-input').focus(), 0);
+  }
+}
+function filterMembers(q){
+  _memberSearchQuery = (q || '').trim();
+  renderMembers();
+}
 function setMemberFilter(f){
   _memberFilter = f;
   ['all','ransaki','tsubomi'].forEach(k=>{
@@ -1155,11 +1178,13 @@ function renderMembers(){
   let visible = S.members.filter(m => m.status !== '無効');
   if(_memberFilter === 'ransaki') visible = visible.filter(m => m.role === '乱咲');
   if(_memberFilter === 'tsubomi') visible = visible.filter(m => m.role === '蕾');
+  if(_memberSearchQuery) visible = visible.filter(m => m.name && m.name.includes(_memberSearchQuery));
 
   // 表示中メンバー数（フィルタに応じて集計。「すべて」の場合は合計人数）
   const ransakiCount = S.members.filter(m => m.role === '乱咲' && m.status !== '無効').length;
   const tsubomiCount = S.members.filter(m => m.role === '蕾' && m.status !== '無効').length;
-  const memberCount = _memberFilter === 'ransaki' ? ransakiCount
+  const memberCount = _memberSearchQuery ? visible.length
+    : _memberFilter === 'ransaki' ? ransakiCount
     : _memberFilter === 'tsubomi' ? tsubomiCount
     : ransakiCount + tsubomiCount;
   const memberCountLabel = `<div style="grid-column:1/-1;margin:4px 0 2px;font-size:11px;color:var(--t2);font-weight:500">メンバー：${memberCount}人</div>`;
