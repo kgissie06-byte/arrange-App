@@ -553,7 +553,9 @@ body.touch-device .sub-tab.active:active {
     <div class="sec-head">
       <h2>メンバーを選択</h2>
       <div style="display:flex;gap:6px">
-        <button class="btn sm" id="member-search-toggle-btn" onclick="toggleMemberSearch()" title="ユーザー検索" aria-label="ユーザー検索">🔍</button>
+        <button class="btn sm" id="member-search-toggle-btn" onclick="toggleMemberSearch()" title="ユーザー検索" aria-label="ユーザー検索" style="display:inline-flex;align-items:center;justify-content:center;padding:4px 8px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        </button>
         <button class="btn input-admin-only" onclick="openMemberModal('add')">+ 追加</button>
         <button class="btn input-admin-only" onclick="openMemberModal('edit')">編集</button>
       </div>
