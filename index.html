@@ -2296,19 +2296,23 @@ function rsCharScores(member, charName){
   return {rar:RS_RAR_SCORE[c.rar]||0, rank:rsRankScore(c.ranks)};
 }
 
-// ソートキー配列を生成：[大将rar, 大将rank, 副将rar, 副将rank, 宿縁] × 通常(+城dualMode)
+// ソートキー配列を生成：[大将rar, 大将rank, 副将rar, 副将rank, 宿縁1, 宿縁2] × 通常(+城dualMode)
 function rsSortKeys(m, row, mainCd, castleMainCd){
   const nm=rsCharScores(m,row.normalMain);
   const ns=rsCharScores(m,row.normalSub);
   const cm=RS.dualMode?rsCharScores(m,row.castleMain):{rar:0,rank:0};
   const cs=RS.dualMode?rsCharScores(m,row.castleSub):{rar:0,rank:0};
-  const sh=shukuenPt(m,mainCd)+(RS.dualMode?shukuenPt(m,castleMainCd):0);
+  // 宿縁①→宿縁②の順でソートできるよう、スロットごとの点数に分ける
+  const mainSlots=shukuenPtsBySlot(m,mainCd);
+  const castleSlots=RS.dualMode?shukuenPtsBySlot(m,castleMainCd):[0,0];
+  const sh1=(mainSlots[0]||0)+(castleSlots[0]||0);
+  const sh2=(mainSlots[1]||0)+(castleSlots[1]||0);
   if(RS.sortMode==='rar'){
-    // レア優先: 大将rar > 大将rank > 副将rar > 副将rank > 宿縁
-    return [nm.rar+cm.rar, nm.rank+cm.rank, ns.rar+cs.rar, ns.rank+cs.rank, sh];
+    // レア優先: 大将rar > 大将rank > 副将rar > 副将rank > 宿縁① > 宿縁②
+    return [nm.rar+cm.rar, nm.rank+cm.rank, ns.rar+cs.rar, ns.rank+cs.rank, sh1, sh2];
   } else {
-    // ランク優先: 大将rank > 大将rar > 副将rank > 副将rar > 宿縁
-    return [nm.rank+cm.rank, nm.rar+cm.rar, ns.rank+cs.rank, ns.rar+cs.rar, sh];
+    // ランク優先: 大将rank > 大将rar > 副将rank > 副将rar > 宿縁① > 宿縁②
+    return [nm.rank+cm.rank, nm.rar+cm.rar, ns.rank+cs.rank, ns.rar+cs.rar, sh1, sh2];
   }
 }
 
@@ -2959,12 +2963,17 @@ function shukuenBadgeHtml(member, charDef){
 }
 
 function shukuenPt(member, charDef){
-  if(!charDef) return 0;
+  return shukuenPtsBySlot(member, charDef).reduce((a,b)=>a+b,0);
+}
+
+// 宿縁スロット（宿縁①・宿縁②…）ごとの点数を配列で返す。ソートで宿縁①→宿縁②の優先順位を使うため
+function shukuenPtsBySlot(member, charDef){
+  if(!charDef) return [0,0];
   const shukuens=charDef.shukuens||[];
   const slots=shukuens.length?shukuens:[charDef.shukuen||{enabled:false,members:[]}];
-  let total=0;
-  slots.forEach(sh=>{
-    if(!sh||!sh.enabled||!sh.members) return;
+  return slots.map(sh=>{
+    if(!sh||!sh.enabled||!sh.members) return 0;
+    let total=0;
     sh.members.forEach(sName=>{
       if(sName==='?') return;
       const mc=member.chars.find(c=>c.name===sName);
@@ -2973,8 +2982,8 @@ function shukuenPt(member, charDef){
       else if(lv==='omote6') total+=2;
       else if(lv==='soji') total+=1;
     });
+    return total;
   });
-  return total;
 }
 
 function initCharNewForm(){
