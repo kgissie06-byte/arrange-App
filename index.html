@@ -871,6 +871,10 @@ body.touch-device .sub-tab.active:active {
           <button id="rs-sort-rank" class="f-btn" onclick="setRSSort('rank')" style="white-space:nowrap">ランク＞レア</button>
         </div>
       </div>
+      <div class="fil-sec" style="flex-shrink:0">
+        <div class="fil-label">未入力メンバー</div>
+        <button id="rs-unentered-btn" class="f-btn" onclick="toggleRSUnentered()" style="white-space:nowrap">未入力も表示</button>
+      </div>
     </div>
     <div style="font-size:11px;color:var(--t2);margin-bottom:8px" id="rs-result-count"></div>
     <div class="reinf-results-list" id="rs-results"></div>
@@ -1050,7 +1054,7 @@ let _reinfSurveyVoters = { ransaki: null, tsubomi: null };  // 参照中アン�
 let E={memberId:null,charName:null,pendingRar:null,pendingRanks:[],pendingEx:null};
 let cnSelRar=[],cnSelRank=[],cuSelRar=[],cuSelRank=[];
 let cnExSotsui=false, cuExSotsui=false, cuBumpUpdatedAt=false; // キャラ更新時、既定では「最近更新されたキャラ」に反映しない
-let RS={rowId:null,mainRar:[],mainRank:[],mainEx:[],subRar:[],subRank:[],subEx:[],castleMainRar:[],castleMainRank:[],castleMainEx:[],castleSubRar:[],castleSubRank:[],castleSubEx:[],roleFilter:[],sortMode:'rar',dualMode:false};
+let RS={rowId:null,mainRar:[],mainRank:[],mainEx:[],subRar:[],subRank:[],subEx:[],castleMainRar:[],castleMainRank:[],castleMainEx:[],castleSubRar:[],castleSubRank:[],castleSubEx:[],roleFilter:[],sortMode:'rar',dualMode:false,showUnentered:false};
 
 function esc(s){return(s||'').replace(/'/g,"\\'");}
 function av(i){return AVC[((i%AVC.length)+AVC.length)%AVC.length];}
@@ -2119,7 +2123,9 @@ async function savePairEdit(rowId,type){
 function openReinfSearch(rowId){
   const row=S.reinf.find(r=>r.id===rowId);if(!row)return;
   const prevSortMode=RS.sortMode||'rar';
-  RS={rowId,mainRar:[],mainRank:[],mainEx:[],subRar:[],subRank:[],subEx:[],castleMainRar:[],castleMainRank:[],castleMainEx:[],castleSubRar:[],castleSubRank:[],castleSubEx:[],roleFilter:[_activeReinfTable==='ransaki'?'乱咲':'蕾'],sortMode:prevSortMode,dualMode:false};
+  const prevShowUnentered=!!RS.showUnentered;
+  RS={rowId,mainRar:[],mainRank:[],mainEx:[],subRar:[],subRank:[],subEx:[],castleMainRar:[],castleMainRank:[],castleMainEx:[],castleSubRar:[],castleSubRank:[],castleSubEx:[],roleFilter:[_activeReinfTable==='ransaki'?'乱咲':'蕾'],sortMode:prevSortMode,dualMode:false,showUnentered:prevShowUnentered};
+  syncRSUnenteredBtn();
   // ソートボタン表示を同期
   const onStyle='background:#EDE5D8;color:#634B38;border-color:#B4A494';
   const rarBtn=document.getElementById('rs-sort-rar');const rankBtn=document.getElementById('rs-sort-rank');
@@ -2236,7 +2242,24 @@ function toggleRSFilter(key,val){
   renderRSResults();
 }
 
+// 育成データを1件も入力していない（未入力の）メンバーか
+function isUnenteredMember(m){return !m.chars||m.chars.length===0;}
+
+function syncRSUnenteredBtn(){
+  const b=document.getElementById('rs-unentered-btn');
+  if(b)b.className='f-btn'+(RS.showUnentered?' on':'');
+}
+function toggleRSUnentered(){
+  RS.showUnentered=!RS.showUnentered;
+  syncRSUnenteredBtn();
+  renderRSResults();
+}
+
 function memberPassesRS(m,row){
+  // 未入力メンバーはキャラ・ランクの条件では判定できないため、トグルONなら役職フィルターのみ適用して候補に含める
+  if(RS.showUnentered&&isUnenteredMember(m)){
+    return !(RS.roleFilter.length&&!RS.roleFilter.includes(m.role));
+  }
   const mainName=row.normalMain;const subName=row.normalSub;
   if(mainName){
     const mc=m.chars.find(c=>c.name===mainName);if(!mc)return false;
@@ -2380,6 +2403,7 @@ function renderRSResults(){
         <div style="font-size:12px;font-weight:500">${escHtml(m.name)}
           ${isAlready&&!isCurrentRow?`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:#EDE5D8;color:#634B38;border:.5px solid #B4A494;margin-left:4px">表に登録済み</span>`:''}
           ${isCurrentRow?`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:#E1F5EE;color:#085041;border:.5px solid #1D9E75;margin-left:4px">この行に設定中</span>`:''}
+          ${isUnenteredMember(m)?`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:#F1EFE8;color:#5F5E5A;border:.5px solid #B4B2A9;margin-left:4px">未入力</span>`:''}
         </div>
         <div style="font-size:11px;color:var(--t2);margin-top:2px">${escHtml(m.role)}</div>
         ${normalBadges?`<div style="margin-top:4px">${normalBadges}</div>`:''}
