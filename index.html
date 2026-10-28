@@ -1255,7 +1255,7 @@ function renderCharGridEdit(m){
     });
     return set;
   })();
-  const orderedChars=orderCharsWithRecentPickup(S.chars,5);
+  const orderedChars=orderCharsWithRecentPickup(S.chars,6);
   const renderCc=(cd,isRecent)=>{
     const c=m.chars.find(x=>x.name===cd.name);const isSel=E.charName===cd.name;
     const imgHtml=cd.img
@@ -1283,12 +1283,20 @@ function renderCharGridEdit(m){
   _grid.innerHTML=html;
   filterCharGrid();
 }
-// 直近5件の更新（新規追加・編集）キャラを先頭にピックアップし、残りは読み仮名順で返す
+// 直近n件の更新（新規追加・編集）キャラを先頭にピックアップし、残りは読み仮名順で返す
+// ただし上位n件がすべて同じ日に更新されたものなら、n件を超えても同日の更新分はすべて表示する
 function orderCharsWithRecentPickup(arr,n){
   const withDate=arr.filter(c=>c.updatedAt);
-  const recent=[...withDate]
-    .sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt))
-    .slice(0,n);
+  const sorted=[...withDate].sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt));
+  // 端末のローカル日付（日本ならJST）で「同日」を判定する
+  const dayKey=c=>{const d=new Date(c.updatedAt);return`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;};
+  let recent=sorted.slice(0,n);
+  if(recent.length>=n && sorted.length>n){
+    const k=dayKey(recent[0]);
+    if(recent.every(c=>dayKey(c)===k)){
+      recent=sorted.filter(c=>dayKey(c)===k);
+    }
+  }
   const recentNames=new Set(recent.map(c=>c.name));
   const rest=sortByYomi(arr.filter(c=>!recentNames.has(c.name)));
   return{recent,rest};
